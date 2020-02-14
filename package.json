@@ -1,0 +1,49 @@
+{
+  "name": "saasmaster-api",
+  "version": "0.1.0",
+  "description": "API for SaaSMaster app",
+  "main": "server.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/saasmaster-co/saasmaster-api.git"
+  },
+  "scripts": {
+    "start": "ENV=dev node server.js",
+    "start:dev": "ENV=dev node server.js",
+    "start:devhosted": "ENV=devhosted node server.js",
+    "start:prod": "ENV=prod node server.js",
+    "build-spa:dev": "cd ../saasmaster && npm run build:dev",
+    "build-spa:prod": "cd ../saasmaster && npm run build:prod",
+    "copy": "cp -r ../saasmaster/build/* build",
+    "build:dev": "PROJ=saasmaster SVC=saasmaster-api scripts/build.sh",
+    "build:prod": "cp Dockerfile-prod Dockerfile; PROJ=saasmaster-prod SVC=saasmaster scripts/build.sh; cp Dockerfile-dev Dockerfile",
+    "deploy:dev": "PROJ=saasmaster SVC=saasmaster-api scripts/deploy.sh",
+    "deploy:prod": "PROJ=saasmaster-prod SVC=saasmaster scripts/deploy.sh",
+    "activate:dev": "CONFIGURATION=saasmaster-dev scripts/activate.sh",
+    "activate:prod": "CONFIGURATION=saasmaster-prod scripts/activate.sh",
+    "push:dev": "npm run activate:dev && npm run build-spa:dev && npm run copy && npm run build:dev && npm run deploy:dev",
+    "push:prod": "npm run activate:prod && npm run build-spa:prod && npm run copy && npm run build:prod && npm run deploy:prod",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Omri Gazitt",
+  "license": "MIT",
+  "dependencies": {
+    "@google-cloud/firestore": "^2.5.0",
+    "@google-cloud/language": "^3.6.2",
+    "@google-cloud/pubsub": "^1.1.5",
+    "@google-cloud/scheduler": "^1.3.3",
+    "@sendgrid/mail": "^6.5.0",
+    "axios": "^0.19.0",
+    "body-parser": "^1.19.0",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "express-jwt": "^5.3.1",
+    "express-jwt-authz": "^2.3.1",
+    "facebook-nodejs-business-sdk": "^5.0.1",
+    "google-auth-library": "^5.5.1",
+    "jwks-rsa": "^1.6.0",
+    "oauth-signature": "^1.5.0",
+    "twilio": "^3.39.2",
+    "twitter": "^1.7.1"
+  }
+}
