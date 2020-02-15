@@ -14,10 +14,10 @@ sgMail.setApiKey(sendgridConfig.api_key);
 
 exports.emailReviews = async (to, reviews) => {
   try {
-    const from = 'hello@saasmaster.co';
+    const from = 'hello@snapmaster.io';
     const subject = 'New reviews!';
     const url = `${environment.getUrl()}/reputation/alerts`;
-    const githubUrl = "https://github.com/ogazitt/saasmaster/raw/master/public";
+    const githubUrl = "https://github.com/snapmaster-io/snapmaster/raw/master/public";
 
     const reviewsText = reviews.map(r => `\t
 ${r[dbconstants.metadataProviderField]} 

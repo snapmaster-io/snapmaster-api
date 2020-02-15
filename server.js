@@ -527,7 +527,7 @@ app.post('/requestaccess', function(req, res){
   const auth = req.headers.authorization;
   const [, token] = auth.match(/Bearer (.*)/);
   const phrase = Buffer.from(token, 'base64').toString();
-  const regex = new RegExp(`${email}SaaSMaster`);
+  const regex = new RegExp(`${email}SnapMaster`);
   const isValid = phrase.match(regex);
 
   const requestAccess = async () => {
@@ -594,5 +594,5 @@ app.get('/*', function(req, res) {
 // Launch the API Server at PORT, or default port 8080
 const port = process.env.PORT || 8080;
 app.listen(port, () => {
-  console.log('SaaSMaster listening on port', port);
+  console.log('SnapMaster listening on port', port);
 });

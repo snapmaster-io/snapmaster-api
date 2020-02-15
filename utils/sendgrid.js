@@ -12,7 +12,7 @@ const email = require('../src/services/email');
 
 email.sendEmail(
   "ogazitt@gmail.com",
-  "omri@saasmaster.co",
+  "omri@snapmaster.io",
   "testing sendgrid",
   "this is only a test"
 );

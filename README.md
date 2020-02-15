@@ -1,10 +1,10 @@
-![SaaSMaster](https://github.com/ogazitt/saasmaster/blob/master/public/SaaSMaster-logo-220.png)
-# SaaSMaster-API
-## Master your online reputation
+![SnapMaster](https://github.com/snapmaster-io/snapmaster/blob/master/public/SaaSMaster-logo-220.png)
+# SnapMaster-API
+## Master your DevOps toolchain
 
-This repository contains the API for the SaaSMaster single-page application.  
+This repository contains the API for the SnapMaster single-page application.  
 
-SaaSMaster-API utilizes the express web server, and relies on [Auth0](https://auth0.com) for authentication and authorization.
+SnapMaster-API utilizes the express web server, and relies on [Auth0](https://auth0.com) for authentication and authorization.
 
 It is a Google Cloud Platform app, with dependencies on Google Cloud Build, Google Cloud Run, Google Cloud Pubsub, 
 Google Cloud Scheduler, and Google Cloud Natural Language API's. 
@@ -37,9 +37,9 @@ a production-like hosted environment in the dev account.
 
 ### `npm run build-spa` and `npm run copy`
 
-These will build the production (minified) version of the [SaaSMaster](https://github.com/ogazitt/saasmaster) front-end, 
-and copy the files into the `build` subdirectory.  It assumes that the saasmaster project is in a peer directory to 
-the saasmaster-api project.
+These will build the production (minified) version of the [SnapMaster](https://github.com/snapmaster-io/snapmaster) front-end, 
+and copy the files into the `build` subdirectory.  It assumes that the snapmaster project is in a peer directory to 
+the snapmaster-api project.
 
 ### `npm run build:dev | build:prod` and `npm run deploy:dev | deploy:prod`
 
