@@ -1,11 +1,11 @@
 {
-  "name": "saasmaster-api",
+  "name": "snapmaster-api",
   "version": "0.1.0",
-  "description": "API for SaaSMaster app",
+  "description": "API for SnapMaster app",
   "main": "server.js",
   "repository": {
     "type": "git",
-    "url": "git://github.com/saasmaster-co/saasmaster-api.git"
+    "url": "git://github.com/snapmaster-io/snapmaster-api.git"
   },
   "scripts": {
     "start": "ENV=dev node server.js",

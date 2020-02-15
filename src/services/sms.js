@@ -15,7 +15,7 @@ exports.toAdmin = 'toAdmin';
 exports.textNotification = async (to, message) => {
   try {
     const from = twilioConfig.from;
-    const mediaUrl = 'https://github.com/snapmaster-io/snapmaster/raw/master/public/SaaSMaster-logo-220.png'
+    const mediaUrl = 'https://github.com/snapmaster-io/snapmaster/raw/master/public/SnapMaster-logo-220.png'
 
     await exports.sendSms(to, from, mediaUrl, message);
   } catch (error) {
@@ -27,7 +27,7 @@ exports.textReviews = async (to, reviews) => {
   try {
     const from = twilioConfig.from;
     const url = `${environment.getUrl()}/reputation/alerts`;
-    const mediaUrl = 'https://github.com/snapmaster-io/snapmaster/raw/master/public/SaaSMaster-logo-220.png'
+    const mediaUrl = 'https://github.com/snapmaster-io/snapmaster/raw/master/public/SnapMaster-logo-220.png'
 
     //const reviewsText = reviews.map(r => `${r[dbconstants.metadataProviderField]}: ${r[dbconstants.metadataSentimentField]}`;
     const body = `You've received ${reviews.length} new review${reviews.length > 1 ? 's' : ''}!\nHandle these new reviews here: ${url}`;

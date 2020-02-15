@@ -48,8 +48,8 @@ Navigate to ${url} to handle these new reviews!`;
   <div style="display: flex">
     <a href=${url}>
       <img 
-        src=${githubUrl}/SaaSMaster-logo-220.png
-        alt="saasmaster" 
+        src=${githubUrl}/SnapMaster-logo-220.png
+        alt="snapmaster" 
         width="50" height="50" />
     </a>
     <span style="font-size: 3em">&nbsp;New Reviews!</span>

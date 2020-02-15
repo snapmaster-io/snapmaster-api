@@ -1,4 +1,4 @@
-![SnapMaster](https://github.com/snapmaster-io/snapmaster/blob/master/public/SaaSMaster-logo-220.png)
+![SnapMaster](https://github.com/snapmaster-io/snapmaster/blob/master/public/SnapMaster-logo-220.png)
 # SnapMaster-API
 ## Master your DevOps toolchain
 
