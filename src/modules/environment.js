@@ -89,7 +89,7 @@ exports.getServiceAccount = () => {
 }
 
 exports.getLocation = () => {
-  const location = environment === 'dev' ? 'us-central1' : 'us-west2';
+  const location = environment === 'dev' ? 'us-central1' : 'us-central1';
   return location;
 }
 
