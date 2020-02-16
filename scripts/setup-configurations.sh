@@ -1,13 +1,13 @@
 #!/bin/bash
 # development
-CONFIG_NAME=saasmaster-dev
-PROJECT_ID=saasmaster
-ACCOUNT=ogazitt@gmail.com
+CONFIG_NAME=snapmaster-dev
+PROJECT_ID=snapmaster-dev
+ACCOUNT=snapmasterios@gmail.com
 RUN_REGION=us-central1
 # production
-CONFIG_NAME=saasmaster-prod
-PROJECT_ID=saasmaster-prod
-ACCOUNT=saasmaster1@gmail.com
+CONFIG_NAME=snapmaster-prod
+PROJECT_ID=snapmaster
+ACCOUNT=snapmasterios@gmail.com
 RUN_REGION=us-central1
 
 gcloud config configurations create $CONFIG_NAME 

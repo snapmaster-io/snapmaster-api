@@ -72,13 +72,13 @@ exports.getCloudPlatformConfigFile = () => {
 }
 
 exports.getProjectId = () => {
-  const projectId = environment === 'dev' ? 'saasmaster' : `saasmaster-${environment}`;
+  const projectId = environment === 'prod' ? 'snapmaster' : `snapmaster-${environment}`;
   return projectId;
 }
 
 exports.getEndpoint = () => {
-  const endpoint = environment === 'dev' ? 'https://saasmaster-api-rlxsdnkh6a-uc.a.run.app' 
-                                         : 'https://saasmaster-klpktfefsa-uc.a.run.app';
+  const endpoint = environment === 'dev' ? 'https://snapmaster-dev-7hjh6mhjjq-uc.a.run.app' 
+                                         : 'https://snapmaster-iwswjzd7qa-uc.a.run.app';
   return endpoint;
 }
 
@@ -94,8 +94,8 @@ exports.getLocation = () => {
 }
 
 exports.getUrl = () => {
-  const endpoint = environment === 'dev' ? 'https://dev.saasmaster.co' 
-                                         : 'https://www.saasmaster.co';
+  const endpoint = environment === 'dev' ? 'https://dev.snapmaster.io' 
+                                         : 'https://www.snapmaster.io';
   return endpoint;
 }
 
