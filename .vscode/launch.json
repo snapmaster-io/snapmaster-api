@@ -7,8 +7,8 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Create Workflow",
-      "program": "${workspaceFolder}/utils/createWorkflow.js",
+      "name": "Create snap",
+      "program": "${workspaceFolder}/utils/createSnap.js",
       "args": ["github-gcpbuild-slack", "snaps/github-gcpbuild-slack.yml"],
       "env": {"ENV":"dev"}
     },

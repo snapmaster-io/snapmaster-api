@@ -1,13 +1,17 @@
-// define some constants - system info "userId" and invoke info "document name"
+// define some constants - system info "userId", snapmaster userId, and invoke info "document name"
 exports.systemInfo = '__system_info';
 exports.invokeInfo = '__invoke_info';
+exports.snapMasterUserId = 'snapmaster';
 
 // define signups "userId" and emails "collection"
 exports.signups = '__signups';
 exports.emailsCollection = 'emails';
 
-// define workflows collection
-exports.workflowsCollection = 'workflows';
+// define snaps collection
+exports.snapsCollection = 'snaps';
+
+// snap field names
+exports.snapPrivateField = 'private';
 
 // name of history "collection" and metadata "collection"
 exports.history = '__history';

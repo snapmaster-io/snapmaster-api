@@ -8,6 +8,7 @@
 //   storeDocument: store a document into a collection
 //   storeBatch: shred an array into a batch of documents in a collection
 //   query: query for documents across a collection, consolidate into an array 
+//   queryGroup: query for documents across a collection group, consolidate into an array 
 //   getAllUsers: get all users stored in system as an array
 //   getUserCollections: get all collections for the user
 //   getUserData: get user info from provider

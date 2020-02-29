@@ -32,6 +32,9 @@ const datapipeline = require('./src/modules/datapipeline');
 const profile = require('./src/modules/profile');
 const connections = require('./src/modules/connections');
 
+// import snap data access layer
+const snap = require('./src/snap/snap-dal');
+
 // beta processing
 const beta = require('./src/modules/beta');
 
@@ -451,6 +454,41 @@ app.post('/profile', checkJwt, processUser, function(req, res){
     res.status(200).send({ message: 'success' });
   }
   storeProfile();
+});
+
+// Get snaps API endpoint
+app.get('/snaps', checkJwt, processUser, function(req, res){
+  const returnsnaps = async () => {
+    const snaps = await snap.getsnaps(req.userId) || {};
+    res.status(200).send(snaps);
+  }
+  returnsnaps();
+});
+  
+// Get snap API endpoint
+app.get('/snaps/:snapId', checkJwt, processUser, function(req, res){
+  const snapId = req.params.snapId;
+  const returnsnap = async () => {
+    const snap = await snap.getsnap(req.userId, snapId) || {};
+    res.status(200).send(snap);
+  }
+  returnsnap();
+});
+  
+// Post snaps API endpoint
+// this will fork an existing snap with snapId
+// TODO: add a code path that creates a new snap
+app.post('/snaps', checkJwt, processUser, function(req, res){
+  const snapId = req.body.snapId;
+  const forkSnap = async () => {
+    await snap.forkSnap(req.userId, snapId);
+    res.status(200).send({ message: 'success' });
+    /*
+    const snaps = await snap.getSnaps(req.userId) || {};
+    res.status(200).send(snaps);
+    */
+  }
+  forkSnap();
 });
 
 // Link API endpoint

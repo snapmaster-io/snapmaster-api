@@ -1,4 +1,4 @@
-// utility to add workflows to the snapmaster user
+// utility to add snaps to the snapmaster user
 
 // get the environment as an env variable
 const env = process.env.ENV || 'prod';
@@ -8,25 +8,25 @@ console.log('environment:', env);
 const environment = require('../src/modules/environment');
 environment.setEnv(env);
 
-const workflow = require('../src/workflow/workflow-dal');
+const snap = require('../src/snap/snap-dal');
 const fs = require('fs');
 
 // check command line
 if (process.argv.length !== 4) {
-  console.error('Usage: createWorkflow <workflowName> <definitionFile.yaml>');
+  console.error('Usage: createSnap <snapName> <definitionFile.yaml>');
   process.exit(1);
 }
 
 const name = process.argv[2];
 if (!name) {
-  console.error('Usage: createWorkflow <workflowName> <definitionFile.yaml>');
+  console.error('Usage: createSnap <snapName> <definitionFile.yaml>');
   process.exit(1);
 }
 console.log('name:', name);
 
 const file = process.argv[3];
 if (!file) {
-  console.error('Usage: createWorkflow <workflowName> <definitionFile.yaml>');
+  console.error('Usage: createSnap <snapName> <definitionFile.yaml>');
   process.exit(1);
 }
 
@@ -36,7 +36,14 @@ if (!definition) {
   process.exit(1);
 }
 
-const defObj = { definition: definition };
+const snapId = `snapmaster/${name}`;
+
+const defObj = { 
+  snapId: snapId,
+  private: false,
+  text: definition
+};
+
 console.log('definition:', defObj);
 
-workflow.createWorkflow('snapmaster', name, defObj);
+snap.createSnap('snapmaster', name, defObj);
