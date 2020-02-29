@@ -6,6 +6,9 @@ exports.invokeInfo = '__invoke_info';
 exports.signups = '__signups';
 exports.emailsCollection = 'emails';
 
+// define workflows collection
+exports.workflowsCollection = 'workflows';
+
 // name of history "collection" and metadata "collection"
 exports.history = '__history';
 

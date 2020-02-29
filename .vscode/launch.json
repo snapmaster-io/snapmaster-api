@@ -4,6 +4,14 @@
   // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Create Workflow",
+      "program": "${workspaceFolder}/utils/createWorkflow.js",
+      "args": ["github-gcpbuild-slack", "snaps/github-gcpbuild-slack.yml"],
+      "env": {"ENV":"dev"}
+    },
 
     {
       "type": "node",
