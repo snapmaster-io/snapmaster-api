@@ -8,6 +8,9 @@ console.log('environment:', env);
 const environment = require('../src/modules/environment');
 environment.setEnv(env);
 
+const database = require('../src/data/database');
+database.setEnv(env);
+
 const snap = require('../src/snap/snap-dal');
 const fs = require('fs');
 

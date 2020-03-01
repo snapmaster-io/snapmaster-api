@@ -33,7 +33,7 @@ const profile = require('./src/modules/profile');
 const connections = require('./src/modules/connections');
 
 // import snap data access layer
-const snap = require('./src/snap/snap-dal');
+const snapdal = require('./src/snap/snap-dal');
 
 // beta processing
 const beta = require('./src/modules/beta');
@@ -428,6 +428,15 @@ app.get('/history', checkJwt, processUser, function(req, res){
   returnHistory();
 });
 
+// Get gallery API endpoint
+app.get('/gallery', checkJwt, processUser, function(req, res){
+  const returnGallery = async () => {
+    const gallery = await snapdal.getAllSnaps() || {};
+    res.status(200).send(gallery);
+  }
+  returnGallery();
+});
+
 // Get profile API endpoint
 app.get('/profile', checkJwt, processUser, function(req, res){
   const returnProfile = async () => {
@@ -458,21 +467,27 @@ app.post('/profile', checkJwt, processUser, function(req, res){
 
 // Get snaps API endpoint
 app.get('/snaps', checkJwt, processUser, function(req, res){
-  const returnsnaps = async () => {
-    const snaps = await snap.getsnaps(req.userId) || {};
+  const returnSnaps = async () => {
+    const snaps = await snapdal.getSnaps(req.userId) || {};
     res.status(200).send(snaps);
   }
-  returnsnaps();
+  returnSnaps();
 });
   
 // Get snap API endpoint
-app.get('/snaps/:snapId', checkJwt, processUser, function(req, res){
+app.get('/snaps/:userId/:snapId', checkJwt, processUser, function(req, res){
+  const userId = req.params.userId;
   const snapId = req.params.snapId;
-  const returnsnap = async () => {
-    const snap = await snap.getsnap(req.userId, snapId) || {};
+  if (!userId || !snapId) {
+    res.status(200).send({ message: 'error'});
+    return;
+  }
+
+  const returnSnap = async () => {
+    const snap = await snapdal.getSnap(userId, snapId) || {};
     res.status(200).send(snap);
   }
-  returnsnap();
+  returnSnap();
 });
   
 // Post snaps API endpoint
@@ -481,7 +496,7 @@ app.get('/snaps/:snapId', checkJwt, processUser, function(req, res){
 app.post('/snaps', checkJwt, processUser, function(req, res){
   const snapId = req.body.snapId;
   const forkSnap = async () => {
-    await snap.forkSnap(req.userId, snapId);
+    await snapdal.forkSnap(req.userId, snapId);
     res.status(200).send({ message: 'success' });
     /*
     const snaps = await snap.getSnaps(req.userId) || {};

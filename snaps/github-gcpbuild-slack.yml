@@ -2,6 +2,10 @@
 version: snap-v1alpha1 
 name: github-gcpbuild-slack
 description: GitHub merge -> Google Cloud build / Slack
+tools:
+  - github
+  - gcpbuild
+  - slack
 parameters: 
   repo: 
     description: name of git repository

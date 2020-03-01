@@ -61,13 +61,25 @@ exports.forkSnap = async (userId, snapId) => {
   }
 }
 
-// get all snaps across all user environments
-exports.getAllSnaps = async (userId) => {
+// get a snap from the user's environment
+exports.getSnap = async (userId, snapId) => {
   try {
-    const snaps = await database.queryGroup(userId, dbconstants.snapsCollection, dbconstants.snapPrivateField, false);
+    // get the snap definition 
+    const snap = await database.getDocument(userId, dbconstants.snapsCollection, snapId);
+    return snap;
+  } catch (error) {
+    console.log(`getSnap: caught exception: ${error}`);
+    return null;
+  }
+}
+
+// get all snaps across all user environments
+exports.getAllSnaps = async () => {
+  try {
+    const snaps = await database.queryGroup(null, dbconstants.snapsCollection, dbconstants.snapPrivateField, false);
     return snaps;
   } catch (error) {
-    console.log(`getSnaps: caught exception: ${error}`);
+    console.log(`getAllSnaps: caught exception: ${error}`);
     return null;
   }
 }
