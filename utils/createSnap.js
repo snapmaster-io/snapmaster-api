@@ -11,25 +11,21 @@ environment.setEnv(env);
 const database = require('../src/data/database');
 database.setEnv(env);
 
-const snap = require('../src/snap/snap-dal');
+const snapdal = require('../src/snap/snap-dal');
+const engine = require('../src/snap/snap-engine');
 const fs = require('fs');
 
+const userId = 'snapmaster';
+
 // check command line
-if (process.argv.length !== 4) {
-  console.error('Usage: createSnap <snapName> <definitionFile.yaml>');
+if (process.argv.length !== 3) {
+  console.error('Usage: createSnap <definitionFile.yaml>');
   process.exit(1);
 }
 
-const name = process.argv[2];
-if (!name) {
-  console.error('Usage: createSnap <snapName> <definitionFile.yaml>');
-  process.exit(1);
-}
-console.log('name:', name);
-
-const file = process.argv[3];
+const file = process.argv[2];
 if (!file) {
-  console.error('Usage: createSnap <snapName> <definitionFile.yaml>');
+  console.error('Usage: createSnap <definitionFile.yaml>');
   process.exit(1);
 }
 
@@ -39,14 +35,18 @@ if (!definition) {
   process.exit(1);
 }
 
-const snapId = `snapmaster/${name}`;
+const snap = engine.parseDefinition(definition);
+const snapId = `${userId}/${snap.name}`;
 
 const defObj = { 
   snapId: snapId,
+  description: snap.description, 
+  trigger: snap.tools.trigger,
+  actions: snap.tools.actions,
   private: false,
   text: definition
 };
 
 console.log('definition:', defObj);
 
-snap.createSnap('snapmaster', name, defObj);
+snapdal.createSnap(userId, snap.name, defObj);

@@ -1,21 +1,20 @@
-// snap engine for snap language
+// snap engine 
 // 
 // exports:
-//   activateSnap: activate a snap in the user's environment
-//   deactivateSnap: deactivate a snap in the user's environment
-//   installSnap: install a snap in the user's environment
+//   parseDefinition: parse a yaml definition into a snap object
 //   triggerSnap: trigger a snap
-//   uninstallSnap: uninstall a snap from the user's environment
 
 const database = require('../data/database');
 const dbconstants = require('../data/database-constants');
+const YAML = require('yaml');
 
-// install a snap in the user's environment
-exports.installSnap = async (userId, snapId) => {
+exports.parseDefinition = (definition) => {
   try {
-
+    const snap = YAML.parse(definition);
+    // TODO: validation
+    return snap;
   } catch (error) {
-    console.log(`triggerSnap: caught exception: ${error}`);
+    console.log(`parseDefinition: caught exception: ${error}`);
     return null;
   }
 }

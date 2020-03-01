@@ -10,10 +10,13 @@ const dbconstants = require('../data/database-constants');
 /* 
  * A snap definition is specified as follows:
  * { 
- *   snapId: string [userId/name],
+ *   snapId: string,      // [userId/name]
+ *   description: string, 
  *   private: boolean,
- *   url: url [typically points to a git repo file],
- *   text: string [inline definition of snap, in case URL doesn't exist]
+ *   trigger: string,     // tool name
+ *   actions: [string],   // array of tool names
+ *   url: string,         // typically points to a git repo file
+ *   text: string         // inline definition of snap, in case URL doesn't exist
  * }
  */
 
