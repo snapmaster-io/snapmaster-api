@@ -31,6 +31,7 @@ const dal = require('./src/data/dal');
 const datapipeline = require('./src/modules/datapipeline');
 const profile = require('./src/modules/profile');
 const connections = require('./src/modules/connections');
+const tools = require('./src/modules/tools');
 
 // import snap data access layer
 const snapdal = require('./src/snap/snap-dal');
@@ -370,6 +371,15 @@ app.post('/yelp', checkJwt, processUser, function (req, res){
   }
 
   res.status(200).send({ message: 'Unknown action'}); 
+});
+
+// Get library API endpoint
+app.get('/library', checkJwt, processUser, function(req, res){
+  const returnLibrary = async () => {
+    const library = await tools.getTools(req.userId) || {};
+    res.status(200).send(library);
+  }
+  returnLibrary();
 });
 
 // Get connections API endpoint
