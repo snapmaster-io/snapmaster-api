@@ -87,7 +87,9 @@ exports.deactivateSnap = async (userId, activeSnapId) => {
 // delete a snap in the user's environment
 exports.deleteSnap = async (userId, snapId) => {
   try {
-    await database.removeDocument(userId, dbconstants.snapsCollection, snapId);
+    const nameArray = snapId.split('/');
+    const snapName = nameArray.length > 1 ? nameArray[1] : snapId;
+    await database.removeDocument(userId, dbconstants.snapsCollection, snapName);
   } catch (error) {
     console.log(`deleteSnap: caught exception: ${error}`);
     return null;

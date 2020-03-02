@@ -484,6 +484,64 @@ app.get('/snaps', checkJwt, processUser, function(req, res){
   returnSnaps();
 });
   
+
+// Get snap API endpoint
+app.get('/snaps/:userId/:snapId', checkJwt, processUser, function(req, res){
+  const userId = req.params.userId;
+  const snapId = req.params.snapId;
+  if (!userId || !snapId) {
+    res.status(200).send({ message: 'error'});
+    return;
+  }
+
+  const returnSnap = async () => {
+    const snap = await snapdal.getSnap(userId, snapId) || {};
+    res.status(200).send(snap);
+  }
+  returnSnap();
+});
+  
+// Post snaps API endpoint
+// this will fork an existing snap with snapId
+// TODO: add a code path that creates a new snap
+app.post('/snaps', checkJwt, processUser, function(req, res){
+  const action = req.body.action;
+  const snapId = req.body.snapId;
+  
+  const createSnap = async () => {
+    const definition = req.body.definition;
+    await snapdal.createSnap(req.userId, definition);
+    res.status(200).send({ message: 'success' });
+  }
+
+  const deleteSnap = async () => {
+    await snapdal.deleteSnap(req.userId, snapId);
+    res.status(200).send({ message: 'success' });
+  }
+
+  const forkSnap = async () => {
+    await snapdal.forkSnap(req.userId, snapId);
+    res.status(200).send({ message: 'success' });
+  }
+
+  if (action === 'create') {
+    createSnap();
+    return;
+  }
+
+  if (action === 'delete' && snapId) {
+    deleteSnap();
+    return;
+  }
+
+  if (action === 'fork' && snapId) {
+    forkSnap();
+    return;
+  }
+
+  res.status(200).send({ message: 'Unknown action'});  
+});
+
 // Get active snaps API endpoint
 app.get('/activesnaps', checkJwt, processUser, function(req, res){
   const returnSnaps = async () => {
@@ -519,38 +577,6 @@ app.post('/activesnaps', checkJwt, processUser, function(req, res){
   }
 
   res.status(200).send({ message: 'Unknown action'});  
-});
-  
-// Get snap API endpoint
-app.get('/snaps/:userId/:snapId', checkJwt, processUser, function(req, res){
-  const userId = req.params.userId;
-  const snapId = req.params.snapId;
-  if (!userId || !snapId) {
-    res.status(200).send({ message: 'error'});
-    return;
-  }
-
-  const returnSnap = async () => {
-    const snap = await snapdal.getSnap(userId, snapId) || {};
-    res.status(200).send(snap);
-  }
-  returnSnap();
-});
-  
-// Post snaps API endpoint
-// this will fork an existing snap with snapId
-// TODO: add a code path that creates a new snap
-app.post('/snaps', checkJwt, processUser, function(req, res){
-  const snapId = req.body.snapId;
-  const forkSnap = async () => {
-    await snapdal.forkSnap(req.userId, snapId);
-    res.status(200).send({ message: 'success' });
-    /*
-    const snaps = await snap.getSnaps(req.userId) || {};
-    res.status(200).send(snaps);
-    */
-  }
-  forkSnap();
 });
 
 // Link API endpoint
