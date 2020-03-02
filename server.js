@@ -484,6 +484,42 @@ app.get('/snaps', checkJwt, processUser, function(req, res){
   returnSnaps();
 });
   
+// Get active snaps API endpoint
+app.get('/activesnaps', checkJwt, processUser, function(req, res){
+  const returnSnaps = async () => {
+    const snaps = await snapdal.getActiveSnaps(req.userId) || {};
+    res.status(200).send(snaps);
+  }
+  returnSnaps();
+});
+  
+// Post active snaps API endpoint
+app.post('/activesnaps', checkJwt, processUser, function(req, res){
+  const action = req.body.action;
+  const snapId = req.body.snapId;
+  
+  const activateSnap = async () => {
+    await snapdal.activateSnap(req.userId, snapId);
+    res.status(200).send({ message: 'success' });
+  }
+
+  const deactivateSnap = async () => {
+    await snapdal.deactivateSnap(req.userId, snapId);
+    res.status(200).send({ message: 'success' });
+  }
+
+  if (action === 'activate' && snapId) {
+    activateSnap();
+  }
+
+  if (action === 'deactivate' && snapId) {
+    deactivateSnap();
+    return;
+  }
+
+  res.status(200).send({ message: 'Unknown action'});  
+});
+  
 // Get snap API endpoint
 app.get('/snaps/:userId/:snapId', checkJwt, processUser, function(req, res){
   const userId = req.params.userId;

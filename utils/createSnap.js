@@ -35,18 +35,4 @@ if (!definition) {
   process.exit(1);
 }
 
-const snap = engine.parseDefinition(definition);
-const snapId = `${userId}/${snap.name}`;
-
-const defObj = { 
-  snapId: snapId,
-  description: snap.description, 
-  trigger: snap.tools.trigger,
-  actions: snap.tools.actions,
-  private: false,
-  text: definition
-};
-
-console.log('definition:', defObj);
-
-snapdal.createSnap(userId, snap.name, defObj);
+snapdal.createSnap(userId, definition);

@@ -1,11 +1,19 @@
 // snap data access layer for snap language
 // 
 // exports:
-//   createSnap: create a Snap in the user's environment
-//   deleteSnap: delete a Snap in the user's environment
+//   activateSnap: activate a snap into the user's environment
+//   createSnap: create a snap in the user's environment
+//   deactivateSnap: deactivate an active snap in the user's environment
+//   deleteSnap: delete a snap in the user's environment
+//   forkSnap: fork a snap into the user's environment
+//   getActiveSnaps: get active snaps in the user's environment
+//   getAllSnaps: get all snaps across all user environments
+//   getSnap: get a snap definition from the user's environment
+//   getSnaps: get all snaps in the user's environment
 
 const database = require('../data/database');
 const dbconstants = require('../data/database-constants');
+const engine = require('./snap-engine');
 
 /* 
  * A snap definition is specified as follows:
@@ -20,12 +28,57 @@ const dbconstants = require('../data/database-constants');
  * }
  */
 
-// create a snap in the user's environment
-exports.createSnap = async (userId, snapId, definition) => {
+// activate a snap into the user's environment
+exports.activateSnap = async (userId, snapId, params) => {
   try {
-    await database.storeDocument(userId, dbconstants.snapsCollection, snapId, definition);
+    const activeSnapId = `${userId}:${snapId}`;
+    const record = {
+      activeSnapId: activeSnapId,
+      userId: userId,
+      snapId: snapId,
+      params: params
+    }
+    await database.storeDocument(userId, dbconstants.activeSnapsCollection, activeSnapId, record);
+  } catch (error) {
+    console.log(`activateSnap: caught exception: ${error}`);
+    return null;
+  }
+}
+
+// create a snap in the user's environment
+exports.createSnap = async (userId, definition, private = false) => {
+  try {
+    const snapDefinition = engine.parseDefinition(definition);
+    const snapId = `${userId}/${snapDefinition.name}`;
+    const name = snapDefinition.name;
+
+    const snap = { 
+      snapId: snapId,
+      userId: userId,
+      name: name,
+      description: snapDefinition.description, 
+      parameters: snapDefinition.parameters,
+      trigger: snapDefinition.tools.trigger,
+      actions: snapDefinition.tools.actions,
+      private: private,
+      text: definition
+    };
+    
+    // store the snap object and return it
+    await database.storeDocument(userId, dbconstants.snapsCollection, name, snap);
+    return snap;
   } catch (error) {
     console.log(`createSnap: caught exception: ${error}`);
+    return null;
+  }
+}
+
+// deactivate a snap in the user's environment
+exports.deactivateSnap = async (userId, activeSnapId) => {
+  try {
+    await database.removeDocument(userId, dbconstants.activeSnapsCollection, activeSnapId);
+  } catch (error) {
+    console.log(`deactivateSnap: caught exception: ${error}`);
     return null;
   }
 }
@@ -51,27 +104,28 @@ exports.forkSnap = async (userId, snapId) => {
     const snapName = snapNameArray.length > 1 ? snapNameArray[1] : snapId;
 
     // get the snap definition 
-    const snap = await database.getDocument(snapUserId, dbconstants.snapsCollection, snapId);
+    const snap = await database.getDocument(snapUserId, dbconstants.snapsCollection, snapName);
 
     // construct new name
-    const forkedsnapName = `${userId}/${snapName}`;
+    const forkedSnapId = `${userId}/${snapName}`;
+    snap.snapId = forkedSnapId;
+    snap.private = true;
 
     // store the new snap
-    await database.storeDocument(userId, dbconstants.snapsCollection, forkedsnapName, snap);
+    await database.storeDocument(userId, dbconstants.snapsCollection, snapName, snap);
   } catch (error) {
     console.log(`forkSnap: caught exception: ${error}`);
     return null;
   }
 }
 
-// get a snap from the user's environment
-exports.getSnap = async (userId, snapId) => {
+// get active snaps in the user's environment
+exports.getActiveSnaps = async (userId) => {
   try {
-    // get the snap definition 
-    const snap = await database.getDocument(userId, dbconstants.snapsCollection, snapId);
-    return snap;
+    const activeSnaps = await database.query(userId, dbconstants.activeSnapsCollection);
+    return activeSnaps;
   } catch (error) {
-    console.log(`getSnap: caught exception: ${error}`);
+    console.log(`getActiveSnaps: caught exception: ${error}`);
     return null;
   }
 }
@@ -83,6 +137,18 @@ exports.getAllSnaps = async () => {
     return snaps;
   } catch (error) {
     console.log(`getAllSnaps: caught exception: ${error}`);
+    return null;
+  }
+}
+
+// get a snap definition from the user's environment
+exports.getSnap = async (userId, snapId) => {
+  try {
+    // get the snap definition 
+    const snap = await database.getDocument(userId, dbconstants.snapsCollection, snapId);
+    return snap;
+  } catch (error) {
+    console.log(`getSnap: caught exception: ${error}`);
     return null;
   }
 }

@@ -9,11 +9,11 @@ tools:
     - gcpbuild
     - slack
 parameters: 
-  repo: 
+  - name: repo
     description: name of git repository
-  branch:
+  - name: branch
     description: name of branch
-  channel: 
+  - name: channel
     description: name of slack channel
 trigger: 
   name: github/merge
@@ -21,13 +21,13 @@ trigger:
     repo: $repo
     branch: $branch
 actions:
-  - name: Build project using google cloud build
-    action: gcpbuild/build
+  - name: gcpbuild/build
+    description: Build project using google cloud build
     parameters: 
       repo: $repo
       branch: $branch
-  - name: Send a message to a slack channel
-    action: slack/send
+  - name: slack/send
+    action: Send a message to a slack channel
     parameters: 
       channel: $channel
       message: kicked off new build of $repo:$branch

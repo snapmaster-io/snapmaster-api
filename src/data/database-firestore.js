@@ -16,9 +16,11 @@ var users = db.collection('users');
 // set the environment
 exports.setEnv = (env) => {
   // the only impact for dev environment is to use a different collection
+  /* DISABLE
   if (env === 'dev') {
     users = db.collection('users-dev');
   }
+  */
 };
 
 // get a document from a collection

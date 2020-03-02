@@ -13,9 +13,13 @@ exports.addConnection = async (userId, connection) => {
 
 exports.getConnections = async (userId) => {
   const connectionList = {
-    twitter: {
+    github: {
       type: 'link',
-      image: '/twitter-logo.png'
+      image: '/github-dark-logo.png'
+    },
+    slack: {
+      type: 'link',
+      image: '/slack-logo.png'
     },
     facebook: {
       type: 'link',
