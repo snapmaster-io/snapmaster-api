@@ -29,9 +29,10 @@ const engine = require('./snap-engine');
  */
 
 // activate a snap into the user's environment
-exports.activateSnap = async (userId, snapId, params) => {
+exports.activateSnap = async (userId, snapId, params = null) => {
   try {
-    const activeSnapId = `${userId}:${snapId}`;
+    // active snap ID is current timestamp
+    const activeSnapId = new Date().getTime().toString();
     const record = {
       activeSnapId: activeSnapId,
       userId: userId,
