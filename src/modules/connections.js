@@ -13,29 +13,33 @@ exports.addConnection = async (userId, connection) => {
 
 exports.getConnections = async (userId) => {
   const connectionList = {
+    aws: {
+      type: 'simple',
+      image: '/aws-logo.jpg'
+    },
+    azure: {
+      type: 'simple',
+      image: '/azure-logo.png'
+    },
+    circleci: {
+      type: 'simple',
+      image: '/circleci-logo.png'
+    },
+    gcp: {
+      type: 'simple',
+      image: '/gcp-full-logo.png'
+    },
     github: {
-      type: 'link',
+      type: 'simple',
       image: '/github-dark-logo.png'
     },
-    slack: {
-      type: 'link',
-      image: '/slack-logo.png'
-    },
-    facebook: {
-      type: 'link',
-      image: '/facebook-logo.png'
-    },
-    yelp: {
+    gitlab: {
       type: 'simple',
-      image: '/yelp-logo.png'
+      image: '/gitlab-logo.png'
     },
-    'google-oauth2': {
-      type: 'link',
-      image: '/google-logo.png'
-    },
-    instagram: {
-      type: 'link',
-      image: '/instagram-logo.png'
+    slack: {
+      type: 'simple',
+      image: '/slack-logo.png'
     },
   };
 

@@ -6,7 +6,7 @@ tools:
   trigger:
     github
   actions:
-    - gcpbuild
+    - gcp
     - slack
 parameters: 
   - name: repo
@@ -21,7 +21,7 @@ trigger:
     repo: $repo
     branch: $branch
 actions:
-  - name: gcpbuild/build
+  - name: gcp/build
     description: Build project using google cloud build
     parameters: 
       repo: $repo

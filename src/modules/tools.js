@@ -7,25 +7,33 @@ const database = require('../data/database');
 
 exports.getTools = async (userId) => {
   const toolList = {
-    twitter: {
-      type: 'link',
-      image: '/twitter-logo.png'
-    },
-    facebook: {
-      type: 'link',
-      image: '/facebook-logo.png'
-    },
-    yelp: {
+    aws: {
       type: 'simple',
-      image: '/yelp-logo.png'
+      image: '/aws-logo.jpg'
     },
-    'google-oauth2': {
-      type: 'link',
-      image: '/google-logo.png'
+    azure: {
+      type: 'simple',
+      image: '/azure-logo.png'
     },
-    instagram: {
-      type: 'link',
-      image: '/instagram-logo.png'
+    circleci: {
+      type: 'simple',
+      image: '/circleci-logo.png'
+    },
+    gcp: {
+      type: 'simple',
+      image: '/gcp-full-logo.png'
+    },
+    github: {
+      type: 'simple',
+      image: '/github-dark-logo.png'
+    },
+    gitlab: {
+      type: 'simple',
+      image: '/gitlab-logo.png'
+    },
+    slack: {
+      type: 'simple',
+      image: '/slack-logo.png'
     },
   };
 
