@@ -93,8 +93,54 @@ const processUser = (req, res, next) => {
   next();
 };
 
+/*
+const githubHandler = require('github-webhook-handler');
+
+// set up github webhook middleware
+const handler = githubHandler({
+  path: '/event_handler',
+  secret: 'abc123..'
+});
+
+handler.on('issues', function (event) {
+  console.log('Received an issue event for %s action=%s: #%d %s',
+    event.payload.repository.name,
+    event.payload.action,
+    event.payload.issue.number,
+    event.payload.issue.title)
+});
+
+// enable the github webhook middleware
+app.use(handler);
+*/
+
 // configure a static file server
 app.use(express.static(path.join(__dirname, 'build')));
+
+/*
+// create some github stuff
+var createApp = require('github-app');
+
+var githubApp = createApp({
+  id: process.env.APP_ID,
+  cert: require('fs').readFileSync('private-key.pem')
+});
+
+handler.on('issues', function (event) {
+  if (event.payload.action === 'opened') {
+    var installation = event.payload.installation.id;
+
+    githubApp.asInstallation(installation).then(function (github) {
+      github.issues.createComment({
+        owner: event.payload.repository.owner.login,
+        repo: event.payload.repository.name,
+        number: event.payload.issue.number,
+        body: 'Welcome to the robot uprising.'
+      });
+    });
+  }
+});
+*/
 
 // async function to retrieve provider data (either from storage cache
 // or directly from provider), update cache, and return the result
@@ -371,6 +417,18 @@ app.post('/yelp', checkJwt, processUser, function (req, res){
   }
 
   res.status(200).send({ message: 'Unknown action'}); 
+});
+
+// Get github api data endpoint
+app.get('/github', checkJwt, processUser, function(req, res){
+  const refresh = req.query.refresh || false;
+  getData(
+    res, 
+    req.userId, 
+    dataProviders.github.getRepositories, 
+    null,     // default entity name
+    [req.userId], // parameter array
+    refresh);
 });
 
 // Get library API endpoint

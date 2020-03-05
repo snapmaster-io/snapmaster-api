@@ -30,7 +30,7 @@ exports.getConnections = async (userId) => {
       image: '/gcp-full-logo.png'
     },
     github: {
-      type: 'simple',
+      type: 'link',
       image: '/github-dark-logo.png'
     },
     gitlab: {

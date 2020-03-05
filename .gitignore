@@ -1,5 +1,6 @@
 # secrets
 *_config*.json
+config/
 
 # build directory contains built react app artifacts
 # they are in a different repo
