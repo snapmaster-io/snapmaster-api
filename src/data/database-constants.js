@@ -26,6 +26,7 @@ exports.metadataSentimentField = '__sentiment';
 exports.metadataSentimentScoreField = '__sentimentScore';
 exports.metadataTextField = '__text';
 exports.metadataNewFlag = '__new';
+exports.metadataHandledFlag = '__handled';
 
 // various section names for __system_info and profile
 exports.dataPipelineSection = 'dataPipeline';

@@ -28,7 +28,7 @@ exports.getGithubAccessInfo = async (userId) => {
       return null;
     }
 
-    // return the facebook access info
+    // return the github access info
     return info;
   } catch (error) {
     await error.response;

@@ -191,25 +191,31 @@ const invokeProvider = async (
   userId,       // userId for this request
   provider,     // provider object
   entity,       // entity to retrieve (null for default)
-  params       // array of parameters to pass to the function
+  params,       // array of parameters to pass to the function
+  returnResult = true // flag to indicate whether to return results
   ) => {
   try {
     // invoke the provider and retrieve the data from the data access layer
     const data = await dal.invokeProvider(userId, provider, entity, params);
     if (!data) {
       console.log('invokeProvider: no data returned');
-      res.status(200).send({ message: 'no data returned'});
+      if (returnResult) {
+        res.status(200).send({ message: 'no data returned'});
+      }
       return;
     }
 
     // SUCCESS! send the data back to the client
-    res.status(200).send(data);
+    if (returnResult) {
+      res.status(200).send(data);
+    }
     return;
   } catch (error) {
     await error.response;
     console.log(`invokeProvider: caught exception: ${error}`);
-    res.status(200).send({ message: error });
-    return;
+    if (returnResult) {
+      res.status(200).send({ message: error });
+    }
   }
 };
 
@@ -419,16 +425,49 @@ app.post('/yelp', checkJwt, processUser, function (req, res){
   res.status(200).send({ message: 'Unknown action'}); 
 });
 
-// Get github api data endpoint
+// Get github endpoint - returns list of active repos
 app.get('/github', checkJwt, processUser, function(req, res){
+  invokeProvider(
+    res, 
+    req.userId, 
+    dataProviders.github.getActiveRepos, 
+    null,     // use the default entity name
+    [req.userId]); // parameter array
+});
+
+// Get github api data endpoint
+app.get('/github/repos', checkJwt, processUser, function(req, res){
   const refresh = req.query.refresh || false;
   getData(
     res, 
     req.userId, 
-    dataProviders.github.getRepositories, 
+    dataProviders.github.getAllRepos, 
     null,     // default entity name
     [req.userId], // parameter array
     refresh);
+});
+
+// Post github api data endpoint
+app.post('/github/repos', checkJwt, processUser, function(req, res){
+  const invoke = async () => {
+  await invokeProvider(
+    res, 
+    req.userId, 
+    dataProviders.github.addActiveRepos, 
+    null,       // use the default entity name
+    [req.body], // use the metadata passed in as the parameter array
+    false);     // don't return a response
+
+    // store __handled metadata for the repos that are active
+  storeMetadata(
+    res,
+    req.userId,
+    dataProviders.github.getAllRepos,
+    `github:repos`,
+    req.body);
+  }
+
+  invoke();
 });
 
 // Get library API endpoint
