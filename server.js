@@ -76,7 +76,7 @@ const checkJwt = jwt({
 });
   
 // Enable the use of request body parsing middleware
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({
   extended: true
 }));
@@ -427,16 +427,6 @@ app.post('/yelp', checkJwt, processUser, function (req, res){
 
 // Get github endpoint - returns list of active repos
 app.get('/github', checkJwt, processUser, function(req, res){
-  invokeProvider(
-    res, 
-    req.userId, 
-    dataProviders.github.getActiveRepos, 
-    null,     // use the default entity name
-    [req.userId]); // parameter array
-});
-
-// Get github api data endpoint
-app.get('/github/repos', checkJwt, processUser, function(req, res){
   const refresh = req.query.refresh || false;
   getData(
     res, 
@@ -448,26 +438,13 @@ app.get('/github/repos', checkJwt, processUser, function(req, res){
 });
 
 // Post github api data endpoint
-app.post('/github/repos', checkJwt, processUser, function(req, res){
-  const invoke = async () => {
-  await invokeProvider(
-    res, 
-    req.userId, 
-    dataProviders.github.addActiveRepos, 
-    null,       // use the default entity name
-    [req.body], // use the metadata passed in as the parameter array
-    false);     // don't return a response
-
-    // store __handled metadata for the repos that are active
+app.post('/github', checkJwt, processUser, function(req, res){
   storeMetadata(
     res,
     req.userId,
     dataProviders.github.getAllRepos,
     `github:repos`,
     req.body);
-  }
-
-  invoke();
 });
 
 // Get library API endpoint
