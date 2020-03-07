@@ -57,7 +57,20 @@ exports.apis.getAllRepos.func = async ([userId]) => {
   try {
     const client = await getClient(userId);
     const repos = await client.repos.list();
-    return repos;
+
+    // store / return only a subset of the fields in the repo payload
+    const data = repos.map(r => {
+      return {
+        id,
+        name,
+        full_name,
+        fork,
+        private,
+        url,
+        html_url
+      }
+    });
+    return data;
   } catch (error) {
     await error.response;
     console.log(`getAllRepos: caught exception: ${error}`);
