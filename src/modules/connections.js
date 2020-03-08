@@ -15,30 +15,12 @@ exports.addConnection = async (userId, connection) => {
 exports.getConnections = async (userId) => {
   try {
     const user = await database.getUserData(userId) || {};
-    const [baseConnection] = userId.split('|');
-    
-    /*
-    const connections = Object.keys(connectionList).map((key) => {
-      // connected can be 'base' for base connection, 'linked' for linked connection, or null
-      var connected = user[key] ? 'linked' : null;
+    const [baseConnection] = userId.split('|');    
 
-      // if the connection is the same as the provider of the base userId, note it that way
-      if (key === provider) {
-        connected = 'base';
-      }
-
-      const uid = user[key] && user[key].userId;
-
-      return ({ 
-        provider: key, 
-        connected: connected,
-        image: connectionList[key].image,
-        type: connectionList[key].type,
-        userId: uid
-      })
-    });
-    */
+    // retrieve the provider definitions for all the registered providers
     const providerDefinitions = providers.providerDefinitions();
+
+    // generate an array of connections which includes conneted state
     const connections = providerDefinitions.map(p => {
       const name = p.provider;
       const connected = user[name] && user[name].connected !== false ? 'linked' : null;
