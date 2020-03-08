@@ -6,33 +6,45 @@
 //        deleteHook(userId, repo, hook): get page reviews
 //        getActiveRepos(userId): get active repos for this user
 //        getAllRepos(userId): get all repos for this user
+//   provider: provider name
+//   image: provider image url (local to SPA)
+//   type: provider type (simple or link)
+//   definition: provider definition
 
 const githubauth = require('../services/githubauth');
 const dbconstants = require('../data/database-constants');
 const dal = require('../data/dal');
+const provider = require('./provider');
 const { Octokit } = require("@octokit/rest");
+
+const providerName = 'github';
+
+exports.provider = providerName;
+exports.image = `/${providerName}-logo.png`;
+exports.type = provider.linkProvider;
+exports.definition = provider.getDefinition(providerName);
 
 // api's defined by this provider
 exports.apis = {
   createHook: {
     name: 'createHook',
-    provider: 'github',
+    provider: providerName,
     entity: 'github:hooks',
     arrayKey: 'data',
     itemKey: 'id'
   },
   deleteHook: {
     name: 'deleteHook',
-    provider: 'github',
+    provider: providerName,
   },
   getActiveRepos: {
     name: 'getActiveRepos',
-    provider: 'github',
+    provider: providerName,
     itemKey: 'name'
   },
   getAllRepos: {
     name: 'getAllRepos',
-    provider: 'github',
+    provider: providerName,
     entity: 'github:repos',
     itemKey: 'name'
   },

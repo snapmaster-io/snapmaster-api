@@ -1,0 +1,14 @@
+---
+version: provider-v1alpha1 
+name: circleci
+description: CircleCI Provider Definition
+connection: 
+  type: simple
+  connectionInfo:
+  - name: userid
+  - name: access token
+parameters: 
+  - name: region
+    description: region to operate in
+triggers: 
+actions:

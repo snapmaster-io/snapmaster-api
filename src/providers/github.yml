@@ -1,0 +1,26 @@
+---
+version: provider-v1alpha1 
+name: github
+description: GitHub Provider Definition
+connection: 
+  type: oauth
+parameters: 
+  - name: repo
+    description: name of git repository
+triggers: 
+  - name: github:push
+    description: push event into a repository
+    parameters:
+    - name: branch
+      description: name of repository branch
+  - name: github:issue-opened
+    description: issue opened in a repository
+    parameters:
+    - name: branch
+      description: name of repository branch
+actions:
+  - name: github:open-issue
+    description: open an issue 
+    parameters:
+    - name: name
+      description: name of the issue

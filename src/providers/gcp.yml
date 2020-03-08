@@ -1,0 +1,11 @@
+---
+version: provider-v1alpha1 
+name: gcp
+description: GCP Provider Definition
+connection: 
+  type: oauth
+parameters: 
+  - name: region
+    description: region to operate in
+triggers: 
+actions:
