@@ -9,7 +9,7 @@ exports.emailsCollection = 'emails';
 
 // define snaps collection
 exports.snapsCollection = 'snaps';
-exports.activeSnapsCollection = 'active';
+exports.activeSnapsCollection = 'activesnaps';
 
 // snap field names
 exports.snapPrivateField = 'private';
