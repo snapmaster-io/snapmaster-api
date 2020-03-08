@@ -186,6 +186,7 @@ const getData = async (
 //   provider: data provider to call
 //   entity: entity to retrieve
 //   params: extra parameters to pass into the data provider function
+//   returnResult: flag for whether to return a HTTP response from this function
 const invokeProvider = async (
   res,          // response object
   userId,       // userId for this request
@@ -213,6 +214,43 @@ const invokeProvider = async (
   } catch (error) {
     await error.response;
     console.log(`invokeProvider: caught exception: ${error}`);
+    if (returnResult) {
+      res.status(200).send({ message: error });
+    }
+  }
+};
+
+// async function to query the provider and return the result 
+//   
+//   res: response object
+//   provider: data provider to call
+//   params: extra parameters to pass into the data provider function
+//   returnResult: flag for whether to return a HTTP response from this function
+const queryProvider = async (
+  res,          // response object
+  provider,     // provider object
+  params,       // array of parameters to pass to the function
+  returnResult = true // flag to indicate whether to return results
+  ) => {
+  try {
+    // invoke the provider and retrieve the data from the data access layer
+    const data = await dal.queryProvider(provider, params);
+    if (!data) {
+      console.log('queryProvider: no data returned');
+      if (returnResult) {
+        res.status(200).send({ message: 'no data returned'});
+      }
+      return;
+    }
+
+    // SUCCESS! send the data back to the client
+    if (returnResult) {
+      res.status(200).send(data);
+    }
+    return;
+  } catch (error) {
+    await error.response;
+    console.log(`queryProvider: caught exception: ${error}`);
     if (returnResult) {
       res.status(200).send({ message: error });
     }
@@ -425,7 +463,7 @@ app.post('/yelp', checkJwt, processUser, function (req, res){
   res.status(200).send({ message: 'Unknown action'}); 
 });
 
-// Get github endpoint - returns list of active repos
+// Get github endpoint - returns list of all repos
 app.get('/github', checkJwt, processUser, function(req, res){
   const refresh = req.query.refresh || false;
   getData(
@@ -445,6 +483,15 @@ app.post('/github', checkJwt, processUser, function(req, res){
     dataProviders.github.getAllRepos,
     `github:repos`,
     req.body);
+});
+
+// Get github activerepos endpoint - returns list of active repos
+app.get('/github/activerepos', checkJwt, processUser, function(req, res){
+  queryProvider(
+    res, 
+    req.userId, 
+    dataProviders.github.getActiveRepos, 
+    [req.userId]); // parameter array
 });
 
 // Get library API endpoint

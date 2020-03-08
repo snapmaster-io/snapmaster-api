@@ -4,9 +4,12 @@
 //   apis.
 //        createHook(userId, repo): create a webhook
 //        deleteHook(userId, repo, hook): get page reviews
+//        getActiveRepos(userId): get active repos for this user
 //        getAllRepos(userId): get all repos for this user
 
 const githubauth = require('../services/githubauth');
+const dbconstants = require('../data/database-constants');
+const dal = require('../data/dal');
 const { Octokit } = require("@octokit/rest");
 
 // api's defined by this provider
@@ -22,11 +25,15 @@ exports.apis = {
     name: 'deleteHook',
     provider: 'github',
   },
+  getActiveRepos: {
+    name: 'getActiveRepos',
+    provider: 'github',
+    itemKey: 'name'
+  },
   getAllRepos: {
     name: 'getAllRepos',
     provider: 'github',
     entity: 'github:repos',
-    arrayKey: 'data',
     itemKey: 'name'
   },
 };
@@ -53,21 +60,33 @@ exports.apis.createHook.func = async ([userId, repo]) => {
   }
 };
 
+exports.apis.getActiveRepos.func = async ([userId]) => {
+  try {
+    const repos = await dal.getData(userId, exports.apis.getAllRepos, [userId], false, false);
+    const data = repos.filter(r => r[dbconstants.metadataActiveFlag]);
+    return data;
+  } catch (error) {
+    await error.response;
+    console.log(`getActiveRepos: caught exception: ${error}`);
+    return null;
+  }
+};
+
 exports.apis.getAllRepos.func = async ([userId]) => {
   try {
     const client = await getClient(userId);
     const repos = await client.repos.list();
 
     // store / return only a subset of the fields in the repo payload
-    const data = repos.map(r => {
+    const data = repos.data.map(r => {
       return {
-        id,
-        name,
-        full_name,
-        fork,
-        private,
-        url,
-        html_url
+        id: r.id,
+        name: r.name,
+        full_name: r.full_name,
+        fork: r.fork,
+        private: r.private,
+        url: r.url,
+        html_url: r.html_url
       }
     });
     return data;

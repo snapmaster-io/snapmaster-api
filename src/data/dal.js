@@ -4,7 +4,8 @@
 //   getData: retrieve an entity and its metadata - from cache or from the provider
 //   getHistory: retrieve metadata snapshot history for a userId
 //   getMetadata: retrieve all metadata for a userId
-//   invokeProvider: invoke a provider method directly
+//   invokeProvider: invoke a provider method directly, merging returned data with existing collection
+//   queryProvider: invoke a provider method directly, returning data without post-processing
 //   storeMetadata: store metadata for a particular entity
 
 const database = require('./database');
@@ -120,7 +121,7 @@ exports.invokeProvider = async (userId, provider, entity, params) => {
     const entityName = entity || provider.entity;
     // basic error checking
     if (!providerName || !entityName) {
-      console.log(`getData: failed to validate provider ${providerName} / entity ${entityName}`);
+      console.log(`invokeProvider: failed to validate provider ${providerName} / entity ${entityName}`);
       return null;
     }
 
@@ -144,6 +145,24 @@ exports.invokeProvider = async (userId, provider, entity, params) => {
     return data;
   } catch (error) {
     console.log(`invokeProvider: caught exception: ${error}`);
+    return null;
+  }
+}
+
+exports.queryProvider = async (provider, params) => {
+  try {
+    const providerName = provider && provider.provider;
+    // basic error checking
+    if (!providerName) {
+      console.log(`queryProvider: failed to validate provider ${providerName}`);
+      return null;
+    }
+
+    // retrieve data from provider
+    const data = await callProvider(provider, params);
+    return data;
+  } catch (error) {
+    console.log(`queryProvider: caught exception: ${error}`);
     return null;
   }
 }
