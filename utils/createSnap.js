@@ -35,4 +35,13 @@ if (!definition) {
   process.exit(1);
 }
 
-snapdal.createSnap(userId, definition);
+const createSnap = async (userId, definition) => {
+  const snap = await snapdal.createSnap(userId, definition);
+  if (!snap) {
+    console.error('could not create snap');
+  } else {
+    console.log(`snap ${snap.snapId} created!`);
+  }  
+}
+
+createSnap(userId, definition);

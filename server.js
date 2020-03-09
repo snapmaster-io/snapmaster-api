@@ -15,6 +15,7 @@ console.log('account:', account);
 // set the environment in the environment service
 const environment = require('./src/modules/environment');
 environment.setEnv(account);
+environment.setDevMode(configuration === environment.dev);
 
 // import the auth0 service
 const auth0 = require('./src/services/auth0');
@@ -177,7 +178,7 @@ app.get('/snaps', checkJwt, processUser, function(req, res){
 
 // Get snap API endpoint
 app.get('/snaps/:userId/:snapId', checkJwt, processUser, function(req, res){
-  const userId = req.params.userId;
+  const userId = decodeURI(req.params.userId);
   const snapId = req.params.snapId;
   if (!userId || !snapId) {
     res.status(200).send({ message: 'error'});

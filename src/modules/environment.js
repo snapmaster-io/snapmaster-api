@@ -12,6 +12,7 @@
 //   getUrl(): gets the URL for the app running in the current env (dev | prod)
 
 var environment;
+var devMode;
 
 // constants for environment types
 exports.dev = 'dev';
@@ -68,6 +69,14 @@ exports.getEnv = () => environment;
 // set the environment (dev or prod)
 exports.setEnv = (env) => {
   environment = env;
+}
+
+// get devMode state (true or false)
+exports.getDevMode = () => devMode;
+
+// set the devMode state
+exports.setDevMode = (mode) => {
+  devMode = mode;
 }
 
 exports.getConfig = (type) => {

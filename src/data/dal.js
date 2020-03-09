@@ -10,7 +10,7 @@
 
 const database = require('./database');
 const dbconstants = require('./database-constants');
-const datapipeline = require('../modules/datapipeline');
+//const datapipeline = require('../modules/datapipeline');
 const sentiment = require('../services/sentiment');
 
 // retrieve an entity and its metadata - from cache or from the provider
@@ -83,7 +83,7 @@ exports.getHistory = async (userId, range) => {
     // check if refreshHistory flag is set, and if so, refresh history and remove flag
     const refreshHistory = await database.getUserData(userId, dbconstants.refreshHistory);
     if (refreshHistory) {
-      await datapipeline.refreshHistory(userId);
+      //await datapipeline.refreshHistory(userId);
       await database.removeConnection(userId, dbconstants.refreshHistory);
     }
 

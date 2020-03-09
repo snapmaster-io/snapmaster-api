@@ -9,7 +9,7 @@
       "request": "launch",
       "name": "Create snap",
       "program": "${workspaceFolder}/utils/createSnap.js",
-      "args": ["snaps/github-gcpbuild-slack.yml"],
+      "args": ["snaps/github-slack.yml"],
       "env": {"ENV":"dev"}
     },
 

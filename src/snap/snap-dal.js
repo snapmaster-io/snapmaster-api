@@ -32,14 +32,8 @@ const providers = require('../providers/providers');
 // activate a snap into the user's environment
 exports.activateSnap = async (userId, snapId, params = null) => {
   try {
-    // parse snapId (which is in account/name format)
-    const [user, name] = snapId.split('/');
-    if (!user || !name) {
-      return { message: `activateSnap: snapId ${snapId} not in user/name format` };
-    }
-
-    // get the snap structure
-    const snap = await database.getDocument(user, dbconstants.snapsCollection, name); 
+    // get the snap object
+    const snap = await exports.getSnap(userId, snapId);
     if (!snap || !snap.trigger) {
       return { message: `activateSnap: could not find snap ${user}/${name}` };
     }
@@ -141,15 +135,16 @@ exports.deleteSnap = async (userId, snapId) => {
 // fork a snap into the user's environment
 exports.forkSnap = async (userId, snapId) => {
   try {
-    // extract userId for snap to fork (either [__userid__/snapname] or the snapmaster userid)
-    const snapNameArray = snapId.split('/');
-    const snapUserId = snapNameArray.length > 1 ? snapNameArray[0] : dbconstants.snapMasterUserId;
-
     // extract snap name (either [userid/__snapname__] or the snapId passed in if it's not a composite)
+    const snapNameArray = snapId.split('/');
     const snapName = snapNameArray.length > 1 ? snapNameArray[1] : snapId;
 
     // get the snap definition 
-    const snap = await database.getDocument(snapUserId, dbconstants.snapsCollection, snapName);
+    const snap = await exports.getSnap(userId, dbconstants.snapsCollection, snapId);
+    if (!snap) {
+      console.error(`forkSnap: cannot find snap ${snapId}`);
+      return null;
+    }
 
     // construct new name
     const forkedSnapId = `${userId}/${snapName}`;
@@ -189,8 +184,16 @@ exports.getAllSnaps = async () => {
 // get a snap definition from the user's environment
 exports.getSnap = async (userId, snapId) => {
   try {
+    let user = userId, snapName = snapId;
+
+    // if snapId is given as "user/name", override the userId
+    const snapArray = snapId.split('/');
+    if (snapArray.length > 1) {
+      [user, snapName] = snapArray;
+    }
+
     // get the snap definition 
-    const snap = await database.getDocument(userId, dbconstants.snapsCollection, snapId);
+    const snap = await database.getDocument(user, dbconstants.snapsCollection, snapName);
     return snap;
   } catch (error) {
     console.log(`getSnap: caught exception: ${error}`);

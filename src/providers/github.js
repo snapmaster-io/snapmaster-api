@@ -22,6 +22,8 @@ const dal = require('../data/dal');
 const provider = require('./provider');
 const requesthandler = require('../modules/requesthandler');
 const environment = require('../modules/environment');
+const snapengine = require('../snap/snap-engine');
+
 const { Octokit } = require('@octokit/rest');
 const WebhooksApi = require('@octokit/webhooks');
 const EventSource = require('eventsource');
@@ -63,7 +65,7 @@ exports.apis = {
 };
 
 // install the eventsource proxy for the dev environment, to receive webhooks via smee.io
-if (environment.getEnv() === environment.dev) {
+if (environment.getDevMode()) {
   const webhookProxyUrl = "https://smee.io/aRW11TsA1USoXCWb"; // replace with your own Webhook Proxy URL
   const source = new EventSource(webhookProxyUrl);
   source.onmessage = event => {
@@ -169,24 +171,14 @@ exports.createTrigger = async (userId, activeSnapId, params) => {
       return null;
     }
 
-    if (environment.getEnv() === environment.dev) {
-      // create an additional hook through smee.io for dev purposes
-      const url = 'https://smee.io/aRW11TsA1USoXCWb';
-      const config = {
-        url: url,
-        secret: 'mysecret', // BUGBUG
-        content_type: 'json',
-      };
-  
-      const hook = await client.repos.createHook({
-        owner,
-        repo,
-        config
-      });
+    let url = encodeURI(`${environment.getUrl()}/github/webhooks/${userId}/${activeSnapId}`);
+
+    // if in dev mode, create the hook through smee.io 
+    if (environment.getDevMode()) {
+      url = 'https://smee.io/aRW11TsA1USoXCWb';
     }
-    
+
     // create the hook
-    const url = encodeURI(`${environment.getUrl()}/github/webhooks/${userId}/${activeSnapId}`);
     const config = {
       url: url,
       secret: 'mysecret', // BUGBUG
@@ -201,8 +193,8 @@ exports.createTrigger = async (userId, activeSnapId, params) => {
 
     // construct trigger data from returned hook info
     const triggerData = {
-      id: hook.id,
-      url: hook.url
+      id: hook.data.id,
+      url: hook.data.url
     }
 
     return triggerData;
@@ -355,4 +347,5 @@ const getToken = async (userId) => {
 // handle an incoming webhook request
 const handleWebhook = (userId, activeSnapId, id, name, payload) => {
   console.log(`userId: ${userId}; activeSnapId: ${activeSnapId}; name: ${name}; id: ${id} event received`);
+  snapengine.executeSnap(userId, activeSnapId, [name, payload]);
 }
