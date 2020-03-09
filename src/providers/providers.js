@@ -2,6 +2,7 @@
 //
 // exports:
 //   providers {}: a hashmap of all available providers and api's they expose
+//   createHandlers(app, middleware): invokes the createHandlers function in each of the registered providers
 //   providerDefinitions(): returns an array of all the provider definitions
 
 // import providers
@@ -12,6 +13,9 @@ const gcp = require('./gcp');
 const github = require('./github');
 const gitlab = require('./gitlab');
 const slack = require('./slack');
+
+// current list of supported providers
+const providerList = [aws, azure, circleci, gcp, github, gitlab, slack];
 
 // legacy providers
 const google = require('./google');
@@ -27,8 +31,13 @@ exports.providers = {
   'yelp': yelp.apis
 }
 
+exports.createHandlers = (app) => {
+  for (const provider of providerList) {
+    provider.createHandlers(app);
+  }
+}
+
 exports.providerDefinitions = () => {
-  const providerList = [aws, azure, circleci, gcp, github, gitlab, slack];
   return providerList.map(provider => {
     return {
       provider: provider.provider,

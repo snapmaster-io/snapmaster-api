@@ -3,12 +3,31 @@
 // exports:
 //   apis.
 //        getTweets(userId): get tweet data for the userId (note - userid is ignored in favor of access token)
+//
+//   createHandlers(app, [middlewaree]): create all route handlers
+// 
+//   provider: provider name
+//   image: provider image url (local to SPA)
+//   type: provider type (simple or link)
+//   definition: provider definition
 
 const axios = require('axios');
 const oauthSignature = require('oauth-signature');
 const twitterauth = require('../services/twitterauth.js');
+const provider = require('./provider');
+const requesthandler = require('../modules/requesthandler');
 const environment = require('../modules/environment');
 const twitterConfig = environment.getConfig(environment.twitter);
+
+// could never get the Twitter client to work :(
+// const Twitter = require('twitter');
+
+const providerName = 'twitter';
+
+exports.provider = providerName;
+exports.image = `/${providerName}-logo.jpg`;
+exports.type = provider.linkProvider;
+//exports.definition = provider.getDefinition(providerName);
 
 // api's defined by this provider
 exports.apis = {
@@ -23,8 +42,49 @@ exports.apis = {
   },
 };
 
-// could never get the Twitter client to work :(
-// const Twitter = require('twitter');
+exports.createHandlers = (app) => {
+  // Get twitter api data endpoint
+  app.get('/twitter', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
+    const refresh = req.query.refresh || false;
+    requesthandler.getData(
+      res, 
+      req.userId, 
+      exports.apis.getTweets, 
+      null,     // default entity name
+      [req.userId], // parameter array
+      refresh);
+  });
+
+  // Post twitter mentions API - takes multiple tweet ids in the body and 
+  // associates metadata with them
+  // Data payload format:
+  //     [
+  //       { id: key1, meta1: value1, meta2: value2, ... },
+  //       { id: key2, meta1: value1, meta2: value2, ... },
+  //     ]
+  app.post('/twitter/mentions', requesthandler.checkJwt, requesthandler.processUser, function (req, res){
+    requesthandler.storeMetadata(
+      res,
+      req.userId,
+      exports.apis.getTweets,
+      null,     // default entity name
+      req.body);
+  });
+
+  // Post twitter mentions API - takes a tweet id as a parameter,
+  // and associates the metdata found in the body 
+  // Data payload format:
+  //   { meta1: value1, meta2: value2, ... }
+  app.post('/twitter/mentions/:tweetId', requesthandler.checkJwt, requesthandler.processUser, function (req, res){
+    // construct the metadata array in the expected format
+    const metadataArray = [{ ...req.body, id: tweetId }];
+    requesthandler.storeMetadata(
+      res,
+      req.userId,
+      exports.apis.getTweets,
+      metadataArray); 
+  });
+}
 
 exports.apis.getTweets.func = async ([userId]) => {
   try {
