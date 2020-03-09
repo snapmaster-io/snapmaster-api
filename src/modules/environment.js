@@ -13,8 +13,14 @@
 
 var environment;
 
+// constants for environment types
+exports.dev = 'dev';
+exports.prod = 'prod';
+
+// constants for config types
 exports.auth0 = 'auth0';
 exports.facebook = 'facebook';
+exports.github = 'github';
 exports.google = 'google';
 exports.sendgrid = 'sendgrid';
 exports.twilio = 'twilio';
@@ -29,6 +35,10 @@ const configs = {
   facebook: {
     dev: require(`../../config/facebook_auth_config_dev.json`),
     prod: require(`../../config/facebook_auth_config_prod.json`)
+  },
+  github: {
+    dev: require(`../../config/github_auth_config_dev.json`),
+    prod: require(`../../config/github_auth_config_prod.json`)
   },
   google: {
     dev: require(`../../config/google_auth_config_dev.json`),

@@ -3,6 +3,7 @@
 // exports:
 //   providers {}: a hashmap of all available providers and api's they expose
 //   createHandlers(app, middleware): invokes the createHandlers function in each of the registered providers
+//   getProvider(providerName): returns the provider named providerName
 //   providerDefinitions(): returns an array of all the provider definitions
 
 // import providers
@@ -35,6 +36,11 @@ exports.createHandlers = (app) => {
   for (const provider of providerList) {
     provider.createHandlers(app);
   }
+}
+
+exports.getProvider = (providerName) => {
+  const provider = providerList.find(p => p.provider === providerName);
+  return provider;
 }
 
 exports.providerDefinitions = () => {

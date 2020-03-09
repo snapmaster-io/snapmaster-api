@@ -247,13 +247,13 @@ app.post('/activesnaps', checkJwt, processUser, function(req, res){
   const snapId = req.body.snapId;
   
   const activateSnap = async () => {
-    await snapdal.activateSnap(req.userId, snapId, req.body.params);
-    res.status(200).send({ message: 'success' });
+    const status = await snapdal.activateSnap(req.userId, snapId, req.body.params);
+    res.status(200).send(status);
   }
 
   const deactivateSnap = async () => {
-    await snapdal.deactivateSnap(req.userId, snapId);
-    res.status(200).send({ message: 'success' });
+    const status = await snapdal.deactivateSnap(req.userId, snapId);
+    res.status(200).send(status);
   }
 
   if (action === 'activate' && snapId) {
