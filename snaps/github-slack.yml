@@ -1,0 +1,14 @@
+---
+version: snap-v1alpha1 
+name: github-slack
+description: GitHub push -> Slack notification
+tools:
+  trigger:
+    github
+  actions:
+    - slack
+parameters: 
+  - name: repo
+    description: name of git repository
+  - name: channel
+    description: name of slack channel

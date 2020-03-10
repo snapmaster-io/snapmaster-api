@@ -24,11 +24,13 @@ exports.executeSnap = async (userId, activeSnapId, params) => {
     }
 
     // load snap definition via snapId
-    const snap = snapdal.getSnap(userId, activeSnap.snapId);
+    const snap = await snapdal.getSnap(userId, activeSnap.snapId);
     if (!snap) {
       console.error(`executeSnap: cannot find snapId ${activeSnap.snapId}`);
       return null;
     }
+
+    console.log(`executing snap ${snap.snapId}`);
 
     // execute actions
     for (const action of snap.actions) {

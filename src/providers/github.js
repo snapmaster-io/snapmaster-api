@@ -15,23 +15,23 @@
 //   type: provider type (simple or link)
 //   definition: provider definition
 
+const { Octokit } = require('@octokit/rest');
+const verify = require('@octokit/webhooks/verify');
+const EventSource = require('eventsource');
+
 const axios = require('axios');
 const githubauth = require('../services/githubauth');
 const dbconstants = require('../data/database-constants');
 const dal = require('../data/dal');
 const provider = require('./provider');
 const requesthandler = require('../modules/requesthandler');
-const environment = require('../modules/environment');
 const snapengine = require('../snap/snap-engine');
-
-const { Octokit } = require('@octokit/rest');
-const WebhooksApi = require('@octokit/webhooks');
-const EventSource = require('eventsource');
-const webhooks = new WebhooksApi({
-  secret: 'mysecret'
-});
+const environment = require('../modules/environment');
 
 const providerName = 'github';
+
+// get github configuration
+const githubConfig = environment.getConfig(providerName);
 
 exports.provider = providerName;
 exports.image = `/${providerName}-logo.png`;
@@ -63,52 +63,6 @@ exports.apis = {
     itemKey: 'name'
   },
 };
-
-// install the eventsource proxy for the dev environment, to receive webhooks via smee.io
-if (environment.getDevMode()) {
-  const webhookProxyUrl = "https://smee.io/aRW11TsA1USoXCWb"; // replace with your own Webhook Proxy URL
-  const source = new EventSource(webhookProxyUrl);
-  source.onmessage = event => {
-    webhooks.on("*", ({ id, name, payload }) => {
-      handleWebhook(null, null, id, name, payload);
-    });    
-  
-    const webhookEvent = JSON.parse(event.data);
-    webhooks
-      .verifyAndReceive({
-        id: webhookEvent["x-request-id"],
-        name: webhookEvent["x-github-event"],
-        signature: webhookEvent["x-hub-signature"],
-        payload: webhookEvent.body
-      })
-      .catch(console.error);
-  };  
-}
-
-/*
-// create some github stuff
-var createApp = require('github-app');
-
-var githubApp = createApp({
-  id: process.env.APP_ID,
-  cert: require('fs').readFileSync('private-key.pem')
-});
-
-handler.on('issues', function (event) {
-  if (event.payload.action === 'opened') {
-    var installation = event.payload.installation.id;
-
-    githubApp.asInstallation(installation).then(function (github) {
-      github.issues.createComment({
-        owner: event.payload.repository.owner.login,
-        repo: event.payload.repository.name,
-        number: event.payload.issue.number,
-        body: 'Welcome to the robot uprising.'
-      });
-    });
-  }
-});
-*/
 
 exports.createHandlers = (app) => {
   // Get github endpoint - returns list of all repos
@@ -142,15 +96,32 @@ exports.createHandlers = (app) => {
       [req.userId]); // parameter array
   });
 
-  // Github webhooks endpoint - called by github
-  app.use('/github/webhooks/:userId/:activeSnapId', webhooks.middleware, function(req, res){
-    const userId = decodeURI(req.params.userId);
-    const activeSnapId = req.params.activeSnapId;
+  // set up Webhook listener for dev mode
+  createWebhookListener();
 
-    webhooks.on("*", ({ id, name, payload }) => {
-      handleWebhook(userId, activeSnapId, id, name, payload);
-    });    
-  });  
+  // Github webhooks endpoint - called by github
+  app.post('/github/webhooks/:userId/:activeSnapId', function(req, res){
+    try {
+      const userId = decodeURI(req.params.userId);
+      const activeSnapId = req.params.activeSnapId;
+      console.log(`POST /github/webhooks: userId ${userId}, activeSnapId ${activeSnapId}`);
+
+      // verify the signature against the body and the secret
+      const secret = githubConfig.github_client_id;      
+      if (!verify(secret, req.body, req.headers['x-hub-signature'])) {
+        console.error('githubWebhook: signature does not match event payload & secret');
+        res.status(500).send();
+        return;
+      }
+
+      // dispatch the webhook payload to the handler
+      handleWebhook(userId, activeSnapId, req.headers["x-github-event"], req.body);
+      res.status(200).send();
+    } catch (error) {
+      console.error(`githubWebhook caught exception: ${error}`);
+      res.status(500).send(error);
+    }
+  });
 }
 
 exports.createTrigger = async (userId, activeSnapId, params) => {
@@ -178,10 +149,10 @@ exports.createTrigger = async (userId, activeSnapId, params) => {
       url = 'https://smee.io/aRW11TsA1USoXCWb';
     }
 
-    // create the hook
+    // create the hook, using the client ID as the secret
     const config = {
       url: url,
-      secret: 'mysecret', // BUGBUG
+      secret: githubConfig.github_client_id,
       content_type: 'json',
     };
 
@@ -225,20 +196,6 @@ exports.deleteTrigger = async (userId, triggerData) => {
       });
 
     return response.data;
-
-    const [client] = await getClient(userId);
-    const hook = await client.repos.deleteHook({
-      owner,
-      repo,
-      hook_id: id
-    });
-
-    const data = {
-      id: hook.id,
-      url: hook.url
-    }
-
-    return data;
   } catch (error) {
     console.log(`deleteTrigger: caught exception: ${error}`);
     return null;
@@ -345,7 +302,33 @@ const getToken = async (userId) => {
 }
 
 // handle an incoming webhook request
-const handleWebhook = (userId, activeSnapId, id, name, payload) => {
-  console.log(`userId: ${userId}; activeSnapId: ${activeSnapId}; name: ${name}; id: ${id} event received`);
+const handleWebhook = (userId, activeSnapId, name, payload) => {
+  console.log(`userId: ${userId}; activeSnapId: ${activeSnapId}; name: ${name} event received`);
   snapengine.executeSnap(userId, activeSnapId, [name, payload]);
+}
+
+// create the webhook listener 
+const createWebhookListener = () => {
+  // if in dev mode, install the eventsource proxy for the dev environment, to receive webhooks via smee.io
+  if (environment.getDevMode()) {
+    const webhookProxyUrl = "https://smee.io/aRW11TsA1USoXCWb"; 
+    const source = new EventSource(webhookProxyUrl);
+    source.onmessage = event => {
+      try {
+        const webhookEvent = JSON.parse(event.data);
+
+        // verify the signature against the body and the secret
+        const secret = githubConfig.github_client_id;          
+        if (!verify(secret, webhookEvent.body, webhookEvent['x-hub-signature'])) {
+          console.error('githubWebhook: signature does not match event payload & secret');
+          return;
+        }
+        
+        // dispatch the webhook payload to the handler
+        handleWebhook(null, null, webhookEvent["x-github-event"], webhookEvent.body);
+      } catch (error) {
+        console.error(`eventSource/githubWebhook: caught exception ${error}`);
+      }
+    };  
+  }
 }
