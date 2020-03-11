@@ -2,20 +2,22 @@
 version: snap-v1alpha1 
 name: github-slack
 description: GitHub push master -> Slack notification
-trigger: github
+trigger: github-push
 actions:
-  - slack
+  - slack-message
 parameters: 
   - name: repo
     description: name of git repository
   - name: channel
     description: name of slack channel
 config:
-  - github:
+  - name: github-push
+    provider: github
     repo: $repo
     event: push
     branch: master
-  - slack:
+  - name: slack-message
+    provider: slack
     action: send
     channel: $channel
     message: received push on $repo:$branch

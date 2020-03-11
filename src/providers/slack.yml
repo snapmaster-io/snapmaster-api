@@ -7,6 +7,14 @@ connection:
   connectionInfo:
   - name: username
   - name: password
-parameters: 
 triggers: 
 actions:
+  - name: send
+    description: send a message to a channel 
+    parameters:
+    - name: channel
+      description: channel to send to
+      required: true
+    - name: message
+      description: message to send
+      required: true

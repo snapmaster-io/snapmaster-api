@@ -124,21 +124,26 @@ exports.createHandlers = (app) => {
   });
 }
 
-exports.createTrigger = async (userId, activeSnapId, params) => {
+exports.createTrigger = async (userId, activeSnapId, param) => {
   try {
-    const [repoParam, eventParam] = params;
-
     // validate params
-    if (repoParam.name !== 'repo') {
-      console.error(`createTrigger: parameter mismatch - expected ${parameterNameRepo}, received ${repoParam.name}`);
+    const repoName = param.repo;
+    if (!repoName) {
+      console.error(`createTrigger: missing required parameter "repo"`);
+      return null;
+    }
+
+    const event = param.event;
+    if (!event) {
+      console.error(`createTrigger: missing required parameter "event"`);
       return null;
     }
 
     const [client] = await getClient(userId);
 
-    const [owner, repo] = repoParam.value.split('/');
+    const [owner, repo] = repoName.split('/');
     if (!owner || !repo) {
-      console.error(`createTrigger: repo must be in owner/name format; received ${repoParam.value}`);
+      console.error(`createTrigger: repo must be in owner/name format; received ${repoName}`);
       return null;
     }
 
@@ -159,7 +164,8 @@ exports.createTrigger = async (userId, activeSnapId, params) => {
     const hook = await client.repos.createHook({
       owner,
       repo,
-      config
+      config,
+      events: [event]
     });
 
     // construct trigger data from returned hook info
@@ -201,6 +207,8 @@ exports.deleteTrigger = async (userId, triggerData) => {
     return null;
   }
 }
+
+
 
 exports.apis.createHook.func = async ([userId, repo]) => {
   try {

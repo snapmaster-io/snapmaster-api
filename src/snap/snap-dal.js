@@ -1,9 +1,7 @@
 // snap data access layer for snap language
 // 
 // exports:
-//   activateSnap: activate a snap into the user's environment
 //   createSnap: create a snap in the user's environment
-//   deactivateSnap: deactivate an active snap in the user's environment
 //   deleteSnap: delete a snap in the user's environment
 //   forkSnap: fork a snap into the user's environment
 //   getActiveSnaps: get active snaps in the user's environment
@@ -14,7 +12,6 @@
 const database = require('../data/database');
 const dbconstants = require('../data/database-constants');
 const engine = require('./snap-engine');
-const providers = require('../providers/providers');
 
 /* 
  * A snap definition is specified as follows:
@@ -28,47 +25,6 @@ const providers = require('../providers/providers');
  *   text: string         // inline definition of snap, in case URL doesn't exist
  * }
  */
-
-// activate a snap into the user's environment
-exports.activateSnap = async (userId, snapId, params = null) => {
-  try {
-    // get the snap object
-    const snap = await exports.getSnap(userId, snapId);
-    if (!snap || !snap.trigger) {
-      return { message: `activateSnap: could not find snap ${user}/${name}` };
-    }
-
-    // get the provider for the trigger
-    const provider = providers.getProvider(snap.trigger);
-
-    // active snap ID is current timestamp
-    const activeSnapId = new Date().getTime().toString();
-    const activeSnap = {
-      activeSnapId: activeSnapId,
-      userId: userId,
-      snapId: snapId,
-      provider: provider.provider,
-      params: params
-    }
-
-    // create the snap trigger
-    const triggerData = await provider.createTrigger(userId, activeSnapId, params);
-    if (!triggerData) {
-      return { message: 'could not activate snap' };
-    }
-
-    // add the trigger data to the activesnap record
-    activeSnap.triggerData = triggerData;
-
-    // store the activated snap information
-    await database.storeDocument(userId, dbconstants.activeSnapsCollection, activeSnapId, activeSnap);
-
-    return { message: 'success' };
-  } catch (error) {
-    console.log(`activateSnap: caught exception: ${error}`);
-    return { message: 'could not activate snap' };
-  }
-}
 
 // create a snap in the user's environment
 exports.createSnap = async (userId, definition, private = false) => {
@@ -84,28 +40,6 @@ exports.createSnap = async (userId, definition, private = false) => {
   } catch (error) {
     console.log(`createSnap: caught exception: ${error}`);
     return null;
-  }
-}
-
-// deactivate a snap in the user's environment
-exports.deactivateSnap = async (userId, activeSnapId) => {
-  try {
-    // get the active snap structure
-    const activeSnap = await database.getDocument(userId, dbconstants.activeSnapsCollection, activeSnapId);
-    if (!activeSnap) {
-      return { message: `could not find active snap ID ${activeSnapId}`};
-    }
-
-    // delete the snap trigger
-    const provider = providers.getProvider(activeSnap.provider);
-    await provider.deleteTrigger(userId, activeSnap.triggerData);
-
-    // delete the active snap from the database
-    await database.removeDocument(userId, dbconstants.activeSnapsCollection, activeSnapId);
-    return { message: 'success' };
-  } catch (error) {
-    console.log(`deactivateSnap: caught exception: ${error}`);
-    return { message: `deactivateSnap error: ${error.message}`};
   }
 }
 
@@ -233,4 +167,3 @@ exports.uninstallSnap = async (userId, snapId) => {
     return null;
   }
 }
-

@@ -4,23 +4,32 @@ name: github
 description: GitHub Provider Definition
 connection: 
   type: oauth
-parameters: 
-  - name: repo
-    description: name of git repository
 triggers: 
-  - name: github:push
+  - name: push
     description: push event into a repository
     parameters:
+    - name: repo
+      description: name of git repository
+      required: true
     - name: branch
-      description: name of repository branch
-  - name: github:issue-opened
-    description: issue opened in a repository
+      description: name of branch
+      required: false
+  - name: issues
+    description: issue change event in a repository
     parameters:
-    - name: branch
-      description: name of repository branch
+    - name: repo
+      description: name of git repository
+      required: true
+    - name: action
+      description: issue action (opened, closed, assigned, etc)
+      required: true
 actions:
-  - name: github:open-issue
+  - name: issue
     description: open an issue 
     parameters:
+    - name: action
+      description: issue action (open, close, assign, etc)
+      required: true
     - name: name
       description: name of the issue
+      required: false

@@ -32,8 +32,10 @@ const datapipeline = require('./src/modules/datapipeline');
 const profile = require('./src/modules/profile');
 const connections = require('./src/modules/connections');
 
-// import snap data access layer
+// import snap data access layer and engine
 const snapdal = require('./src/snap/snap-dal');
+const snapengine = require('./src/snap/snap-engine');
+
 
 // beta processing
 const beta = require('./src/modules/beta');
@@ -248,12 +250,12 @@ app.post('/activesnaps', checkJwt, processUser, function(req, res){
   const snapId = req.body.snapId;
   
   const activateSnap = async () => {
-    const status = await snapdal.activateSnap(req.userId, snapId, req.body.params);
+    const status = await snapengine.activateSnap(req.userId, snapId, req.body.params);
     res.status(200).send(status);
   }
 
   const deactivateSnap = async () => {
-    const status = await snapdal.deactivateSnap(req.userId, snapId);
+    const status = await snapengine.deactivateSnap(req.userId, snapId);
     res.status(200).send(status);
   }
 
