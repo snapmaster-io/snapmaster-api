@@ -15,9 +15,8 @@ config:
     provider: github
     repo: $repo
     event: push
-    branch: master
   - name: slack-message
     provider: slack
     action: send
     channel: $channel
-    message: received push on $repo:$branch
+    message: received push on $repo

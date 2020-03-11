@@ -135,8 +135,6 @@ exports.executeSnap = async (userId, activeSnapId, params) => {
 
       // invoke the provider
       const status = await provider.invokeAction(userId, activeSnapId, param);
-
-      console.log(`executeSnap action: ${action}, params: ${params && params.map && params[0]}`);
     }
 
   } catch (error) {
