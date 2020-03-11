@@ -5,8 +5,8 @@ description: Slack Provider Definition
 connection: 
   type: simple
   connectionInfo:
-  - name: username
-  - name: password
+  - name: token
+    description: personal access token
 triggers: 
 actions:
   - name: send

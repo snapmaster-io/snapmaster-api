@@ -1,18 +1,64 @@
 // connection management layer
 
 // exports:
-//   addConnection: add a (simple) connection
-//   getConnections: return user connections
-//   removeConnection: remove a (simple) connection
+//   createHandlers(app): create handlers for GET and POST endpoints
+//   getConnectionInfo(userId, provider): return connection information for the userId and provider
 
 const database = require('../data/database');
 const providers = require('../providers/providers');
+const requesthandler = require('./requesthandler');
 
-exports.addConnection = async (userId, connection) => {
-  await database.setUserData(userId, connection, { connected: true });
+exports.createHandlers = (app) => {
+  // Get connections API endpoint
+  //app.get('/connections', checkJwt, jwtAuthz(['read:timesheets']), function(req, res){
+  app.get('/connections', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
+    const returnConnections = async () => {
+      const conns = await getConnections(req.userId) || {};
+      res.status(200).send(conns);
+    }
+    returnConnections();
+  });
+  
+  // Post connections API endpoint adds or removes a simple connection
+  app.post('/connections', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
+    const action = req.body && req.body.action;
+    const provider = req.body && req.body.provider;
+  
+    const add = async () => {
+      await addConnection(req.userId, provider, req.body.connectionInfo);
+      res.status(200).send({ message: 'success'});
+    }
+  
+    const remove = async () => {
+      await removeConnection(req.userId, provider);
+      res.status(200).send({ message: 'success'});
+    }
+  
+    if (action === 'add' && provider) {
+      add();
+      return;
+    }
+  
+    if (action === 'remove' && provider) {
+      remove();
+      return;
+    }
+  
+    res.status(200).send({ message: 'Unknown action'});  
+  });
 }
 
-exports.getConnections = async (userId) => {
+exports.getConnectionInfo = async (userId, provider) => {
+  const connection = await database.getUserData(userId, provider);
+  const connectionInfo = connection && connection.connectionInfo;
+  return connectionInfo;
+}
+
+const addConnection = async (userId, connection, connectionInfo) => {
+  await database.setUserData(userId, connection, { connected: true, connectionInfo: connectionInfo });
+}
+
+const getConnections = async (userId) => {
   try {
     const user = await database.getUserData(userId) || {};
     const [baseConnection] = userId.split('|');    
@@ -48,6 +94,6 @@ exports.getConnections = async (userId) => {
   }
 }
 
-exports.removeConnection = async (userId, connection) => {
+const removeConnection = async (userId, connection) => {
   await database.removeConnection(userId, connection);
 }

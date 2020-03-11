@@ -72,46 +72,13 @@ app.use(express.static(path.join(__dirname, 'build')));
 // create route handlers for each of the providers
 providers.createHandlers(app);
 
+// create route handlers for connections API calls
+connections.createHandlers(app);
+profile.createHandlers(app);
+
 // create a set of route handlers for the non-provider API calls
 //
 
-// Get connections API endpoint
-//app.get('/connections', checkJwt, jwtAuthz(['read:timesheets']), function(req, res){
-app.get('/connections', checkJwt, processUser, function(req, res){
-  const returnConnections = async () => {
-    const conns = await connections.getConnections(req.userId) || {};
-    res.status(200).send(conns);
-  }
-  returnConnections();
-});
-
-// Post connections API endpoint adds or removes a simple connection
-app.post('/connections', checkJwt, processUser, function(req, res){
-  const action = req.body && req.body.action;
-  const provider = req.body && req.body.provider;
-
-  const add = async () => {
-    await connections.addConnection(req.userId, provider);
-    res.status(200).send({ message: 'success'});
-  }
-
-  const remove = async () => {
-    await connections.removeConnection(req.userId, provider);
-    res.status(200).send({ message: 'success'});
-  }
-
-  if (action === 'add' && provider) {
-    add();
-    return;
-  }
-
-  if (action === 'remove' && provider) {
-    remove();
-    return;
-  }
-
-  res.status(200).send({ message: 'Unknown action'});  
-});
 
 // Get metadata API endpoint
 app.get('/metadata', checkJwt, processUser, function(req, res){
@@ -138,34 +105,6 @@ app.get('/gallery', checkJwt, processUser, function(req, res){
     res.status(200).send(gallery);
   }
   returnGallery();
-});
-
-// Get profile API endpoint
-app.get('/profile', checkJwt, processUser, function(req, res){
-  const returnProfile = async () => {
-    // retrieve the profile data from the app and from auth0 
-    const appProfile = await profile.getProfile(req.userId) || {};
-    const auth0profile = await auth0.getAuth0Profile(req.userId);
-
-    // create a consolidated profile with app data overwriting auth0 data
-    const fullProfile = {...auth0profile, ...appProfile};
-
-    // ensure the [identities] come fresh from auth0 
-    if (auth0profile && auth0profile.identities) {
-      fullProfile.identities = auth0profile.identities;
-    }
-    res.status(200).send(fullProfile);
-  }
-  returnProfile();
-});
-
-// Post profile API endpoint
-app.post('/profile', checkJwt, processUser, function(req, res){
-  const storeProfile = async () => {
-    await profile.storeProfile(req.userId, req.body);
-    res.status(200).send({ message: 'success' });
-  }
-  storeProfile();
 });
 
 // Get snaps API endpoint

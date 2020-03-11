@@ -12,7 +12,14 @@
       "args": ["snaps/github-slack.yml"],
       "env": {"ENV":"dev"}
     },
-
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Slack send",
+      "program": "${workspaceFolder}/utils/invokeAction.js",
+      "args": ["slack", "google-oauth2|112908869952290990195", "./slackParams.json"],
+      "env": {"ENV":"dev"}
+    },
     {
       "type": "node",
       "request": "launch",

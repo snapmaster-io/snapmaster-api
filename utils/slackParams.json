@@ -1,0 +1,5 @@
+{
+  "action": "send",
+  "channel": "general",
+  "message": "hello, world!"
+}

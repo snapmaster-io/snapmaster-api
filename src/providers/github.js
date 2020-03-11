@@ -304,7 +304,7 @@ const getToken = async (userId) => {
     }
     return accessToken;
   } catch (error) {
-    console.log(`getClient: caught exception: ${error}`);
+    console.log(`getToken: caught exception: ${error}`);
     return null;
   }
 }
