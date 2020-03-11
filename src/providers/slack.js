@@ -26,3 +26,11 @@ exports.apis = {
 
 exports.createHandlers = (app) => {
 }
+
+exports.invokeAction = async (userId, activeSnapId, param) => {
+  const action = param.action;
+  const channel = param.channel;
+  const message = param.message;
+
+  console.log(`slack: action ${action}, channel ${channel}, message ${message}`);
+}

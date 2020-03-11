@@ -129,6 +129,13 @@ exports.executeSnap = async (userId, activeSnapId, params) => {
 
     // execute actions
     for (const action of snap.actions) {
+      // get the parameter object
+      const param = activeSnap.boundParams.find(c => c.name === action);
+      const provider = providers.getProvider(param.provider);
+
+      // invoke the provider
+      const status = await provider.invokeAction(userId, activeSnapId, param);
+
       console.log(`executeSnap action: ${action}, params: ${params && params.map && params[0]}`);
     }
 
