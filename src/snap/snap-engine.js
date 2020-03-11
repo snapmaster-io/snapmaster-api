@@ -43,9 +43,31 @@ exports.executeSnap = async (userId, activeSnapId, params) => {
   }
 }
 
-exports.parseDefinition = (definition) => {
+exports.parseDefinition = (userId, definition, privateFlag) => {
   try {
-    const snap = YAML.parse(definition);
+    const snapDefinition = YAML.parse(definition);
+
+    const snapId = `${userId}/${snapDefinition.name}`;
+    const name = snapDefinition.name;
+
+    const snap = { 
+      snapId: snapId,
+      userId: userId,
+      name: name,
+      description: snapDefinition.description, 
+      trigger: snapDefinition.trigger,
+      actions: snapDefinition.actions,
+      parameters: snapDefinition.parameters,
+      config: snapDefinition.config,
+      private: privateFlag,
+      text: definition
+    };
+
+    if (!snap.name || !snap.trigger || !snap.actions || !snap.config) {
+      console.error('parseDefinition: definition did not contain required fields');
+      return null;
+    }
+
     // TODO: validation
     return snap;
   } catch (error) {

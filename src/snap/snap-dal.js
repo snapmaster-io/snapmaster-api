@@ -73,24 +73,13 @@ exports.activateSnap = async (userId, snapId, params = null) => {
 // create a snap in the user's environment
 exports.createSnap = async (userId, definition, private = false) => {
   try {
-    const snapDefinition = engine.parseDefinition(definition);
-    const snapId = `${userId}/${snapDefinition.name}`;
-    const name = snapDefinition.name;
-
-    const snap = { 
-      snapId: snapId,
-      userId: userId,
-      name: name,
-      description: snapDefinition.description, 
-      parameters: snapDefinition.parameters,
-      trigger: snapDefinition.tools.trigger,
-      actions: snapDefinition.tools.actions,
-      private: private,
-      text: definition
-    };
+    const snap = engine.parseDefinition(userId, definition, private);
+    if (!snap) {
+      return null;
+    }
     
     // store the snap object and return it
-    await database.storeDocument(userId, dbconstants.snapsCollection, name, snap);
+    await database.storeDocument(userId, dbconstants.snapsCollection, snap.name, snap);
     return snap;
   } catch (error) {
     console.log(`createSnap: caught exception: ${error}`);
