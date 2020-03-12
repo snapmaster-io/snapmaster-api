@@ -1,4 +1,4 @@
-// Slack provider
+// Docker provider
 
 // exports:
 //   apis.
@@ -12,11 +12,11 @@
 //   definition: provider definition
 
 const axios = require('axios');
-const provider = require('./provider');
-const requesthandler = require('../modules/requesthandler');
-const connections = require('../modules/connections');
+const provider = require('../provider');
+const requesthandler = require('../../modules/requesthandler');
+const connections = require('../../modules/connections');
 
-const providerName = 'slack';
+const providerName = 'docker';
 
 exports.provider = providerName;
 exports.image = `/${providerName}-logo.png`;
@@ -35,7 +35,7 @@ exports.invokeAction = async (userId, activeSnapId, param) => {
   const channel = param.channel;
   const message = param.message;
 
-  console.log(`slack: action ${action}, channel ${channel}, message ${message}`);
+  console.log(`docker: action ${action}, channel ${channel}, message ${message}`);
 
   if (!action || !channel || !message) {
     console.error('invokeAction: missing required parameter');
@@ -64,10 +64,6 @@ exports.invokeAction = async (userId, activeSnapId, param) => {
     });
 
   return response.data;  
-}
-
-const callApi = async () => {
-
 }
 
 const getToken = async (userId) => {

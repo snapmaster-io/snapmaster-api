@@ -15,7 +15,7 @@ exports.linkProvider = 'link';
 
 exports.getDefinition = (providerName) => {
   try {
-    const definition = fs.readFileSync(`./src/providers/${providerName}.yml`, 'utf8');
+    const definition = fs.readFileSync(`./src/providers/${providerName}/${providerName}.yml`, 'utf8');
     const provider = YAML.parse(definition);
     // TODO: validation
     return provider;

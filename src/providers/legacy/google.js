@@ -13,9 +13,9 @@
 //   definition: provider definition
 
 const axios = require('axios');
-const googleauth = require('../services/googleauth.js');
-const provider = require('./provider');
-const requesthandler = require('../modules/requesthandler');
+const googleauth = require('../../services/googleauth.js');
+const provider = require('../provider');
+const requesthandler = require('../../modules/requesthandler');
 
 const providerName = 'google';
 

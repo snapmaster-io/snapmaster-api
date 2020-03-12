@@ -1,4 +1,4 @@
-// GCP provider
+// AWS provider
 
 // exports:
 //   apis.
@@ -10,10 +10,10 @@
 //   type: provider type (simple or link)
 //   definition: provider definition
 
-const provider = require('./provider');
-const requesthandler = require('../modules/requesthandler');
+const provider = require('../provider');
+const requesthandler = require('../../modules/requesthandler');
 
-const providerName = 'gcp';
+const providerName = 'aws';
 
 exports.provider = providerName;
 exports.image = `/${providerName}-logo.png`;

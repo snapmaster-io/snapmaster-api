@@ -16,9 +16,9 @@
 //const bizSdk = require('facebook-nodejs-business-sdk');
 
 const axios = require('axios');
-const facebookauth = require('../services/facebookauth.js');
-const provider = require('./provider');
-const requesthandler = require('../modules/requesthandler');
+const facebookauth = require('../../services/facebookauth.js');
+const provider = require('../provider');
+const requesthandler = require('../../modules/requesthandler');
 
 const providerName = 'facebook';
 

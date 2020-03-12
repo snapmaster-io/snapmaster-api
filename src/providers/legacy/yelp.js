@@ -15,11 +15,11 @@
 //   definition: provider definition
 
 const axios = require('axios');
-const provider = require('./provider');
-const requesthandler = require('../modules/requesthandler');
-const environment = require('../modules/environment');
+const provider = require('../provider');
+const requesthandler = require('../../modules/requesthandler');
+const environment = require('../../modules/environment');
 const yelpConfig = environment.getConfig(environment.yelp);
-const database = require('../data/database.js');
+const database = require('../../data/database.js');
 
 const providerName = 'yelp';
 

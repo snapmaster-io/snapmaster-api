@@ -20,13 +20,13 @@ const verify = require('@octokit/webhooks/verify');
 const EventSource = require('eventsource');
 
 const axios = require('axios');
-const githubauth = require('../services/githubauth');
-const dbconstants = require('../data/database-constants');
-const dal = require('../data/dal');
-const provider = require('./provider');
-const requesthandler = require('../modules/requesthandler');
-const snapengine = require('../snap/snap-engine');
-const environment = require('../modules/environment');
+const githubauth = require('../../services/githubauth');
+const dbconstants = require('../../data/database-constants');
+const dal = require('../../data/dal');
+const provider = require('../provider');
+const requesthandler = require('../../modules/requesthandler');
+const snapengine = require('../../snap/snap-engine');
+const environment = require('../../modules/environment');
 
 const providerName = 'github';
 

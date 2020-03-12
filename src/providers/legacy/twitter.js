@@ -13,10 +13,10 @@
 
 const axios = require('axios');
 const oauthSignature = require('oauth-signature');
-const twitterauth = require('../services/twitterauth.js');
-const provider = require('./provider');
-const requesthandler = require('../modules/requesthandler');
-const environment = require('../modules/environment');
+const twitterauth = require('../../services/twitterauth.js');
+const provider = require('../provider');
+const requesthandler = require('../../modules/requesthandler');
+const environment = require('../../modules/environment');
 const twitterConfig = environment.getConfig(environment.twitter);
 
 // could never get the Twitter client to work :(

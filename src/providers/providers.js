@@ -7,25 +7,25 @@
 //   providerDefinitions(): returns an array of all the provider definitions
 
 // import providers
-const aws = require('./aws');
-const azure = require('./azure');
-const circleci = require('./circleci');
-const gcp = require('./gcp');
-const github = require('./github');
-const gitlab = require('./gitlab');
-const slack = require('./slack');
+const providerNames = ['aws', 'azure', 'circleci', 'docker', 'gcp', 'github', 'gitlab', 'slack', 'twilio'];
+
+const providerList = providerNames.map(p => {
+  const providerFile = `./${p}/${p}`;
+  const providerObject = require(providerFile);
+  return providerObject;
+});
 
 // current list of supported providers
-const providerList = [aws, azure, circleci, gcp, github, gitlab, slack];
+//const providerList = [aws, azure, circleci, gcp, github, gitlab, slack];
 
 // legacy providers
-const google = require('./google');
-const facebook = require('./facebook');
-const twitter = require('./twitter');
-const yelp = require('./yelp');
+const google = require('./legacy/google');
+const facebook = require('./legacy/facebook');
+const twitter = require('./legacy/twitter');
+const yelp = require('./legacy/yelp');
 
 exports.providers = {
-  'github': github.apis,
+//  'github': github.apis,
   'google-oauth2': google.apis,
   'facebook': facebook.apis,
   'twitter': twitter.apis,

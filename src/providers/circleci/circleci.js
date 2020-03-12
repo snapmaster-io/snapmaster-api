@@ -1,4 +1,4 @@
-// GitLab provider
+// CircleCI provider
 
 // exports:
 //   apis.
@@ -10,10 +10,10 @@
 //   type: provider type (simple or link)
 //   definition: provider definition
 
-const provider = require('./provider');
-const requesthandler = require('../modules/requesthandler');
+const provider = require('../provider');
+const requesthandler = require('../../modules/requesthandler');
 
-const providerName = 'gitlab';
+const providerName = 'circleci';
 
 exports.provider = providerName;
 exports.image = `/${providerName}-logo.png`;
