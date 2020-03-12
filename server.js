@@ -183,6 +183,16 @@ app.get('/activesnaps', checkJwt, processUser, function(req, res){
   returnSnaps();
 });
   
+// Get active snap logs API endpoint
+app.get('/activesnaps/:activeSnapId', checkJwt, processUser, function(req, res){
+  const activeSnapId = req.params.activeSnapId;
+  const returnLogs = async () => {
+    const logs = await snapdal.getActiveSnapLogs(req.userId, activeSnapId) || {};
+    res.status(200).send(logs);
+  }
+  returnLogs();
+});
+  
 // Post active snaps API endpoint
 app.post('/activesnaps', checkJwt, processUser, function(req, res){
   const action = req.body.action;

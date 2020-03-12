@@ -93,6 +93,18 @@ exports.getActiveSnaps = async (userId) => {
   }
 }
 
+// get logs for an active snap in the user's environment
+exports.getActiveSnapLogs = async (userId, activeSnapId) => {
+  try {
+    const logsCollection = `${dbconstants.activeSnapsCollection}/${activeSnapId}/${dbconstants.logsCollection}`;
+    const logs = await database.query(userId, logsCollection);
+    return logs;
+  } catch (error) {
+    console.log(`getActiveSnapLogs: caught exception: ${error}`);
+    return null;
+  }
+}
+
 // get all snaps across all user environments
 exports.getAllSnaps = async () => {
   try {
