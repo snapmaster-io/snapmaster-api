@@ -11,7 +11,7 @@
 //   type: provider type (simple or link)
 //   definition: provider definition
 
-const axios = require('axios');
+const Twilio = require('twilio'); 
 const provider = require('../provider');
 const requesthandler = require('../../modules/requesthandler');
 const connections = require('../../modules/connections');
@@ -31,52 +31,57 @@ exports.createHandlers = (app) => {
 }
 
 exports.invokeAction = async (userId, activeSnapId, param) => {
-  const action = param.action;
-  const channel = param.channel;
-  const message = param.message;
+  try {
+    const action = param.action;
+    const to = param.to;
+    const message = param.message;
+    const from = param.from;
+    const mediaUrl = param.mediaUrl || 'https://github.com/snapmaster-io/snapmaster/raw/master/public/SnapMaster-logo-220.png'
+    ;
 
-  console.log(`twilio: action ${action}, channel ${channel}, message ${message}`);
+    console.log(`twilio: action ${action}, to ${to}, message ${message}`);
 
-  if (!action || !channel || !message) {
-    console.error('invokeAction: missing required parameter');
+    if (!action || !to || !from || !message) {
+      console.error('invokeAction: missing required parameter');
+      return null;
+    }
+
+    // get token for calling API
+    const client = await getClient(userId);
+    const msg = {
+      body: message, 
+      from,
+      to,
+      mediaUrl
+    };
+
+    // send message
+    const response = await client.messages.create(msg);
+    return response;
+  } catch (error) {
+    console.log(`invokeAction: caught exception: ${error}`);
     return null;
-  }
-
-  // get token for calling API
-  const token = await getToken(userId);
-
-  const url = 'https://slack.com/api/chat.postMessage';
-  const headers = { 
-    'content-type': 'application/json',
-    'authorization': `Bearer ${token}`
-   };
-
-  const body = JSON.stringify({
-    channel,
-    text: message
-  });
-
-  const response = await axios.post(
-    url,
-    body,
-    {
-      headers: headers
-    });
-
-  return response.data;  
+  }  
 }
 
-const getToken = async (userId) => {
+const getClient = async (userId) => {
   try {
     const connectionInfo = await connections.getConnectionInfo(userId, providerName);
     if (!connectionInfo) {
       return null;
     }
 
+    const account = connectionInfo.find(p => p.name === 'account');
     const token = connectionInfo.find(p => p.name === 'token');
-    return token && token.value;
+
+    if (!account || !token) {
+      return null;
+    }
+
+    const client = new Twilio(account.value, token.value);
+    return client;
   } catch (error) {
-    console.log(`getToken: caught exception: ${error}`);
+    console.log(`getClient: caught exception: ${error}`);
     return null;
   }
 }

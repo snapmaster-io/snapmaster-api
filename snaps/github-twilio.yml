@@ -1,0 +1,22 @@
+---
+version: snap-v1alpha1 
+name: github-twilio
+description: GitHub push -> Twilio SMS notification
+trigger: github-push
+actions:
+  - twilio-message
+parameters: 
+  - name: repo
+    description: name of git repository
+  - name: to
+    description: phone number to send SMS to
+config:
+  - name: github-push
+    provider: github
+    repo: $repo
+    event: push
+  - name: twilio-message
+    provider: twilio
+    action: send
+    to: $to
+    message: received push on $repo

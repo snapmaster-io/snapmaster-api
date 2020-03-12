@@ -23,7 +23,15 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Launch Program",
+      "name": "Twilio send",
+      "program": "${workspaceFolder}/utils/invokeAction.js",
+      "args": ["twilio", "google-oauth2|112908869952290990195", "./twilioParams.json"],
+      "env": {"ENV":"dev"}
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Start snapmaster server",
       "program": "${workspaceFolder}/server.js",
       "env": {"ENV":"dev"}
     }

@@ -31,39 +31,44 @@ exports.createHandlers = (app) => {
 }
 
 exports.invokeAction = async (userId, activeSnapId, param) => {
-  const action = param.action;
-  const channel = param.channel;
-  const message = param.message;
+  try {
+    const action = param.action;
+    const channel = param.channel;
+    const message = param.message;
 
-  console.log(`slack: action ${action}, channel ${channel}, message ${message}`);
+    console.log(`slack: action ${action}, channel ${channel}, message ${message}`);
 
-  if (!action || !channel || !message) {
-    console.error('invokeAction: missing required parameter');
-    return null;
-  }
+    if (!action || !channel || !message) {
+      console.error('invokeAction: missing required parameter');
+      return null;
+    }
 
-  // get token for calling API
-  const token = await getToken(userId);
+    // get token for calling API
+    const token = await getToken(userId);
 
-  const url = 'https://slack.com/api/chat.postMessage';
-  const headers = { 
-    'content-type': 'application/json',
-    'authorization': `Bearer ${token}`
-   };
+    const url = 'https://slack.com/api/chat.postMessage';
+    const headers = { 
+      'content-type': 'application/json',
+      'authorization': `Bearer ${token}`
+    };
 
-  const body = JSON.stringify({
-    channel,
-    text: message
-  });
-
-  const response = await axios.post(
-    url,
-    body,
-    {
-      headers: headers
+    const body = JSON.stringify({
+      channel,
+      text: message
     });
 
-  return response.data;  
+    const response = await axios.post(
+      url,
+      body,
+      {
+        headers: headers
+      });
+
+    return response.data;  
+  } catch (error) {
+    console.log(`invokeAction: caught exception: ${error}`);
+    return null;
+  }
 }
 
 const callApi = async () => {

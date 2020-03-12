@@ -5,16 +5,24 @@ description: Twilio Provider Definition
 connection: 
   type: simple
   connectionInfo:
+  - name: account
+    description: account SID
   - name: token
-    description: personal access token
+    description: auth token
 triggers: 
 actions:
   - name: send
     description: send a message to a phone number 
     parameters:
-    - name: phone
-      description: channel to send to
+    - name: to
+      description: phone number to send SMS to
       required: true
     - name: message
       description: message to send
       required: true
+    - name: from
+      description: phone number to send SMS from
+      required: true
+    - name: mediaUrl
+      description: URL of image to send with SMS
+      required: false
