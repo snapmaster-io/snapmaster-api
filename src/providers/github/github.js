@@ -311,8 +311,7 @@ const getToken = async (userId) => {
 
 // handle an incoming webhook request
 const handleWebhook = (userId, activeSnapId, name, payload) => {
-  console.log(`userId: ${userId}; activeSnapId: ${activeSnapId}; name: ${name} event received`);
-  snapengine.executeSnap(userId, activeSnapId, [name, payload]);
+  snapengine.executeSnap(userId, activeSnapId, [name], payload);
 }
 
 // create the webhook listener 

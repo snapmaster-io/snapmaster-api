@@ -4,6 +4,7 @@
   // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
+
     {
       "type": "node",
       "request": "launch",
@@ -26,6 +27,14 @@
       "name": "Twilio send",
       "program": "${workspaceFolder}/utils/invokeAction.js",
       "args": ["twilio", "google-oauth2|112908869952290990195", "./twilioParams.json"],
+      "env": {"ENV":"dev"}
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Trigger active snap",
+      "program": "${workspaceFolder}/utils/executeSnap.js",
+      "args": ["google-oauth2|112908869952290990195", "1583964008818"],
       "env": {"ENV":"dev"}
     },
     {

@@ -105,7 +105,11 @@ exports.deactivateSnap = async (userId, activeSnapId) => {
 }
 
 // execute a snap that has been triggered
-exports.executeSnap = async (userId, activeSnapId, params) => {
+exports.executeSnap = async (userId, activeSnapId, params, payload) => {
+
+  // declare log object to make it available in catch block
+  let logObject;
+
   try {
     // validate incoming userId and activeSnapId
     if (!userId || !activeSnapId) {
@@ -118,14 +122,15 @@ exports.executeSnap = async (userId, activeSnapId, params) => {
       return { message: `could not find active snap ID ${activeSnapId}`};
     }
 
+    // log snap invocation
+    logObject = await logInvocation(userId, activeSnap, params, payload);
+
     // load snap definition via snapId
     const snap = await snapdal.getSnap(userId, activeSnap.snapId);
     if (!snap) {
       console.error(`executeSnap: cannot find snapId ${activeSnap.snapId}`);
       return null;
     }
-
-    console.log(`executing snap ${snap.snapId}`);
 
     // execute actions
     for (const action of snap.actions) {
@@ -135,10 +140,28 @@ exports.executeSnap = async (userId, activeSnapId, params) => {
 
       // invoke the provider
       const status = await provider.invokeAction(userId, activeSnapId, param);
+
+      // log the action execution
+      const actionLog = {
+        provider: param.provider,
+        state: dbconstants.executionStateExecuted,
+        param,
+      }
+
+      await updateLog(logObject, actionLog);
     }
+
+    // log the completed state
+    logObject.state = dbconstants.executionStateComplete;
+    await updateLog(logObject);
 
   } catch (error) {
     console.log(`executeSnap: caught exception: ${error}`);
+
+    // log the error state
+    logObject.state = dbconstants.executionStateError;
+    await updateLog(logObject);
+
     return null;
   }
 }
@@ -202,6 +225,57 @@ const bindParameters = (config, params) => {
 
   // return the bound config
   return boundConfig;
+}
+
+// log the invocation in the logs collection
+const logInvocation = async (userId, activeSnap, params, payload) => {
+  try {
+    const activeSnapId = activeSnap.activeSnapId;
+    const timestamp = new Date().getTime();
+    const documentName = "" + timestamp;
+    const logObject = {
+      timestamp,
+      state: dbconstants.executionStateTriggered,
+      userId,
+      activeSnapId: activeSnap.activeSnapId,
+      snapId: activeSnap.snapId,
+      trigger: activeSnap.provider,
+      actions: [],
+      params,
+      payload
+    };
+
+    const logsCollection = `${dbconstants.activeSnapsCollection}/${activeSnapId}/${dbconstants.logsCollection}`;
+    await database.storeDocument(userId, logsCollection,documentName, logObject);
+
+    // log the invocation in the console
+    console.log(`executing snap ${activeSnap.snapId}`);
+
+    return logObject;
+  } catch (error) {
+    console.error(`logInvocation: caught exception: ${error}`);
+    return null;
+  }
+}
+
+// update the log entry in the logs collection
+const updateLog = async (logObject, actionLog) => {
+  try {
+    const documentName = "" + logObject.timestamp;
+    const userId = logObject.userId;
+    const activeSnapId = logObject.activeSnapId;
+    if (actionLog) {
+      logObject.actions.push(actionLog);
+    }
+
+    const logsCollection = `${dbconstants.activeSnapsCollection}/${activeSnapId}/${dbconstants.logsCollection}`;
+    await database.storeDocument(userId, logsCollection,documentName, logObject);
+
+    return logObject;
+  } catch (error) {
+    console.error(`updateLog: caught exception: ${error}`);
+    return null;
+  }
 }
 
 // validates a config section against the provider definition

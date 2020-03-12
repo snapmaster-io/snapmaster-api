@@ -10,9 +10,16 @@ exports.emailsCollection = 'emails';
 // define snaps collection
 exports.snapsCollection = 'snaps';
 exports.activeSnapsCollection = 'activesnaps';
+exports.logsCollection = 'logs';
 
 // snap field names
 exports.snapPrivateField = 'private';
+
+// active snap states
+exports.executionStateTriggered = 'triggered';
+exports.executionStateExecuted = 'executed';
+exports.executionStateComplete = 'complete';
+exports.executionStateError = 'error';
 
 // name of history "collection" and metadata "collection"
 exports.history = '__history';
