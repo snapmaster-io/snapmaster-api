@@ -151,7 +151,7 @@ exports.createTrigger = async (userId, activeSnapId, param) => {
 
     // if in dev mode, create the hook through smee.io 
     if (environment.getDevMode()) {
-      url = 'https://smee.io/aRW11TsA1USoXCWb';
+      url = githubauth.github_smee_url;
     }
 
     // create the hook, using the client ID as the secret
