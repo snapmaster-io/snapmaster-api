@@ -132,7 +132,7 @@ exports.executeSnap = async (userId, activeSnapId, params, payload) => {
     logObject = await logInvocation(userId, activeSnap, params, payload);
 
     // increment and store execution counter in activeSnap document
-    activeSnap.executionCounter = activeSnap.executionCounter ? activeSnap.ExecutionCounter + 1 : 1;
+    activeSnap.executionCounter = activeSnap.executionCounter ? activeSnap.executionCounter + 1 : 1;
     await database.storeDocument(userId, dbconstants.activeSnapsCollection, activeSnapId, activeSnap);
 
     // load snap definition via snapId
