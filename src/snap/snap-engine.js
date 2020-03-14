@@ -428,23 +428,3 @@ const validateSnap = async (snap) => {
     console.error(`validateSnap: caught exception: ${error}`);
   }
 }
-
-
-`
-config:
-  - name: github
-    provider: github
-    repo: $repo
-    event: push
-    branch: master
-
-- name: push
-  description: push event into a repository
-  parameters:
-  - name: repo
-    description: name of git repository
-    required: true
-  - name: branch
-    description: name of branch
-    required: false
-`

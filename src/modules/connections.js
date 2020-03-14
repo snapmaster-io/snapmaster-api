@@ -7,6 +7,7 @@
 const database = require('../data/database');
 const providers = require('../providers/providers');
 const requesthandler = require('./requesthandler');
+const auth0 = require('../services/auth0');
 
 exports.createHandlers = (app) => {
   // Get connections API endpoint
@@ -45,6 +46,50 @@ exports.createHandlers = (app) => {
     }
   
     res.status(200).send({ message: 'Unknown action'});  
+  });
+
+  // Link API endpoint
+  // body: 
+  //  { 
+  //    action: 'link' | 'unlink',
+  //    primaryUserId <could be empty, in which case use req.user[sub]>
+  //    secondaryUserId <in the format 'provider|userid'>
+  //  }
+  app.post('/link', requesthandler.checkJwt, function(req, res){
+    const userId = req.body && req.body.primaryUserId || req.user['sub'];
+    const action = req.body && req.body.action;
+    const secondaryUserId = req.body && req.body.secondaryUserId;
+    console.log(`POST /link: ${action} ${userId}, ${secondaryUserId}`);
+
+    const link = async () => {
+      // link accounts
+      const data = await auth0.linkAccounts(userId, secondaryUserId);
+
+      // set refresh history flag
+      if (data) {
+        await database.setUserData(userId, dbconstants.refreshHistory, { refresh: true });
+        res.status(200).send(data);  
+      } else {
+        res.status(200).send({ message: 'link failed' });
+      }
+    }
+
+    const unlink = async () => {
+      const data = await auth0.unlinkAccounts(userId, secondaryUserId);
+      res.status(200).send(data || { message: 'unlink failed' });
+    }
+
+    if (action === 'link' && userId && secondaryUserId) {
+      link();
+      return;
+    }
+
+    if (action === 'unlink' && userId && secondaryUserId) {
+      unlink();
+      return;
+    }
+
+    res.status(200).send({ message: 'Unknown action'});
   });
 }
 

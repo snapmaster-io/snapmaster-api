@@ -17,9 +17,6 @@ const environment = require('./src/modules/environment');
 environment.setEnv(account);
 environment.setDevMode(configuration === environment.dev);
 
-// import the auth0 service
-const auth0 = require('./src/services/auth0');
-
 // import middleware
 const { checkJwt, processUser } = require('./src/modules/requesthandler');
 
@@ -69,15 +66,16 @@ app.use(bodyParser.urlencoded({
 // configure a static file server
 app.use(express.static(path.join(__dirname, 'build')));
 
+// create route handlers for modules that process incoming calls
+connections.createHandlers(app);
+profile.createHandlers(app);
+snapdal.createHandlers(app);
+
 // create route handlers for each of the providers
 providers.createHandlers(app);
 
-// create route handlers for connections API calls
-connections.createHandlers(app);
-profile.createHandlers(app);
-
 // create a set of route handlers for the non-provider API calls
-//
+// these should trend towards zero as they get refactored out
 
 
 // Get metadata API endpoint
@@ -98,209 +96,7 @@ app.get('/history', checkJwt, processUser, function(req, res){
   returnHistory();
 });
 
-// Get gallery API endpoint
-app.get('/gallery', checkJwt, processUser, function(req, res){
-  const returnGallery = async () => {
-    const gallery = await snapdal.getAllSnaps() || {};
-    res.status(200).send(gallery);
-  }
-  returnGallery();
-});
 
-// Get snaps API endpoint
-app.get('/snaps', checkJwt, processUser, function(req, res){
-  const returnSnaps = async () => {
-    const snaps = await snapdal.getSnaps(req.userId) || {};
-    res.status(200).send(snaps);
-  }
-  returnSnaps();
-});
-  
-
-// Get snap API endpoint
-app.get('/snaps/:userId/:snapId', checkJwt, processUser, function(req, res){
-  const userId = decodeURI(req.params.userId);
-  const snapId = req.params.snapId;
-  if (!userId || !snapId) {
-    res.status(200).send({ message: 'error'});
-    return;
-  }
-
-  const returnSnap = async () => {
-    const snap = await snapdal.getSnap(userId, snapId) || {};
-    res.status(200).send(snap);
-  }
-  returnSnap();
-});
-  
-// Post snaps API endpoint
-// this will fork an existing snap with snapId
-// TODO: add a code path that creates a new snap
-app.post('/snaps', checkJwt, processUser, function(req, res){
-  const action = req.body.action;
-  const snapId = req.body.snapId;
-  
-  const createSnap = async () => {
-    const definition = req.body.definition;
-    await snapdal.createSnap(req.userId, definition);
-    res.status(200).send({ message: 'success' });
-  }
-
-  const deleteSnap = async () => {
-    await snapdal.deleteSnap(req.userId, snapId);
-    res.status(200).send({ message: 'success' });
-  }
-
-  const forkSnap = async () => {
-    await snapdal.forkSnap(req.userId, snapId);
-    res.status(200).send({ message: 'success' });
-  }
-
-  if (action === 'create') {
-    createSnap();
-    return;
-  }
-
-  if (action === 'delete' && snapId) {
-    deleteSnap();
-    return;
-  }
-
-  if (action === 'fork' && snapId) {
-    forkSnap();
-    return;
-  }
-
-  res.status(200).send({ message: 'Unknown action'});  
-});
-
-// Get active snaps API endpoint
-app.get('/activesnaps', checkJwt, processUser, function(req, res){
-  const returnActiveSnaps = async () => {
-    const activesnaps = await snapdal.getActiveSnaps(req.userId) || {};
-    res.status(200).send(activesnaps);
-  }
-  returnActiveSnaps();
-});
-  
-// Get active snap logs API endpoint
-app.get('/activesnaps/:activeSnapId', checkJwt, processUser, function(req, res){
-  const activeSnapId = req.params.activeSnapId;
-  const returnLogs = async () => {
-    const logs = await snapdal.getActiveSnapLogs(req.userId, activeSnapId) || {};
-    res.status(200).send(logs);
-  }
-  returnLogs();
-});
-  
-// Post active snaps API endpoint
-app.post('/activesnaps', checkJwt, processUser, function(req, res){
-  const action = req.body.action;
-  const snapId = req.body.snapId;
-  
-  const activateSnap = async () => {
-    const status = await snapengine.activateSnap(req.userId, snapId, req.body.params);
-    if (status.message === 'success') {
-      const activesnaps = await snapdal.getActiveSnaps(req.userId) || {};
-      status.data = activesnaps;
-    }
-    res.status(200).send(status);
-  }
-
-  const deactivateSnap = async () => {
-    const status = await snapengine.deactivateSnap(req.userId, snapId);
-    if (status.message === 'success') {
-      const activesnaps = await snapdal.getActiveSnaps(req.userId) || {};
-      status.data = activesnaps;
-    }
-    res.status(200).send(status);
-  }
-
-  const pauseSnap = async () => {
-    const status = await snapengine.pauseSnap(req.userId, snapId);
-    if (status.message === 'success') {
-      const activesnaps = await snapdal.getActiveSnaps(req.userId) || {};
-      status.data = activesnaps;
-    }
-    res.status(200).send(status);
-  }
-
-  const resumeSnap = async () => {
-    const status = await snapengine.resumeSnap(req.userId, snapId);
-    if (status.message === 'success') {
-      const activesnaps = await snapdal.getActiveSnaps(req.userId) || {};
-      status.data = activesnaps;
-    }
-    res.status(200).send(status);
-  }
-
-  if (!snapId) {
-    res.status(200).send({ message: 'Unknown snapId'});  
-    return;
-  }
-
-  switch (action) {
-    case 'activate':
-      activateSnap();
-      return;
-    case 'deactivate':
-      deactivateSnap();
-      return;
-    case 'pause':
-      pauseSnap();
-      return;
-    case 'resume':
-      resumeSnap();
-      return;
-    default:
-      res.status(200).send({ message: 'Unknown action'});
-      return;
-  }
-});
-
-// Link API endpoint
-// body: 
-//  { 
-//    action: 'link' | 'unlink',
-//    primaryUserId <could be empty, in which case use req.user[sub]>
-//    secondaryUserId <in the format 'provider|userid'>
-//  }
-app.post('/link', checkJwt, function(req, res){
-  const userId = req.body && req.body.primaryUserId || req.user['sub'];
-  const action = req.body && req.body.action;
-  const secondaryUserId = req.body && req.body.secondaryUserId;
-  console.log(`POST /link: ${action} ${userId}, ${secondaryUserId}`);
-
-  const link = async () => {
-    // link accounts
-    const data = await auth0.linkAccounts(userId, secondaryUserId);
-
-    // set refresh history flag
-    if (data) {
-      await database.setUserData(userId, dbconstants.refreshHistory, { refresh: true });
-      res.status(200).send(data);  
-    } else {
-      res.status(200).send({ message: 'link failed' });
-    }
-  }
-
-  const unlink = async () => {
-    const data = await auth0.unlinkAccounts(userId, secondaryUserId);
-    res.status(200).send(data || { message: 'unlink failed' });
-  }
-
-  if (action === 'link' && userId && secondaryUserId) {
-    link();
-    return;
-  }
-
-  if (action === 'unlink' && userId && secondaryUserId) {
-    unlink();
-    return;
-  }
-
-  res.status(200).send({ message: 'Unknown action'});
-});
 
 // invoke endpoint: this is only called from the pubsub push subscription
 app.post('/invoke', function(req, res){
