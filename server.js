@@ -176,11 +176,11 @@ app.post('/snaps', checkJwt, processUser, function(req, res){
 
 // Get active snaps API endpoint
 app.get('/activesnaps', checkJwt, processUser, function(req, res){
-  const returnSnaps = async () => {
-    const snaps = await snapdal.getActiveSnaps(req.userId) || {};
-    res.status(200).send(snaps);
+  const returnActiveSnaps = async () => {
+    const activesnaps = await snapdal.getActiveSnaps(req.userId) || {};
+    res.status(200).send(activesnaps);
   }
-  returnSnaps();
+  returnActiveSnaps();
 });
   
 // Get active snap logs API endpoint
@@ -200,25 +200,62 @@ app.post('/activesnaps', checkJwt, processUser, function(req, res){
   
   const activateSnap = async () => {
     const status = await snapengine.activateSnap(req.userId, snapId, req.body.params);
+    if (status.message === 'success') {
+      const activesnaps = await snapdal.getActiveSnaps(req.userId) || {};
+      status.data = activesnaps;
+    }
     res.status(200).send(status);
   }
 
   const deactivateSnap = async () => {
     const status = await snapengine.deactivateSnap(req.userId, snapId);
+    if (status.message === 'success') {
+      const activesnaps = await snapdal.getActiveSnaps(req.userId) || {};
+      status.data = activesnaps;
+    }
     res.status(200).send(status);
   }
 
-  if (action === 'activate' && snapId) {
-    activateSnap();
+  const pauseSnap = async () => {
+    const status = await snapengine.pauseSnap(req.userId, snapId);
+    if (status.message === 'success') {
+      const activesnaps = await snapdal.getActiveSnaps(req.userId) || {};
+      status.data = activesnaps;
+    }
+    res.status(200).send(status);
+  }
+
+  const resumeSnap = async () => {
+    const status = await snapengine.resumeSnap(req.userId, snapId);
+    if (status.message === 'success') {
+      const activesnaps = await snapdal.getActiveSnaps(req.userId) || {};
+      status.data = activesnaps;
+    }
+    res.status(200).send(status);
+  }
+
+  if (!snapId) {
+    res.status(200).send({ message: 'Unknown snapId'});  
     return;
   }
 
-  if (action === 'deactivate' && snapId) {
-    deactivateSnap();
-    return;
+  switch (action) {
+    case 'activate':
+      activateSnap();
+      return;
+    case 'deactivate':
+      deactivateSnap();
+      return;
+    case 'pause':
+      pauseSnap();
+      return;
+    case 'resume':
+      resumeSnap();
+      return;
+    default:
+      res.status(200).send({ message: 'Unknown action'});
+      return;
   }
-
-  res.status(200).send({ message: 'Unknown action'});  
 });
 
 // Link API endpoint

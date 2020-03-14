@@ -3,8 +3,10 @@
 // exports:
 //   activateSnap(userId, snapId, params): activate a snap into the user's environment
 //   deactivateSnap(userId, activeSnapId): deactivate an active snap in the user's environment
-//   parseDefinition(userId, definition, privateFlag): parse a yaml definition into a snap object
 //   executeSnap(userId, activeSnapId, params): execute snap actions
+//   parseDefinition(userId, definition, privateFlag): parse a yaml definition into a snap object
+//   pauseSnap(userId, activeSnapId): pause an active snap in the user's environment
+//   resumeSnap(userId, activeSnapId): resume a paused snap in the user's environment
 
 const database = require('../data/database');
 const dbconstants = require('../data/database-constants');
@@ -49,12 +51,17 @@ exports.activateSnap = async (userId, snapId, params = null) => {
     const boundParams = bindParameters(snap.config, params);
 
     // active snap ID is current timestamp
-    const activeSnapId = new Date().getTime().toString();
+    const timestamp = new Date().getTime();
+    const activeSnapId = "" + timestamp;
+
     const activeSnap = {
       activeSnapId: activeSnapId,
       userId: userId,
       snapId: snapId,
       provider: provider.provider,
+      state: dbconstants.snapStateActive,
+      activated: timestamp,
+      trigger: snap.trigger,
       params: params,
       boundParams: boundParams
     }
@@ -81,11 +88,10 @@ exports.activateSnap = async (userId, snapId, params = null) => {
   }
 }
 
-
 // deactivate a snap in the user's environment
 exports.deactivateSnap = async (userId, activeSnapId) => {
   try {
-    // get the active snap structure
+    // get the active snap object
     const activeSnap = await database.getDocument(userId, dbconstants.activeSnapsCollection, activeSnapId);
     if (!activeSnap) {
       return { message: `could not find active snap ID ${activeSnapId}`};
@@ -107,8 +113,8 @@ exports.deactivateSnap = async (userId, activeSnapId) => {
 // execute a snap that has been triggered
 exports.executeSnap = async (userId, activeSnapId, params, payload) => {
 
-  // declare log object to make it available in catch block
-  let logObject;
+  // declare logObject and activeSnap to make them available in catch block
+  let logObject, activeSnap;
 
   try {
     // validate incoming userId and activeSnapId
@@ -117,13 +123,17 @@ exports.executeSnap = async (userId, activeSnapId, params, payload) => {
     }
 
     // get activeSnap object
-    const activeSnap = await database.getDocument(userId, dbconstants.activeSnapsCollection, activeSnapId);
+    activeSnap = await database.getDocument(userId, dbconstants.activeSnapsCollection, activeSnapId);
     if (!activeSnap) {
       return { message: `could not find active snap ID ${activeSnapId}`};
     }
 
     // log snap invocation
     logObject = await logInvocation(userId, activeSnap, params, payload);
+
+    // increment and store execution counter in activeSnap document
+    activeSnap.executionCounter = activeSnap.executionCounter ? activeSnap.ExecutionCounter + 1 : 1;
+    await database.storeDocument(userId, dbconstants.activeSnapsCollection, activeSnapId, activeSnap);
 
     // load snap definition via snapId
     const snap = await snapdal.getSnap(userId, activeSnap.snapId);
@@ -161,6 +171,10 @@ exports.executeSnap = async (userId, activeSnapId, params, payload) => {
     // log the error state
     logObject.state = dbconstants.executionStateError;
     await updateLog(logObject);
+
+    // increment and store execution counter in activeSnap document
+    activeSnap.errorCounter = activeSnap.errorCounter ? activeSnap.ErrorCounter + 1 : 1;
+    await database.storeDocument(userId, dbconstants.activeSnapsCollection, activeSnapId, activeSnap);
 
     return null;
   }
@@ -201,6 +215,65 @@ exports.parseDefinition = (userId, definition, privateFlag) => {
   } catch (error) {
     console.log(`parseDefinition: caught exception: ${error}`);
     return null;
+  }
+}
+
+// pause an active snap
+exports.pauseSnap = async (userId, activeSnapId) => {
+  try {
+    // get the active snap object
+    const activeSnap = await database.getDocument(userId, dbconstants.activeSnapsCollection, activeSnapId);
+    if (!activeSnap) {
+      return { message: `could not find active snap ID ${activeSnapId}`};
+    }
+
+    // delete the snap trigger
+    const provider = providers.getProvider(activeSnap.provider);
+    await provider.deleteTrigger(userId, activeSnap.triggerData);
+
+    // set the snap state to "paused"
+    activeSnap.state = dbconstants.snapStatePaused;
+    activeSnap.activated = new Date().getTime();
+    
+    // store the new state of the active snap 
+    await database.storeDocument(userId, dbconstants.activeSnapsCollection, activeSnapId, activeSnap);
+    return { message: 'success' };
+  } catch (error) {
+    console.log(`pauseSnap: caught exception: ${error}`);
+    return { message: `pauseSnap error: ${error.message}`};
+  }
+}
+
+// resume a paused snap 
+exports.resumeSnap = async (userId, activeSnapId) => {
+  try {
+    // get the active snap object
+    const activeSnap = await database.getDocument(userId, dbconstants.activeSnapsCollection, activeSnapId);
+    if (!activeSnap) {
+      return { message: `could not find active snap ID ${activeSnapId}`};
+    }
+
+    // find the trigger parameter
+    const triggerParam = activeSnap.boundParams.find(p => p.name === activeSnap.trigger);
+
+    // re-create the snap trigger
+    const provider = providers.getProvider(activeSnap.provider);
+    const triggerData = await provider.createTrigger(userId, activeSnapId, triggerParam);
+    if (!triggerData) {
+      return { message: 'could not re-create trigger for this snap - try deactivating it' };
+    }
+
+    // set the snap state to "active", and refresh timestamp and triggerData
+    activeSnap.state = dbconstants.snapStateActive;
+    activeSnap.activated = new Date().getTime();
+    activeSnap.triggerData = triggerData;
+
+    // store the new state of the active snap 
+    await database.storeDocument(userId, dbconstants.activeSnapsCollection, activeSnapId, activeSnap);
+    return { message: 'success' };
+  } catch (error) {
+    console.log(`resumeSnap: caught exception: ${error}`);
+    return { message: `resumeSnap error: ${error.message}`};
   }
 }
 

@@ -16,6 +16,10 @@ exports.logsCollection = 'logs';
 exports.snapPrivateField = 'private';
 
 // active snap states
+exports.snapStateActive = 'active';
+exports.snapStatePaused = 'paused';
+
+// snap execution states
 exports.executionStateTriggered = 'triggered';
 exports.executionStateExecuted = 'executed';
 exports.executionStateComplete = 'complete';

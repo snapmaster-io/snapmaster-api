@@ -58,24 +58,20 @@ exports.deleteSnap = async (userId, snapId) => {
 // fork a snap into the user's environment
 exports.forkSnap = async (userId, snapId) => {
   try {
-    // extract snap name (either [userid/__snapname__] or the snapId passed in if it's not a composite)
-    const snapNameArray = snapId.split('/');
-    const snapName = snapNameArray.length > 1 ? snapNameArray[1] : snapId;
-
     // get the snap definition 
-    const snap = await exports.getSnap(userId, dbconstants.snapsCollection, snapId);
+    const snap = await exports.getSnap(userId, snapId);
     if (!snap) {
       console.error(`forkSnap: cannot find snap ${snapId}`);
       return null;
     }
 
     // construct new name
-    const forkedSnapId = `${userId}/${snapName}`;
+    const forkedSnapId = `${userId}/${snap.name}`;
     snap.snapId = forkedSnapId;
     snap.private = true;
 
     // store the new snap
-    await database.storeDocument(userId, dbconstants.snapsCollection, snapName, snap);
+    await database.storeDocument(userId, dbconstants.snapsCollection, snap.name, snap);
   } catch (error) {
     console.log(`forkSnap: caught exception: ${error}`);
     return null;
