@@ -7,7 +7,18 @@
 //   providerDefinitions(): returns an array of all the provider definitions
 
 // import providers
-const providerNames = ['aws', 'azure', 'circleci', 'docker', 'gcp', 'github', 'gitlab', 'slack', 'twilio'];
+const providerNames = [
+  'aws',
+  'azure', 
+  'circleci', 
+  'docker', 
+  'gcp', 
+  'github', 
+  'gitlab', 
+  'pagerduty', 
+  'slack', 
+  'twilio'
+];
 
 const providerList = providerNames.map(p => {
   const providerFile = `./${p}/${p}`;
