@@ -1,13 +1,9 @@
 // snap data access layer for snap language
 // 
 // exports:
-//   createSnap: create a snap in the user's environment
-//   deleteSnap: delete a snap in the user's environment
-//   forkSnap: fork a snap into the user's environment
-//   getActiveSnaps: get active snaps in the user's environment
-//   getAllSnaps: get all snaps across all user environments
+//   createHandlers(app): create handlers for GET and POST endpoints
+//   getSnap: get an active snap record from the user's environment
 //   getSnap: get a snap definition from the user's environment
-//   getSnaps: get all snaps in the user's environment
 
 const database = require('../data/database');
 const dbconstants = require('../data/database-constants');
@@ -32,6 +28,16 @@ exports.createHandlers = (app) => {
     }
     returnLogs();
   });
+
+  // Get active snap logs API endpoint
+  app.get('/logs/:activeSnapId', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
+    const activeSnapId = req.params.activeSnapId;
+    const returnLogs = async () => {
+      const logs = await getActiveSnapLogs(req.userId, activeSnapId) || {};
+      res.status(200).send(logs);
+    }
+    returnLogs();
+  });  
 
   // Get snaps API endpoint
   app.get('/snaps', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
@@ -105,17 +111,17 @@ exports.createHandlers = (app) => {
     }
     returnActiveSnaps();
   });
-    
+
   // Get active snap logs API endpoint
   app.get('/activesnaps/:activeSnapId', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
     const activeSnapId = req.params.activeSnapId;
-    const returnLogs = async () => {
-      const logs = await getActiveSnapLogs(req.userId, activeSnapId) || {};
-      res.status(200).send(logs);
+    const returnActiveSnap = async () => {
+      const activeSnap = await exports.getActiveSnap(req.userId, activeSnapId) || {};
+      res.status(200).send(activeSnap);
     }
-    returnLogs();
-  });
-    
+    returnActiveSnap();
+  });  
+      
   // Post active snaps API endpoint
   app.post('/activesnaps', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
     const action = req.body.action;
@@ -180,6 +186,17 @@ exports.createHandlers = (app) => {
         return;
     }
   });
+}
+
+// get an active snap record from the user's environment
+exports.getActiveSnap = async (userId, activeSnapId) => {
+  try {
+    const activeSnap = await database.getDocument(userId, dbconstants.activeSnapsCollection, activeSnapId);
+    return activeSnap;
+  } catch (error) {
+    console.log(`getActiveSnap: caught exception: ${error}`);
+    return null;
+  }
 }
 
 // get a snap definition from the user's environment
