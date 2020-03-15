@@ -12,6 +12,9 @@ exports.snapsCollection = 'snaps';
 exports.activeSnapsCollection = 'activesnaps';
 exports.logsCollection = 'logs';
 
+// define userId field for queryGroup queries over userId
+exports.userIdField = 'userId';
+
 // snap field names
 exports.snapPrivateField = 'private';
 

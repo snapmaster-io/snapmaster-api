@@ -114,7 +114,7 @@ exports.query = async (userId, collection, field, value) => {
 exports.queryGroup = async (userId, collection, field, value) => {
   try {
     const col = db.collectionGroup(collection);
-    let query = userId ? col.where(dbconstants.metadataUserIdField, '==', userId) : col;
+    let query = userId ? col.where(dbconstants.userIdField, '==', userId) : col;
     if (field && value) {
       // a query was passed in, so chain it to the query
       query = query.where(field, '==', value);
