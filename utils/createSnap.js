@@ -36,6 +36,13 @@ if (!definition) {
 }
 
 const createSnap = async (userId, definition) => {
+  // create the user if it doesn't exist yet
+  const user = await database.getUserData(userId);
+  if (!user) {
+    await database.setUserData(userId, dbconstants.profile, { system: true } );
+  }
+
+  // create the snap in the user's context
   const snap = await snapdal.createSnap(userId, definition);
   if (!snap) {
     console.error('could not create snap');

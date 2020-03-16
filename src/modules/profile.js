@@ -37,13 +37,53 @@ exports.createHandlers = (app) => {
   // Post profile API endpoint
   app.post('/profile', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
     const store = async () => {
-      await storeProfile(req.userId, req.body);
+      await storeProfile(req.userId, req.body);      
       res.status(200).send({ message: 'success' });
     }
     store();
   });
 
+  app.get('/validateaccount', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
+    const accountName = req.query.account;
+    const validate = async () => {
+      const account = await database.getUserData(accountName);
+      if (account) {
+        res.status(200).send({ valid: false });
+      } else {
+        res.status(200).send({ valid: true });
+      }
+    }
+
+    if (!accountName || accountName === "") {
+      res.status(200).send({ valid: false } );
+      return;
+    }
+
+    validate();
+  });  
+
+  app.post('/validateaccount/:account', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
+    const accountName = req.params.account;
+    const validate = async () => {
+      const account = await database.getUserData(accountName);
+      if (account) {
+        res.status(200).send({ message: 'error' });
+      } else {
+        // create a new user with the name ${accountName}, noting the userId in the profile
+        await database.setUserData(accountName, { profile: { userId: req.userId }});
+        res.status(200).send({ message: 'success' });
+      }
+    }
+
+    if (!accountName) {
+      res.status(200).send({ valid: false } );
+      return;
+    }
+
+    validate();
+  });    
 }
+
 // retrieve all metadata for all data entities 
 const getProfile = async (userId) => {
   try {
