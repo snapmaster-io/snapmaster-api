@@ -24,7 +24,7 @@ const keys = {
 exports.activateSnap = async (userId, snapId, params = null) => {
   try {
     // get the snap object
-    const snap = await snapdal.getSnap(userId, snapId);
+    const snap = await snapdal.getSnap(snapId);
     if (!snap) {
       const message = `could not find snap ${snapId}`;
       console.error(`activateSnap: ${message}`);
@@ -136,7 +136,7 @@ exports.executeSnap = async (userId, activeSnapId, params, payload) => {
     await database.storeDocument(userId, dbconstants.activeSnapsCollection, activeSnapId, activeSnap);
 
     // load snap definition via snapId
-    const snap = await snapdal.getSnap(userId, activeSnap.snapId);
+    const snap = await snapdal.getSnap(activeSnap.snapId);
     if (!snap) {
       console.error(`executeSnap: cannot find snapId ${activeSnap.snapId}`);
       return null;
@@ -180,11 +180,11 @@ exports.executeSnap = async (userId, activeSnapId, params, payload) => {
   }
 }
 
-exports.parseDefinition = (userId, definition, privateFlag) => {
+exports.parseDefinition = (account, definition, privateFlag) => {
   try {
     const snapDefinition = YAML.parse(definition);
 
-    const snapId = `${userId}/${snapDefinition.name}`;
+    const snapId = `${account}/${snapDefinition.name}`;
     const name = snapDefinition.name;
     const triggerName = snapDefinition.trigger;
     const config = snapDefinition.config;
@@ -193,7 +193,7 @@ exports.parseDefinition = (userId, definition, privateFlag) => {
 
     const snap = { 
       snapId: snapId,
-      userId: userId,
+      account: account,
       name: name,
       description: snapDefinition.description, 
       provider: provider,
@@ -206,7 +206,7 @@ exports.parseDefinition = (userId, definition, privateFlag) => {
     };
 
     // validate required fields
-    if (!snap.name || !snap.trigger || !snap.actions || !snap.config) {
+    if (!snap.account || !snap.name || !snap.trigger || !snap.actions || !snap.config) {
       console.error('parseDefinition: definition did not contain required fields');
       return null;
     }

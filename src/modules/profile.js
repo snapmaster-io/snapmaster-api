@@ -70,7 +70,7 @@ exports.createHandlers = (app) => {
         res.status(200).send({ message: 'error' });
       } else {
         // create a new user with the name ${accountName}, noting the userId in the profile
-        await database.setUserData(accountName, { profile: { userId: req.userId }});
+        await database.setUserData(accountName, dbconstants.profile, { userId: req.userId });
         res.status(200).send({ message: 'success' });
       }
     }

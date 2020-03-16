@@ -2,8 +2,9 @@
 // 
 // exports:
 //   createHandlers(app): create handlers for GET and POST endpoints
-//   getSnap: get an active snap record from the user's environment
-//   getSnap: get a snap definition from the user's environment
+//   createSnap(account, definition, private): create a snap in a user's account using the definition
+//   getActveSnap(userId, activeSnapId): get an active snap record from the user's environment
+//   getSnap(snapId): get a snap definition from the user's environment
 
 const database = require('../data/database');
 const dbconstants = require('../data/database-constants');
@@ -49,24 +50,23 @@ exports.createHandlers = (app) => {
   });
     
   // Get snap API endpoint
-  app.get('/snaps/:userId/:snapId', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
-    const userId = decodeURI(req.params.userId);
-    const snapId = req.params.snapId;
-    if (!userId || !snapId) {
+  app.get('/snaps/:account/:snapName', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
+    const account = req.params.account;
+    const snapName = req.params.snapName;
+    if (!account || !snapName) {
       res.status(200).send({ message: 'error'});
       return;
     }
 
     const returnSnap = async () => {
-      const snap = await exports.getSnap(userId, snapId) || {};
+      const snap = await exports.getSnap(`${account}/${snapName}`);
       res.status(200).send(snap);
     }
     returnSnap();
   });
     
   // Post snaps API endpoint
-  // this will fork an existing snap with snapId
-  // TODO: add a code path that creates a new snap
+  // this will create a new snap, fork, or delete an existing snap with snapId
   app.post('/snaps', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
     const action = req.body.action;
     const snapId = req.body.snapId;
@@ -188,6 +188,33 @@ exports.createHandlers = (app) => {
   });
 }
 
+exports.createSnap = async (userId, definition, private = false) => {
+  try {
+    // get the account name associated with the user
+    const account = await getAccount(userId);
+    if (!account) {
+      console.error(`createSnap: cannot find account for userId ${userId}`);
+      return null;
+    }
+
+    // parse the snap definition
+    const snap = snapengine.parseDefinition(account, definition, private);
+    if (!snap) {
+      return null;
+    }
+
+    // store the snap's userId
+    snap.userId = userId;
+    
+    // store the snap object and return it
+    await database.storeDocument(account, dbconstants.snapsCollection, snap.name, snap);
+    return snap;
+  } catch (error) {
+    console.log(`createSnap: caught exception: ${error}`);
+    return null;
+  }
+}
+
 // get an active snap record from the user's environment
 exports.getActiveSnap = async (userId, activeSnapId) => {
   try {
@@ -200,18 +227,17 @@ exports.getActiveSnap = async (userId, activeSnapId) => {
 }
 
 // get a snap definition from the user's environment
-exports.getSnap = async (userId, snapId) => {
+exports.getSnap = async (snapId) => {
   try {
-    let user = userId, snapName = snapId;
-
-    // if snapId is given as "user/name", override the userId
-    const snapArray = snapId.split('/');
-    if (snapArray.length > 1) {
-      [user, snapName] = snapArray;
+    // snapId must be given as "user/name"
+    const [account, snapName] = snapId.split('/');
+    if (!account || !snapName) {
+      console.error(`getSnap: invalid snapId ${snapId}`)
+      return null;
     }
 
     // get the snap definition 
-    const snap = await database.getDocument(user, dbconstants.snapsCollection, snapName);
+    const snap = await database.getDocument(account, dbconstants.snapsCollection, snapName);
     return snap;
   } catch (error) {
     console.log(`getSnap: caught exception: ${error}`);
@@ -222,7 +248,7 @@ exports.getSnap = async (userId, snapId) => {
 /* 
  * A snap definition is specified as follows:
  * { 
- *   snapId: string,      // [userId/name]
+ *   snapId: string,      // [account/name]
  *   description: string, 
  *   private: boolean,
  *   trigger: string,     // tool name
@@ -232,29 +258,19 @@ exports.getSnap = async (userId, snapId) => {
  * }
  */
   
-// create a snap in the user's environment
-const createSnap = async (userId, definition, private = false) => {
-  try {
-    const snap = snapengine.parseDefinition(userId, definition, private);
-    if (!snap) {
-      return null;
-    }
-    
-    // store the snap object and return it
-    await database.storeDocument(userId, dbconstants.snapsCollection, snap.name, snap);
-    return snap;
-  } catch (error) {
-    console.log(`createSnap: caught exception: ${error}`);
-    return null;
-  }
-}
-
 // delete a snap in the user's environment
 const deleteSnap = async (userId, snapId) => {
   try {
+    // get the account name associated with the user
+    const account = await getAccount(userId);
+    if (!account) {
+      console.error(`deleteSnap: cannot find account for userId ${userId}`);
+      return null;
+    }
+
     const nameArray = snapId.split('/');
     const snapName = nameArray.length > 1 ? nameArray[1] : snapId;
-    await database.removeDocument(userId, dbconstants.snapsCollection, snapName);
+    await database.removeDocument(account, dbconstants.snapsCollection, snapName);
   } catch (error) {
     console.log(`deleteSnap: caught exception: ${error}`);
     return null;
@@ -264,24 +280,41 @@ const deleteSnap = async (userId, snapId) => {
 // fork a snap into the user's environment
 const forkSnap = async (userId, snapId) => {
   try {
+    // get the account name associated with the user
+    const account = await getAccount(userId);
+    if (!account) {
+      console.error(`forkSnap: cannot find account for userId ${userId}`);
+      return null;
+    }
+
     // get the snap definition 
-    const snap = await exports.getSnap(userId, snapId);
+    const snap = await exports.getSnap(snapId);
     if (!snap) {
       console.error(`forkSnap: cannot find snap ${snapId}`);
       return null;
     }
 
     // construct new name
-    const forkedSnapId = `${userId}/${snap.name}`;
+    const forkedSnapId = `${account}/${snap.name}`;
     snap.snapId = forkedSnapId;
     snap.private = true;
+    snap.account = account;
+    snap.userId = userId;
 
     // store the new snap
-    await database.storeDocument(userId, dbconstants.snapsCollection, snap.name, snap);
+    await database.storeDocument(account, dbconstants.snapsCollection, snap.name, snap);
   } catch (error) {
     console.log(`forkSnap: caught exception: ${error}`);
     return null;
   }
+}
+
+// get account for a userId
+const getAccount = async (userId) => {
+  // retrieve the account associated with the user
+  const user = await database.getUserData(userId, dbconstants.profile);
+  const account = user.account;
+  return account;
 }
 
 // get active snaps in the user's environment
@@ -332,7 +365,15 @@ const getLogs = async (userId) => {
 // get all snaps in the user's environment
 const getSnaps = async (userId) => {
   try {
-    const snaps = await database.query(userId, dbconstants.snapsCollection);
+    // get the account name associated with the user
+    const account = await getAccount(userId);
+    if (!account) {
+      console.error(`getSnaps: cannot find account for userId ${userId}`);
+      return null;
+    }
+
+    // get all the snaps in the user's account
+    const snaps = await database.query(account, dbconstants.snapsCollection);
     return snaps;
   } catch (error) {
     console.log(`getSnaps: caught exception: ${error}`);

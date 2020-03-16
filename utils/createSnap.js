@@ -11,8 +11,8 @@ environment.setEnv(env);
 const database = require('../src/data/database');
 database.setEnv(env);
 
+const dbconstants = require('../src/data/database-constants');
 const snapdal = require('../src/snap/snap-dal');
-const engine = require('../src/snap/snap-engine');
 const fs = require('fs');
 
 const userId = 'snapmaster';
@@ -39,7 +39,7 @@ const createSnap = async (userId, definition) => {
   // create the user if it doesn't exist yet
   const user = await database.getUserData(userId);
   if (!user) {
-    await database.setUserData(userId, dbconstants.profile, { system: true } );
+    await database.setUserData(userId, dbconstants.profile, { account: userId } );
   }
 
   // create the snap in the user's context
