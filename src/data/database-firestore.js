@@ -202,6 +202,27 @@ exports.setUserData = async (
   }
 }
 
+// remove a subcollection from a document by removing all its documents
+exports.removeCollection = async (
+  userId,            // userid to store data for
+  collection) => {   // collection to remove
+  try {
+    // address the collection
+    const col = users.doc(userId).collection(collection);
+    const snapshot = await col.get();
+
+    // get list of documents in snapshot
+    const docArray = snapshot.docs;
+    for (const document of docArray) {
+      const doc = document.ref;
+      await doc.delete();
+    }
+  } catch (error) {
+    console.log(`removeCollection: caught exception: ${error}`);
+    return null;
+  }
+}
+
 // remove a connection from a userid
 exports.removeConnection = async (
   userId,            // userid to store data for

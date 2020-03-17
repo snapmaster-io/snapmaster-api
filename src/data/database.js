@@ -107,6 +107,13 @@ exports.setUserData = async (
   return await provider.setUserData(userId, connection, data)
 }
 
+// remove a subcollection of a document
+exports.removeCollection = async (
+  userId,            // userid to store data for (which addresses a document)
+  collection) => {   // collection to remove
+  return await provider.removeCollection(userId, collection)
+}
+
 // remove a section for a particular connection
 exports.removeConnection = async (
   userId,                // userid to store data for
