@@ -73,7 +73,7 @@ exports.createHandlers = (app) => {
     
     const create = async () => {
       const definition = req.body.definition;
-      const snap = await createSnap(req.userId, definition);
+      const snap = await exports.createSnap(req.userId, definition);
       if (snap) {
         res.status(200).send({ message: 'success', snap: snap });
       } else {
