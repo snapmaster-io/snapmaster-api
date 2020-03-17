@@ -73,8 +73,12 @@ exports.createHandlers = (app) => {
     
     const create = async () => {
       const definition = req.body.definition;
-      await createSnap(req.userId, definition);
-      res.status(200).send({ message: 'success' });
+      const snap = await createSnap(req.userId, definition);
+      if (snap) {
+        res.status(200).send({ message: 'success', snap: snap });
+      } else {
+        res.status(200).send({ message: 'error' });
+      }
     }
 
     const del = async () => {
@@ -93,6 +97,9 @@ exports.createHandlers = (app) => {
         return;
       case 'delete':
         del();
+        return;
+      case 'edit':
+        create();
         return;
       case 'fork':
         fork();
