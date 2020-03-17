@@ -54,7 +54,7 @@ exports.createHandlers = (app) => {
       }
     }
 
-    if (!accountName || accountName === "") {
+    if (!accountName || accountName === "" || !validateAccountName(accountName)) {
       res.status(200).send({ valid: false } );
       return;
     }
@@ -75,8 +75,8 @@ exports.createHandlers = (app) => {
       }
     }
 
-    if (!accountName) {
-      res.status(200).send({ valid: false } );
+    if (!accountName || !validateAccountName(account)) {
+      res.status(200).send({ message: 'error' } );
       return;
     }
 
@@ -102,4 +102,11 @@ const storeProfile = async (userId, profile) => {
   } catch (error) {
     console.log(`storeProfile: caught exception: ${error}`);
   }
+}
+
+// valid accounts are 1-20 characters, start with a-z, and are alphanumeric
+const validateAccountName = (value) => {
+  const re = /^[a-z]\w{0,19}$/;
+  const acct = String(value).toLowerCase();
+  return re.test(acct);
 }
