@@ -4,6 +4,8 @@ name: slack
 description: Slack Provider Definition
 connection: 
   type: simple
+  infoUrl: https://api.slack.com/legacy/custom-integrations/legacy-tokens
+  infoText: Click here to create a legacy access token
   connectionInfo:
   - name: token
     description: personal access token

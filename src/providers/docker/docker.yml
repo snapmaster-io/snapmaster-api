@@ -4,6 +4,8 @@ name: docker
 description: Docker Provider Definition
 connection: 
   type: simple
+  infoUrl: https://hub.docker.com/settings/security
+  infoText: Click here to create a personal access token
   connectionInfo:
   - name: token
     description: personal access token

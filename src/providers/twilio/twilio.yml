@@ -4,6 +4,8 @@ name: twilio
 description: Twilio Provider Definition
 connection: 
   type: simple
+  infoUrl: https://www.twilio.com/console
+  infoText: Click here to view Twilio Account SID and Auth Token
   connectionInfo:
   - name: account
     description: account SID
