@@ -1,0 +1,25 @@
+---
+version: snap-v1alpha1 
+name: github-issue-twilio
+description: GitHub new issue -> Twilio SMS notification
+trigger: github-issue
+actions:
+  - twilio-message
+parameters: 
+  - name: repo
+    description: name of git repository
+  - name: from
+    description: phone number to send SMS from
+  - name: to
+    description: phone number to send SMS to
+config:
+  - name: github-issue
+    provider: github
+    repo: $repo
+    event: issues
+  - name: twilio-message
+    provider: twilio
+    action: send
+    from: $from
+    to: $to
+    message: received event $.action on issue $.issue.title in repo $repo
