@@ -14,15 +14,15 @@ database.setEnv(env);
 const snapengine = require('../src/snap/snap-engine');
 
 // check command line
-if (process.argv.length < 4) {
-  console.error('Usage: executeSnap <userId> <activeSnapId>');
+if (process.argv.length < 6) {
+  console.error('Usage: executeSnap <userId> <activeSnapId> <action> <payload.json>');
   process.exit(1);
 }
 
 const userId = process.argv[2];
 const activeSnapId = process.argv[3];
-const params = null;
-const payload = null;
+const params = [process.argv[4]];
+const payload = require(process.argv[5]);
 
 // trigger the active snap
 snapengine.executeSnap(userId, activeSnapId, params, payload);

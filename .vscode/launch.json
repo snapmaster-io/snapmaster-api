@@ -34,7 +34,7 @@
       "request": "launch",
       "name": "Trigger active snap",
       "program": "${workspaceFolder}/utils/executeSnap.js",
-      "args": ["google-oauth2|112908869952290990195", "1583964008818"],
+      "args": ["google-oauth2|112908869952290990195", "1584662096837", "edited", "./githubPayload.json"],
       "env": {"ENV":"dev"}
     },
     {

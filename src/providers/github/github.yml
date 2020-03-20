@@ -22,7 +22,7 @@ triggers:
       required: true
     - name: action
       description: issue action (opened, closed, assigned, etc)
-      required: true
+      required: false
 actions:
   - name: issue
     description: open an issue 

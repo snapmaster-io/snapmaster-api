@@ -13,6 +13,7 @@ const dbconstants = require('../data/database-constants');
 const snapdal = require('./snap-dal');
 const providers = require('../providers/providers');
 const YAML = require('yaml');
+const {JSONPath} = require('jsonpath-plus');
 
 // provider definition keys
 const keys = {
@@ -144,22 +145,25 @@ exports.executeSnap = async (userId, activeSnapId, params, payload) => {
     if (!snap) {
       console.error(`executeSnap: cannot find snapId ${activeSnap.snapId}`);
       return null;
-    }
+    }    
 
     // execute actions
     for (const action of snap.actions) {
       // get the parameter object
-      const param = activeSnap.boundParams.find(c => c.name === action);
+      let param = activeSnap.boundParams.find(c => c.name === action);
       const provider = providers.getProvider(param.provider);
 
+      // bind the payload to the parameter
+      const newParam = bindPayloadToParameter(param, payload);
+
       // invoke the provider
-      const status = await provider.invokeAction(userId, activeSnapId, param);
+      const status = await provider.invokeAction(userId, activeSnapId, newParam);
 
       // log the action execution
       const actionLog = {
         provider: param.provider,
         state: dbconstants.executionStateExecuted,
-        param,
+        param: newParam,
       }
 
       await updateLog(logObject, actionLog);
@@ -302,6 +306,33 @@ const bindParameters = (config, params) => {
 
   // return the bound config
   return boundConfig;
+}
+
+// bind payload by finding all JSONPath expressions and evaluating against the payload value
+const bindPayloadToParameter = (param, payload) => {
+  const regex = /\$\.[a-zA-Z][a-zA-Z0-9.]*/g;
+
+  // construct a new config entry
+  const newParam = { ...param };
+  for (const key of Object.keys(param)) {
+    // match the parameter value against the jsonpath regex
+    const matches = param[key].match(regex);
+    if (matches) {
+      let value = param[key];
+      // evaluate jsonpath expressions and replace them in value string
+      for (const jsonPath of matches) {
+        const result = JSONPath(jsonPath, payload);
+        if (result && result.length > 0) {
+          value = value.replace(jsonPath, result[0]);
+        }
+      }
+
+      // replace the value with the new string
+      newParam[key] = value;
+    }
+  }
+
+  return newParam;
 }
 
 // log the invocation in the logs collection
