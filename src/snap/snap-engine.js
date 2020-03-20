@@ -181,7 +181,7 @@ exports.executeSnap = async (userId, activeSnapId, params, payload) => {
     await updateLog(logObject);
 
     // increment and store execution counter in activeSnap document
-    activeSnap.errorCounter = activeSnap.errorCounter ? activeSnap.ErrorCounter + 1 : 1;
+    activeSnap.errorCounter = activeSnap.errorCounter ? activeSnap.errorCounter + 1 : 1;
     await database.storeDocument(userId, dbconstants.activeSnapsCollection, activeSnapId, activeSnap);
 
     return null;
