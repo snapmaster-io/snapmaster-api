@@ -1,0 +1,22 @@
+---
+version: snap-v1alpha1 
+name: docker-slack
+description: Docker push -> Slack notification
+trigger: docker-push
+actions:
+  - slack-message
+parameters: 
+  - name: repo
+    description: name of docker repository
+  - name: channel
+    description: name of slack channel
+config:
+  - name: docker-push
+    provider: docker
+    event: push
+    repo: $repo
+  - name: slack-message
+    provider: slack
+    action: send
+    channel: $channel
+    message: received push on $repo

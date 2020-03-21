@@ -4,10 +4,16 @@ name: docker
 description: Docker Provider Definition
 connection: 
   type: simple
-  infoUrl: https://hub.docker.com/settings/security
-  infoText: Click here to create a personal access token
   connectionInfo:
-  - name: token
-    description: personal access token
+  - name: username
+    description: user name
+  - name: password
+    description: triggers require password (not a personal access token)
 triggers: 
+  - name: push
+    description: push event into a repository
+    parameters:
+    - name: repo
+      description: name of docker repository
+      required: true 
 actions:
