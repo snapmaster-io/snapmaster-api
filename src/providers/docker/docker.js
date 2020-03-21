@@ -62,7 +62,7 @@ exports.createTrigger = async (userId, activeSnapId, param) => {
       return null;
     }
 
-    const hook = encodeURI(`${environment.getUrl()}/github/webhooks/${userId}/${activeSnapId}`);
+    const hook = encodeURI(`${environment.getUrl()}/docker/webhooks/${userId}/${activeSnapId}`);
     const body = {
       name: `SnapMaster-${activeSnapId}`,
       expect_final_callback: false,
