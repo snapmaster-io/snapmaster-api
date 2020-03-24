@@ -157,13 +157,14 @@ exports.executeSnap = async (userId, activeSnapId, params, payload) => {
       const newParam = bindPayloadToParameter(param, payload);
 
       // invoke the provider
-      const status = await provider.invokeAction(userId, activeSnapId, newParam);
+      const output = await provider.invokeAction(userId, activeSnapId, newParam);
 
       // log the action execution
       const actionLog = {
         provider: param.provider,
         state: dbconstants.executionStateExecuted,
         param: newParam,
+        output: output
       }
 
       await updateLog(logObject, actionLog);
@@ -393,33 +394,37 @@ const updateLog = async (logObject, actionLog) => {
 //
 // returns true for a valid config section, false for failed validation
 const validateConfigSection = (definitions, key, config) => {
+  try {
+    // ensure config contains the key
+    const definitionKey = config[key];
+    if (!definitionKey) {
+      console.error(`validateConfigSection: ${key} not specified`);
+      return false;
+    }
 
-  // ensure config contains the key
-  const definitionKey = config[key];
-  if (!definitionKey) {
-    console.error(`validateConfigSection: ${key} not specified`);
-    return false;
-  }
+    // find the definition in the provider definitions based on the key
+    const definition = definitions.find(t => t.name === definitionKey);
+    if (!definition) {
+      console.error(`validateConfigSection: key ${key} not found in provider definition`);
+      return false;
+    }
 
-  // find the definition in the provider definitions based on the key
-  const definition = definitions.find(t => t.name === definitionKey);
-  if (!definition) {
-    console.error(`validateConfigSection: key ${key} not found in provider definition`);
-    return false;
-  }
-
-  // validate that we have each of the required parameters
-  for (const param of definition.parameters) {
-    if (param.required) {
-      if (!config[param.name]) {
-        console.error(`validateTriggerConfig: required parameter ${param.name} not found in snap config`);
-        return false;
+    // validate that we have each of the required parameters
+    for (const param of definition.parameters) {
+      if (param.required) {
+        if (!config[param.name]) {
+          console.error(`validateTriggerConfig: required parameter ${param.name} not found in snap config`);
+          return false;
+        }
       }
     }
-  }
 
-  // config is valid
-  return true;
+    // config is valid
+    return true;
+  } catch (error) {
+    console.error(`validateConfigSection: caught exception: ${error}`);
+    return false;
+  }
 }
 
 // validates snap against provider definition

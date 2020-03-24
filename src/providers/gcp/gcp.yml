@@ -3,9 +3,28 @@ version: provider-v1alpha1
 name: gcp
 description: GCP Provider Definition
 connection: 
-  type: oauth
+  type: simple
+  infoText: create a service account and download the key file
+  infoUrl: https://console.cloud.google.com/apis/credentials
+  connectionInfo:    
+  - name: project
+    description: project ID 
+  - name: key
+    description: paste the JSON from the service account key file
 parameters: 
   - name: region
     description: region to operate in
 triggers: 
 actions:
+  - name: deploy
+    description: deploy a container image 
+    parameters:
+    - name: project
+      description: project ID
+      required: true
+    - name: image
+      description: image to deploy
+      required: true
+    - name: service
+      description: service name
+      required: true

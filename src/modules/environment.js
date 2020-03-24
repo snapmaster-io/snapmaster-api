@@ -37,6 +37,10 @@ const configs = {
     dev: require(`../../config/facebook_auth_config_dev.json`),
     prod: require(`../../config/facebook_auth_config_prod.json`)
   },
+  gcp: {
+    dev: require(`../../config/google_auth_config_dev.json`),
+    prod: require(`../../config/google_auth_config_prod.json`)
+  },
   github: {
     dev: require(`../../config/github_auth_config_dev.json`),
     prod: require(`../../config/github_auth_config_prod.json`)
