@@ -176,7 +176,12 @@ const getCommand = (action, param) => {
           console.error(`getCommand: action ${action} requires service name`);
           return null;
         }
-        return `gcloud run deploy ${service} --image gcr.io/${project}/${image} --platform managed`;
+        const region = param.region;
+        if (!region) {
+          console.error(`getCommand: action ${action} requires region name`);
+          return null;
+        }
+        return `gcloud run deploy ${service} --image gcr.io/${project}/${image} --platform managed --allow-unauthenticated --region ${region} --account snapmaster@${project}.iam.gserviceaccount.com`;
       default:
         console.error(`getCommand: unknown command ${action}`);
         return null;
@@ -215,9 +220,10 @@ const setupEnvironment = async (serviceCredentials, activeSnapId, param) => {
   const tmp = tempdir();
   const dirName = `${tmp}/${activeSnapId}`;
   mkdir(dirName);
-  cd(dirName)
+  cd(dirName);
 
   // create creds.json file
+  // BUGBUG: make sure this doesn't log to the console
   echo(serviceCredentials).to('creds.json');
 
   // execute the gcloud auth call
@@ -230,4 +236,8 @@ const teardownEnvironment = async (activeSnapId) => {
   const tmp = tempdir();
   const dirName = `${tmp}/${activeSnapId}`;
   rm('-rf', dirName);
+
+  // remove the cached gcloud credential
+  const output = exec(`gcloud auth revoke snapmaster@${project}.iam.gserviceaccount.com`);  
+  return output;
 }

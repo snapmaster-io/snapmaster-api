@@ -28,3 +28,6 @@ actions:
     - name: service
       description: service name
       required: true
+    - name: region
+      description: region to deploy into
+      required: true

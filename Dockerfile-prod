@@ -1,13 +1,7 @@
-# Use the official google sdk image
-FROM google/cloud-sdk
-
-# install the nodejs runtime
-RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - && \
-    apt-get install -y nodejs build-essential
-    
 # Use the official lightweight Node.js 12 image.
 # https://hub.docker.com/_/node
 #FROM node:12-slim
+FROM ogazitt/gcloud-node-image
 
 # Create and change to the app directory.
 WORKDIR /usr/src/app
