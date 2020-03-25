@@ -146,7 +146,7 @@ const executeCommand = async (command) => {
   try {
     console.log(`executing command: ${command}`);
     const returnVal = exec(command, { silent: true });
-    return returnVal;  
+    return { code: returnVal.code, stdout: returnVal.stdout, stderr: returnVal.stderr };  
   } catch (error) {
     console.error(`executeCommand: caught exception: ${error}`);
     return null;

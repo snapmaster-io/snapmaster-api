@@ -1,0 +1,6 @@
+{
+  "action": "deploy",
+  "project": "saasmaster",
+  "image": "saasmaster-api",
+  "service": "saasmaster-api"
+}

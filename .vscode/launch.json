@@ -32,6 +32,14 @@
     {
       "type": "node",
       "request": "launch",
+      "name": "GCP deploy",
+      "program": "${workspaceFolder}/utils/invokeAction.js",
+      "args": ["gcp", "google-oauth2|112908869952290990195", "./gcpParams.json"],
+      "env": {"ENV":"dev"}
+    },
+    {
+      "type": "node",
+      "request": "launch",
       "name": "Trigger active snap",
       "program": "${workspaceFolder}/utils/executeSnap.js",
       "args": ["google-oauth2|112908869952290990195", "1584662096837", "edited", "./githubPayload.json"],
