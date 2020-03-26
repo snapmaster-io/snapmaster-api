@@ -83,17 +83,18 @@ exports.invokeAction = async (connectionInfo, activeSnapId, param) => {
 
     // construct script name, environment, and full command
     const script = `./src/providers/${providerName}/${action}.sh`;
-    const env = getEnvironment(param);
+    //const env = getEnvironment(param);
+    const env = { ...process.env, ...getEnvironment(param), ACTIVESNAPID: activeSnapId, SERVICECREDS: serviceCredentials };
     const command = `ACTIVESNAPID=${activeSnapId} SERVICECREDS='${serviceCredentials}' ${env} ${script}`;
 
     // log a message before executing command
     console.log(`executing command: ${script}`);
 
     // execute the action and obtain the output
-    const output = await executeCommand(command);
+    const output = await executeCommand(script, env);
 
     // log a message after executing command
-    console.log(`finished executing command: ${script}: return value ${output && output.code}`);
+    console.log(`finished executing command: ${script}`);
         
     return output;
   } catch (error) {
@@ -134,10 +135,10 @@ exports.apis.getProjects.func = async ([userId]) => {
   }
 }
 
-const executeCommand = async (command) => {
+const executeCommand = async (command, env) => {
   try {
     // execute asynchronously so as to not block the web thread
-    const returnVal = await execAsync(command);
+    const returnVal = await execAsync(command, [], { env: env });
     return returnVal;
   } catch (error) {
     console.error(`executeCommand: caught exception: ${error}`);
@@ -146,9 +147,12 @@ const executeCommand = async (command) => {
 }
 
 const getEnvironment = (param) => {
-  let env = '';
+  //let env = '';
+  const env = {};
   for (const key in param) {
-    env += `${key.toUpperCase()}=${param[key]} `;
+    //env += `${key.toUpperCase()}=${param[key]} `;
+    const upperKey = key.toUpperCase();
+    env[upperKey] = param[key];
   }
   return env;
 }
