@@ -2,5 +2,6 @@
   "action": "deploy",
   "project": "saasmaster",
   "image": "saasmaster-api",
-  "service": "saasmaster-api"
+  "service": "saasmaster-api",
+  "region": "us-central1"
 }
