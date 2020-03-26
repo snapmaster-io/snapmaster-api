@@ -13,8 +13,6 @@
 
 const Twilio = require('twilio'); 
 const provider = require('../provider');
-const requesthandler = require('../../modules/requesthandler');
-const connections = require('../../modules/connections');
 
 const providerName = 'twilio';
 
@@ -30,14 +28,13 @@ exports.apis = {
 exports.createHandlers = (app) => {
 }
 
-exports.invokeAction = async (userId, activeSnapId, param) => {
+exports.invokeAction = async (connectionInfo, activeSnapId, param) => {
   try {
     const action = param.action;
     const to = param.to;
     const message = param.message;
     const from = param.from;
-    const mediaUrl = param.mediaUrl || 'https://github.com/snapmaster-io/snapmaster/raw/master/public/SnapMaster-logo-220.png'
-    ;
+    const mediaUrl = param.mediaUrl || 'https://github.com/snapmaster-io/snapmaster/raw/master/public/SnapMaster-logo-220.png';
 
     console.log(`twilio: action ${action}, to ${to}, message ${message}`);
 
@@ -47,7 +44,7 @@ exports.invokeAction = async (userId, activeSnapId, param) => {
     }
 
     // get token for calling API
-    const client = await getClient(userId);
+    const client = await getClient(connectionInfo);
     const msg = {
       body: message, 
       from,
@@ -64,13 +61,8 @@ exports.invokeAction = async (userId, activeSnapId, param) => {
   }  
 }
 
-const getClient = async (userId) => {
+const getClient = async (connectionInfo) => {
   try {
-    const connectionInfo = await connections.getConnectionInfo(userId, providerName);
-    if (!connectionInfo) {
-      return null;
-    }
-
     const account = connectionInfo.find(p => p.name === 'account');
     const token = connectionInfo.find(p => p.name === 'token');
 

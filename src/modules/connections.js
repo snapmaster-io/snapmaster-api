@@ -2,7 +2,6 @@
 
 // exports:
 //   createHandlers(app): create handlers for GET and POST endpoints
-//   getConnectionInfo(userId, provider): return connection information for the userId and provider
 
 const database = require('../data/database');
 const providers = require('../providers/providers');
@@ -91,12 +90,6 @@ exports.createHandlers = (app) => {
 
     res.status(200).send({ message: 'Unknown action'});
   });
-}
-
-exports.getConnectionInfo = async (userId, provider) => {
-  const connection = await database.getUserData(userId, provider);
-  const connectionInfo = connection && connection.connectionInfo;
-  return connectionInfo;
 }
 
 const addConnection = async (userId, connection, connectionInfo) => {

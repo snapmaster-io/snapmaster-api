@@ -13,8 +13,6 @@
 
 const axios = require('axios');
 const provider = require('../provider');
-const requesthandler = require('../../modules/requesthandler');
-const connections = require('../../modules/connections');
 
 const providerName = 'slack';
 
@@ -30,7 +28,7 @@ exports.apis = {
 exports.createHandlers = (app) => {
 }
 
-exports.invokeAction = async (userId, activeSnapId, param) => {
+exports.invokeAction = async (connectionInfo, activeSnapId, param) => {
   try {
     const action = param.action;
     const channel = param.channel;
@@ -44,7 +42,7 @@ exports.invokeAction = async (userId, activeSnapId, param) => {
     }
 
     // get token for calling API
-    const token = await getToken(userId);
+    const token = await getToken(connectionInfo);
 
     const url = 'https://slack.com/api/chat.postMessage';
     const headers = { 
@@ -71,17 +69,8 @@ exports.invokeAction = async (userId, activeSnapId, param) => {
   }
 }
 
-const callApi = async () => {
-
-}
-
-const getToken = async (userId) => {
+const getToken = async (connectionInfo) => {
   try {
-    const connectionInfo = await connections.getConnectionInfo(userId, providerName);
-    if (!connectionInfo) {
-      return null;
-    }
-
     const token = connectionInfo.find(p => p.name === 'token');
     return token && token.value;
   } catch (error) {

@@ -37,6 +37,7 @@ exports.provider = providerName;
 exports.image = `/${providerName}-logo.png`;
 exports.type = provider.linkProvider;
 exports.definition = provider.getDefinition(providerName);
+exports.getAccessInfo = githubConfig.getGithubAccessInfo;
 
 // api's defined by this provider
 exports.apis = {

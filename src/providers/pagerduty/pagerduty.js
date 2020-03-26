@@ -30,7 +30,7 @@ exports.apis = {
 exports.createHandlers = (app) => {
 }
 
-exports.invokeAction = async (userId, activeSnapId, param) => {
+exports.invokeAction = async (connectionInfo, activeSnapId, param) => {
   const action = param.action;
   const channel = param.channel;
   const message = param.message;
@@ -43,7 +43,7 @@ exports.invokeAction = async (userId, activeSnapId, param) => {
   }
 
   // get token for calling API
-  const token = await getToken(userId);
+  const token = await getToken(connectionInfo);
 
   const url = 'https://slack.com/api/chat.postMessage';
   const headers = { 
@@ -66,13 +66,8 @@ exports.invokeAction = async (userId, activeSnapId, param) => {
   return response.data;  
 }
 
-const getToken = async (userId) => {
+const getToken = async (connectionInfo) => {
   try {
-    const connectionInfo = await connections.getConnectionInfo(userId, providerName);
-    if (!connectionInfo) {
-      return null;
-    }
-
     const token = connectionInfo.find(p => p.name === 'token');
     return token && token.value;
   } catch (error) {

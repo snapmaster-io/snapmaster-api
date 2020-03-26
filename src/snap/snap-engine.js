@@ -11,6 +11,7 @@
 const database = require('../data/database');
 const dbconstants = require('../data/database-constants');
 const snapdal = require('./snap-dal');
+const { simpleProvider, linkProvider } = require('../providers/provider');
 const providers = require('../providers/providers');
 const YAML = require('yaml');
 const {JSONPath} = require('jsonpath-plus');
@@ -156,8 +157,11 @@ exports.executeSnap = async (userId, activeSnapId, params, payload) => {
       // bind the payload to the parameter
       const newParam = bindPayloadToParameter(param, payload);
 
+      // get the provider's connection information
+      const connInfo = await getConnectionInfo(userId);
+
       // invoke the provider
-      const output = await provider.invokeAction(userId, activeSnapId, newParam);
+      const output = await provider.invokeAction(connInfo, activeSnapId, newParam);
 
       // log the action execution
       const actionLog = {
@@ -334,6 +338,22 @@ const bindPayloadToParameter = (param, payload) => {
   }
 
   return newParam;
+}
+
+const getConnectionInfo = async (userId, providerName) => {
+  // retrieve the provider
+  const provider = providers.getProvider(providerName);
+
+  // if this is an OAuth link provider, call the provider's getAccessInfo method to retrieve token info
+  if (provider.type === linkProvider) {
+    const info = provider.getAccessInfo(userId);
+    return info;
+  }
+
+  // retrieve connection info from the user's connection info in the profile
+  const connection = await database.getUserData(userId, providerName);
+  const connectionInfo = connection && connection.connectionInfo;
+  return connectionInfo;
 }
 
 // log the invocation in the logs collection

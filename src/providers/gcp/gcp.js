@@ -11,20 +11,13 @@
 //   definition: provider definition
 
 const axios = require('axios');
-const { mkdir, cd, rm, echo, exec, tempdir } = require('shelljs');
 const { execAsync } = require('../../modules/execasync');
 const googleauth = require('../../services/googleauth');
 const provider = require('../provider');
-const database = require('../../data/database');
 const requesthandler = require('../../modules/requesthandler');
 const environment = require('../../modules/environment');
 
 const providerName = 'gcp';
-
-const actions = {
-  build: 'build',
-  deploy: 'deploy'
-}
 
 // get GCP configuration
 const gcpConfig = environment.getConfig(providerName);
@@ -33,6 +26,7 @@ exports.provider = providerName;
 exports.image = `/${providerName}-logo.png`;
 exports.type = provider.simpleProvider;
 exports.definition = provider.getDefinition(providerName);
+exports.getAccessInfo = googleauth.getGoogleAccessToken;
 
 // api's defined by this provider
 exports.apis = {
@@ -60,7 +54,7 @@ exports.createHandlers = (app) => {
   });    
 }
 
-exports.invokeAction = async (userId, activeSnapId, param) => {
+exports.invokeAction = async (connectionInfo, activeSnapId, param) => {
   try {
     // get required parameters
     const action = param.action;
@@ -81,7 +75,7 @@ exports.invokeAction = async (userId, activeSnapId, param) => {
     //   are either difficult to use or nonexistent.
 
     // set up the environment
-    const serviceCredentials = await getServiceCredentials(userId);
+    const serviceCredentials = await getServiceCredentials(connectionInfo);
     if (!serviceCredentials) {
       console.error(`invokeAction: service credentials not found`);
       return null;
@@ -90,7 +84,7 @@ exports.invokeAction = async (userId, activeSnapId, param) => {
     // construct script name, environment, and full command
     const script = `./src/providers/${providerName}/${action}.sh`;
     const env = getEnvironment(param);
-    const command = `ACTIVESNAPID=${activeSnapId||'foo'} SERVICECREDS='${serviceCredentials}' ${env} ${script}`;
+    const command = `ACTIVESNAPID=${activeSnapId} SERVICECREDS='${serviceCredentials}' ${env} ${script}`;
 
     // log a message before executing command
     console.log(`executing command: ${script}`);
@@ -159,15 +153,9 @@ const getEnvironment = (param) => {
   return env;
 }
 
-const getServiceCredentials = async (userId) => {
+const getServiceCredentials = async (connectionInfo) => {
   try {
-    const user = await database.getUserData(userId, providerName);
-    if (!user) {
-      console.error('getServiceCredentials: could not find provider section');
-      return null;
-    }
-
-    const key = user.connectionInfo && user.connectionInfo.find(c => c.name === 'key');
+    const key = connectionInfo && connectionInfo.find(c => c.name === 'key');
     if (!key) {
       console.error('getServiceCredentials: could not find key in connection info');
       return null;
