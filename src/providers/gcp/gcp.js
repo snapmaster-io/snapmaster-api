@@ -75,8 +75,6 @@ exports.invokeAction = async (userId, activeSnapId, param) => {
       return null;
     }
 
-    console.log(`gcp: action ${action} project ${project}`);
-
     // IMPLEMENTATION NOTE:
     //   current implementation shell-execs gcloud SDK commands, because the REST API for 
     //   google cloud build and google cloud run is pretty gnarly, and the node.js packages 
@@ -89,21 +87,20 @@ exports.invokeAction = async (userId, activeSnapId, param) => {
       return null;
     }
 
-    // set up the environment
-    await setupEnvironment(serviceCredentials, activeSnapId, project);
+    // construct script name, environment, and full command
+    const script = `./src/providers/${providerName}/${action}.sh`;
+    const env = getEnvironment(param);
+    const command = `ACTIVESNAPID=${activeSnapId||'foo'} SERVICECREDS='${serviceCredentials}' ${env} ${script}`;
 
-    // get the command to execute
-    const command = getCommand(action, project, param);
-    if (!command) {
-      return null;
-    }
+    // log a message before executing command
+    console.log(`executing command: ${script}`);
 
     // execute the action and obtain the output
     const output = await executeCommand(command);
 
-    // tear down the environment
-    await teardownEnvironment(activeSnapId, project);
-
+    // log a message after executing command
+    console.log(`finished executing command: ${script}: return value ${output && output.code}`);
+        
     return output;
   } catch (error) {
     console.log(`invokeAction: caught exception: ${error}`);
@@ -145,15 +142,8 @@ exports.apis.getProjects.func = async ([userId]) => {
 
 const executeCommand = async (command) => {
   try {
-    // log a message before executing command
-    console.log(`executing command: ${command}`);
-
     // execute asynchronously so as to not block the web thread
     const returnVal = await execAsync(command);
-
-    // log a message after executing command
-    console.log(`finished executing command: ${command}: return value ${returnVal}`);
-
     return returnVal;
   } catch (error) {
     console.error(`executeCommand: caught exception: ${error}`);
@@ -161,41 +151,12 @@ const executeCommand = async (command) => {
   }
 }
 
-const getCommand = (action, project, param) => {
-  try {
-    const image = param.image;
-    if (!image) {
-      console.error(`getCommand: action ${action} requires image name`);
-      return null;
-    }
-
-    // set up the base command with the account and project information
-    const baseCommand = `gcloud --account snapmaster@${project}.iam.gserviceaccount.com --project ${project} `;
-
-    // return the right shell command to exec for the appropriate action
-    switch (action) {
-      case actions.build:
-        return `${baseCommand} builds submit --tag gcr.io/${project}/${image}`;
-      case actions.deploy: 
-        const service = param.service;
-        if (!service) {
-          console.error(`getCommand: action ${action} requires service name`);
-          return null;
-        }
-        const region = param.region;
-        if (!region) {
-          console.error(`getCommand: action ${action} requires region name`);
-          return null;
-        }
-        return `${baseCommand} run deploy ${service} --image gcr.io/${project}/${image} --platform managed --allow-unauthenticated --region ${region}`;
-      default:
-        console.error(`getCommand: unknown command ${action}`);
-        return null;
-    }
-  } catch (error) {
-    console.error(`getCommand: caught exception: ${error}`);
-    return null;
+const getEnvironment = (param) => {
+  let env = '';
+  for (const key in param) {
+    env += `${key.toUpperCase()}=${param[key]} `;
   }
+  return env;
 }
 
 const getServiceCredentials = async (userId) => {
@@ -215,44 +176,6 @@ const getServiceCredentials = async (userId) => {
     return key.value;
   } catch (error) {
     console.error(`getServiceCredentials: caught exception: ${error}`);
-    return null;
-  }
-}
-
-const setupEnvironment = async (serviceCredentials, activeSnapId, project) => {
-  try {
-    // create temporary directory
-    const tmp = tempdir();
-    const dirName = `${tmp}/${activeSnapId}`;
-    mkdir(dirName);
-    cd(dirName);
-
-    // create creds.json file
-    // BUGBUG: make sure this doesn't log to the console
-    echo(serviceCredentials).to('creds.json');
-
-    // execute the gcloud auth call
-    const output = exec(`gcloud auth activate-service-account snapmaster@${project}.iam.gserviceaccount.com --key-file=creds.json --project=${project}`);  
-    return output;
-  } catch (error) {
-    console.error(`setupEnvironment: caught exception: ${error}`);
-    return null;
-  }
-}
-
-const teardownEnvironment = async (activeSnapId, project) => {
-  try {
-    // remove the cached gcloud credential
-    const output = exec(`gcloud auth revoke snapmaster@${project}.iam.gserviceaccount.com`);  
-
-    // remove temporary directory and everything in it
-    const tmp = tempdir();
-    const dirName = `${tmp}/${activeSnapId}`;
-    rm('-rf', dirName);
-
-    return output;
-  } catch (error) {
-    console.error(`teardownEnvironment: caught exception: ${error}`);
     return null;
   }
 }
