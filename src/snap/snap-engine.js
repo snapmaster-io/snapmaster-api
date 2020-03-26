@@ -158,7 +158,7 @@ exports.executeSnap = async (userId, activeSnapId, params, payload) => {
       const newParam = bindPayloadToParameter(param, payload);
 
       // get the provider's connection information
-      const connInfo = await getConnectionInfo(userId);
+      const connInfo = await getConnectionInfo(userId, param.provider);
 
       // invoke the provider
       const output = await provider.invokeAction(connInfo, activeSnapId, newParam);
@@ -341,19 +341,24 @@ const bindPayloadToParameter = (param, payload) => {
 }
 
 const getConnectionInfo = async (userId, providerName) => {
-  // retrieve the provider
-  const provider = providers.getProvider(providerName);
+  try {
+    // retrieve the provider
+    const provider = providers.getProvider(providerName);
 
-  // if this is an OAuth link provider, call the provider's getAccessInfo method to retrieve token info
-  if (provider.type === linkProvider) {
-    const info = provider.getAccessInfo(userId);
-    return info;
+    // if this is an OAuth link provider, call the provider's getAccessInfo method to retrieve token info
+    if (provider.type === linkProvider) {
+      const info = provider.getAccessInfo(userId);
+      return info;
+    }
+
+    // retrieve connection info from the user's connection info in the profile
+    const connection = await database.getUserData(userId, providerName);
+    const connectionInfo = connection && connection.connectionInfo;
+    return connectionInfo;
+  } catch (error) {
+    console.error(`getConnectionInfo: caught exception: ${error}`);
+    return null;
   }
-
-  // retrieve connection info from the user's connection info in the profile
-  const connection = await database.getUserData(userId, providerName);
-  const connectionInfo = connection && connection.connectionInfo;
-  return connectionInfo;
 }
 
 // log the invocation in the logs collection
