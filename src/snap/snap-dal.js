@@ -129,6 +129,16 @@ exports.createHandlers = (app) => {
     returnActiveSnap();
   });  
       
+  // Execute active snap API endpoint
+  app.post('/activesnaps/:activeSnapId', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
+    const activeSnapId = req.params.activeSnapId;
+    const executeSnap = async () => {
+      snapengine.executeSnap(req.userId, activeSnapId, null, null);
+      res.status(200).send();
+    }
+    executeSnap();
+  });  
+      
   // Post active snaps API endpoint
   app.post('/activesnaps', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
     const action = req.body.action;
