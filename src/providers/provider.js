@@ -29,7 +29,7 @@ exports.getDefinition = (providerName) => {
 }
 
 // invoke a provider action across service boundaries
-exports.invokeAction = (providerName, connectionInfo, activeSnapId, params) => {
+exports.invokeAction = async (providerName, connectionInfo, activeSnapId, params) => {
   try {
     // get an access token for the provider service
     const token = auth0.getAPIAccessToken();
