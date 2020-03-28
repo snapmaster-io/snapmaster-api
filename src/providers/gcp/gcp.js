@@ -11,22 +11,31 @@
 //   definition: provider definition
 
 const axios = require('axios');
-const { execAsync } = require('../../modules/execasync');
+// const { mkdir, cd, rm, exec, echo, tempdir } = require('shelljs');
+// const { execAsync } = require('../../modules/execasync');
 const googleauth = require('../../services/googleauth');
 const provider = require('../provider');
 const requesthandler = require('../../modules/requesthandler');
-const environment = require('../../modules/environment');
+//const environment = require('../../modules/environment');
 
 const providerName = 'gcp';
 
 // get GCP configuration
-const gcpConfig = environment.getConfig(providerName);
+//const gcpConfig = environment.getConfig(providerName);
 
 exports.provider = providerName;
 exports.image = `/${providerName}-logo.png`;
 exports.type = provider.simpleProvider;
 exports.definition = provider.getDefinition(providerName);
 exports.getAccessInfo = googleauth.getGoogleAccessToken;
+exports.invokeAction = provider.invokeAction;  // invokeAction is implemented by a separate service
+
+/*
+const actions = {
+  build: 'build',
+  deploy: 'deploy'
+}
+*/
 
 // api's defined by this provider
 exports.apis = {
@@ -54,7 +63,8 @@ exports.createHandlers = (app) => {
   });    
 }
 
-exports.invokeAction = async (connectionInfo, activeSnapId, param) => {
+/* 
+exports.OLDinvokeAction = async (connectionInfo, activeSnapId, param) => {
   try {
     // get required parameters
     const action = param.action;
@@ -81,27 +91,49 @@ exports.invokeAction = async (connectionInfo, activeSnapId, param) => {
       return null;
     }
 
+    // run registered functions on the worker via exec
+    console.log(`gcp: executing action ${action}`);
+
+    const output = await pool.exec('invokeAction', [action, serviceCredentials, activeSnapId, param]);
+
+    console.log(`gcp: finished executing action ${action} with output ${output}`);
+
+    *** /*
     // construct script name, environment, and full command
-    const script = `./src/providers/${providerName}/${action}.sh`;
+    //const script = `./src/providers/${providerName}/${action}.sh`;
     //const env = getEnvironment(param);
-    const env = { ...process.env, ...getEnvironment(param), ACTIVESNAPID: activeSnapId, SERVICECREDS: serviceCredentials };
-    const command = `ACTIVESNAPID=${activeSnapId} SERVICECREDS='${serviceCredentials}' ${env} ${script}`;
+    //const env = { ...process.env, ...getEnvironment(param), ACTIVESNAPID: activeSnapId, SERVICECREDS: serviceCredentials };
+    const command = getCommand(action, project, param);
+    //const command = `ACTIVESNAPID=${activeSnapId} SERVICECREDS='${serviceCredentials}' ${env} ${cmd}`;
 
     // log a message before executing command
-    console.log(`executing command: ${script}`);
+    console.log(`executing command: ${command}`);
+
+    // setup environment
+    setupEnvironment(serviceCredentials, activeSnapId, project);
 
     // execute the action and obtain the output
-    const output = await executeCommand(script, env);
+    //const output = await executeCommand(script, env);
+    exec(command, function(code, stdout, stderr) {
+      // setup environment
+      teardownEnvironment(activeSnapId, project);
 
-    // log a message after executing command
-    console.log(`finished executing command: ${script}`);
-        
+      // log a message after executing command
+      console.log(`finished executing command: ${command}, return code ${code}`);
+      
+      // return to caller
+      return { code, stdout, stderr };
+    });
+
+    return `gcp: executed ${command}`;
+    * /
     return output;
   } catch (error) {
     console.log(`invokeAction: caught exception: ${error}`);
     return null;
   }
 }
+*/
 
 exports.apis.getProjects.func = async ([userId]) => {
   try {
@@ -130,10 +162,11 @@ exports.apis.getProjects.func = async ([userId]) => {
     return response.data;
   } catch (error) {
     await error.response;
-    console.log(`getCalendarData: caught exception: ${error}`);
+    console.log(`getProjects: caught exception: ${error}`);
     return null;
   }
 }
+/*
 
 const executeCommand = async (command, env) => {
   try {
@@ -146,13 +179,50 @@ const executeCommand = async (command, env) => {
   }
 }
 
+const getCommand = (action, project, param) => {
+  try {
+    const image = param.image;
+    if (!image) {
+      console.error(`getCommand: action ${action} requires image name`);
+      return null;
+    }
+
+    // set up the base command with the account and project information
+    const baseCommand = `gcloud --account snapmaster@${project}.iam.gserviceaccount.com --project ${project} `;
+
+    // return the right shell command to exec for the appropriate action
+    switch (action) {
+      case actions.build:
+        return `${baseCommand} builds submit --tag gcr.io/${project}/${image}`;
+      case actions.deploy: 
+        const service = param.service;
+        if (!service) {
+          console.error(`getCommand: action ${action} requires service name`);
+          return null;
+        }
+        const region = param.region;
+        if (!region) {
+          console.error(`getCommand: action ${action} requires region name`);
+          return null;
+        }
+        return `${baseCommand} run deploy ${service} --image gcr.io/${project}/${image} --platform managed --allow-unauthenticated --region ${region}`;
+      default:
+        console.error(`getCommand: unknown command ${action}`);
+        return null;
+    }
+  } catch (error) {
+    console.error(`getCommand: caught exception: ${error}`);
+    return null;
+  }
+}
+
 const getEnvironment = (param) => {
-  //let env = '';
-  const env = {};
+  let env = '';
+  //const env = {};
   for (const key in param) {
-    //env += `${key.toUpperCase()}=${param[key]} `;
-    const upperKey = key.toUpperCase();
-    env[upperKey] = param[key];
+    env += `${key.toUpperCase()}=${param[key]} `;
+    //const upperKey = key.toUpperCase();
+    //env[upperKey] = param[key];
   }
   return env;
 }
@@ -171,3 +241,42 @@ const getServiceCredentials = async (connectionInfo) => {
     return null;
   }
 }
+
+const setupEnvironment = (serviceCredentials, activeSnapId, project) => {
+  try {
+    // create temporary directory
+    const tmp = tempdir();
+    const dirName = `${tmp}/${activeSnapId}`;
+    mkdir(dirName);
+    cd(dirName);
+
+    // create creds.json file
+    // BUGBUG: make sure this doesn't log to the console
+    echo(serviceCredentials).to('creds.json');
+
+    // execute the gcloud auth call
+    const output = exec(`gcloud auth activate-service-account snapmaster@${project}.iam.gserviceaccount.com --key-file=creds.json --project=${project}`);  
+    return output;
+  } catch (error) {
+    console.error(`setupEnvironment: caught exception: ${error}`);
+    return null;
+  }
+}
+
+const teardownEnvironment = (activeSnapId, project) => {
+  try {
+    // remove the cached gcloud credential
+    const output = exec(`gcloud auth revoke snapmaster@${project}.iam.gserviceaccount.com`);  
+
+    // remove temporary directory and everything in it
+    const tmp = tempdir();
+    const dirName = `${tmp}/${activeSnapId}`;
+    rm('-rf', dirName);
+
+    return output;
+  } catch (error) {
+    console.error(`teardownEnvironment: caught exception: ${error}`);
+    return null;
+  }
+} 
+*/

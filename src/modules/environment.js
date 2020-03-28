@@ -9,6 +9,7 @@
 //   geteEndpoint(): gets the Google Cloud Run endpoint for the current env (dev | prod)
 //   getServiceAccount(): gets the GCP pub-sub service account for the current env (dev | prod)
 //   getServiceAccount(): gets the GCP service location for the current env (dev | prod)
+//   getProviderUrl(): gets the URL for the provider running in the current env (dev | prod)
 //   getUrl(): gets the URL for the app running in the current env (dev | prod)
 
 var environment;
@@ -116,9 +117,13 @@ exports.getLocation = () => {
   return location;
 }
 
+exports.getProviderUrl = (providerName) => {
+  const endpoint = providerName + (environment === 'dev' && '-dev') + '.snapmaster.io';
+  return endpoint;
+}
+
 exports.getUrl = () => {
   const endpoint = environment === 'dev' ? 'https://dev.snapmaster.io' 
                                          : 'https://www.snapmaster.io';
   return endpoint;
 }
-

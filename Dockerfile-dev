@@ -1,7 +1,6 @@
 # Use the official lightweight Node.js 12 image.
 # https://hub.docker.com/_/node
-#FROM node:12-slim
-FROM ogazitt/gcloud-node-image
+FROM node:12-slim
 
 # Create and change to the app directory.
 WORKDIR /usr/src/app
@@ -17,5 +16,8 @@ RUN npm install --only=production
 # Copy local code to the container image.
 COPY . ./
 
+# set the environment variable ENV to devhosted
+ENV ENV=devhosted
+
 # Run the web service on container startup.
-CMD [ "npm", "run", "start:devhosted" ]
+CMD [ "node", "./server.js"]
