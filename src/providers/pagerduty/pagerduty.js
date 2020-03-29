@@ -4,7 +4,7 @@
 //   apis.
 //
 //   createHandlers(app): create all route handlers
-//   invokeAction(userId, activeSnapId, param): invoke an action
+//   invokeAction(providerName, connectionInfo, activeSnapId, param): invoke an action
 // 
 //   provider: provider name
 //   image: provider image url (local to SPA)
@@ -30,40 +30,45 @@ exports.apis = {
 exports.createHandlers = (app) => {
 }
 
-exports.invokeAction = async (connectionInfo, activeSnapId, param) => {
-  const action = param.action;
-  const channel = param.channel;
-  const message = param.message;
+exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param) => {
+  try {
+    const action = param.action;
+    const channel = param.channel;
+    const message = param.message;
 
-  console.log(`pagerduty: action ${action}, channel ${channel}, message ${message}`);
+    console.log(`${providerName}: action ${action}, channel ${channel}, message ${message}`);
 
-  if (!action || !channel || !message) {
-    console.error('invokeAction: missing required parameter');
-    return null;
-  }
+    if (!action || !channel || !message) {
+      console.error('invokeAction: missing required parameter');
+      return null;
+    }
 
-  // get token for calling API
-  const token = await getToken(connectionInfo);
+    // get token for calling API
+    const token = await getToken(connectionInfo);
 
-  const url = 'https://slack.com/api/chat.postMessage';
-  const headers = { 
-    'content-type': 'application/json',
-    'authorization': `Bearer ${token}`
-   };
+    const url = 'https://slack.com/api/chat.postMessage';
+    const headers = { 
+      'content-type': 'application/json',
+      'authorization': `Bearer ${token}`
+    };
 
-  const body = JSON.stringify({
-    channel,
-    text: message
-  });
-
-  const response = await axios.post(
-    url,
-    body,
-    {
-      headers: headers
+    const body = JSON.stringify({
+      channel,
+      text: message
     });
 
-  return response.data;  
+    const response = await axios.post(
+      url,
+      body,
+      {
+        headers: headers
+      });
+
+    return response.data;
+  } catch (error) {
+    console.log(`invokeAction: caught exception: ${error}`);
+    return null;
+  }
 }
 
 const getToken = async (connectionInfo) => {

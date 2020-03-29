@@ -28,7 +28,9 @@ exports.image = `/${providerName}-logo.png`;
 exports.type = provider.simpleProvider;
 exports.definition = provider.getDefinition(providerName);
 exports.getAccessInfo = googleauth.getGoogleAccessToken;
-exports.invokeAction = provider.invokeAction;  // invokeAction is implemented by a separate service
+
+// invokeAction is implemented by a separate service
+exports.invokeAction = provider.invokeAction;  
 
 /*
 const actions = {

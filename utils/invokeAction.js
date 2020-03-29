@@ -28,7 +28,7 @@ const invokeAction = async (userId, providerName, params) => {
   const provider = providers.getProvider(providerName);
   const connectionInfo = await getConnectionInfo(userId, providerName);
 
-  const status = await provider.invokeAction(connectionInfo, "123456", params);
+  const status = await provider.invokeAction(providerName, connectionInfo, "123456", params);
   if (!status) {
     console.error('could not invoke action');
   } else {

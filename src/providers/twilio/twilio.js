@@ -4,7 +4,7 @@
 //   apis.
 //
 //   createHandlers(app): create all route handlers
-//   invokeAction(userId, activeSnapId, param): invoke an action
+//   invokeAction(providerName, connectionInfo, activeSnapId, param): invoke an action
 // 
 //   provider: provider name
 //   image: provider image url (local to SPA)
@@ -28,7 +28,7 @@ exports.apis = {
 exports.createHandlers = (app) => {
 }
 
-exports.invokeAction = async (connectionInfo, activeSnapId, param) => {
+exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param) => {
   try {
     const action = param.action;
     const to = param.to;
@@ -36,7 +36,7 @@ exports.invokeAction = async (connectionInfo, activeSnapId, param) => {
     const from = param.from;
     const mediaUrl = param.mediaUrl || 'https://github.com/snapmaster-io/snapmaster/raw/master/public/SnapMaster-logo-220.png';
 
-    console.log(`twilio: action ${action}, to ${to}, message ${message}`);
+    console.log(`${providerName}: action ${action}, to ${to}, message ${message}`);
 
     if (!action || !to || !from || !message) {
       console.error('invokeAction: missing required parameter');

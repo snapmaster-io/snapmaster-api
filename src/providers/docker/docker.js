@@ -4,7 +4,7 @@
 //   apis.
 //
 //   createHandlers(app): create all route handlers
-//   invokeAction(userId, activeSnapId, param): invoke an action
+//   invokeAction(providerName, connectionInfo, activeSnapId, param): invoke an action
 // 
 //   provider: provider name
 //   image: provider image url (local to SPA)
@@ -134,12 +134,12 @@ exports.deleteTrigger = async (userId, triggerData) => {
   }
 }
 
-exports.invokeAction = async (connectionInfo, activeSnapId, param) => {
+exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param) => {
   const action = param.action;
   const channel = param.channel;
   const message = param.message;
 
-  console.log(`docker: action ${action}, channel ${channel}, message ${message}`);
+  console.log(`${providerName}: action ${action}, channel ${channel}, message ${message}`);
 
   if (!action || !channel || !message) {
     console.error('invokeAction: missing required parameter');

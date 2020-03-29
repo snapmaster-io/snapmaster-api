@@ -161,7 +161,7 @@ exports.executeSnap = async (userId, activeSnapId, params, payload) => {
       const connInfo = await getConnectionInfo(userId, param.provider);
 
       // invoke the provider
-      const output = await provider.invokeAction(connInfo, activeSnapId, newParam);
+      const output = await provider.invokeAction(param.provider, connInfo, activeSnapId, newParam);
 
       // log the action execution
       const actionLog = {

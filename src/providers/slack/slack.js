@@ -4,7 +4,7 @@
 //   apis.
 //
 //   createHandlers(app): create all route handlers
-//   invokeAction(userId, activeSnapId, param): invoke an action
+//   invokeAction(providerName, connectionInfo, activeSnapId, param): invoke an action
 // 
 //   provider: provider name
 //   image: provider image url (local to SPA)
@@ -28,13 +28,13 @@ exports.apis = {
 exports.createHandlers = (app) => {
 }
 
-exports.invokeAction = async (connectionInfo, activeSnapId, param) => {
+exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param) => {
   try {
     const action = param.action;
     const channel = param.channel;
     const message = param.message;
 
-    console.log(`slack: action ${action}, channel ${channel}, message ${message}`);
+    console.log(`${providerName}: action ${action}, channel ${channel}, message ${message}`);
 
     if (!action || !channel || !message) {
       console.error('invokeAction: missing required parameter');

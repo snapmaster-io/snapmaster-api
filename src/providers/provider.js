@@ -29,25 +29,27 @@ exports.getDefinition = (providerName) => {
 }
 
 // invoke a provider action across service boundaries
-exports.invokeAction = async (providerName, connectionInfo, activeSnapId, params) => {
+exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param) => {
   try {
     // get an access token for the provider service
-    const token = auth0.getAPIAccessToken();
+    const token = await auth0.getAPIAccessToken();
     if (!token) {
       console.error('invokeAction: could not retrieve API access token');
       return null;
     }
 
-    const url = environment.getProviderUrl(providerName);
+    const providerUrl = environment.getProviderUrl(providerName);
+    //const providerUrl = 'http://localhost:8081'
+    const url = `${providerUrl}/invokeAction`;
     const body = {
       connectionInfo,
       activeSnapId,
-      params
+      param
     };
 
     const headers = { 
       'content-type': 'application/json',
-      'authorization': `Bearker ${token}`
+      'authorization': `Bearer ${token}`
     };
 
     const response = await axios.post(

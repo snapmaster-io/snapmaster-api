@@ -118,7 +118,7 @@ exports.getLocation = () => {
 }
 
 exports.getProviderUrl = (providerName) => {
-  const endpoint = providerName + (environment === 'dev' && '-dev') + '.snapmaster.io';
+  const endpoint = `https://provider-${providerName}${environment === 'dev' && '-dev'}.snapmaster.io`;
   return endpoint;
 }
 
