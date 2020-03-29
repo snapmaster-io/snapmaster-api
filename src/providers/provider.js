@@ -60,6 +60,9 @@ exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param)
       });
 
     const data = response.data;
+
+    console.log(`invokeAction: ${providerName} executed and returned ${data}`);
+
     return data;
   } catch (error) {
     console.error(`invokeAction: caught exception: ${error}`);
