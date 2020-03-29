@@ -16,6 +16,18 @@ parameters:
     description: region to operate in
 triggers: 
 actions:
+  - name: build
+    description: clone a repo and build a container image 
+    parameters:
+    - name: project
+      description: project ID
+      required: true
+    - name: image
+      description: image name
+      required: true
+    - name: repo
+      description: repo to clone and build
+      required: true
   - name: deploy
     description: deploy a container image 
     parameters:
@@ -31,3 +43,4 @@ actions:
     - name: region
       description: region to deploy into
       required: true
+
