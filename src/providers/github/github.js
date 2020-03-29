@@ -8,7 +8,8 @@
 //        getAllRepos(userId): get all repos for this user
 //
 //   createHandlers(app, [middlewaree]): create all route handlers
-//   createTrigger(userId, activeSnapId, params): create a trigger (webhook)
+//   createTrigger(connectionInfo, userId, activeSnapId, params): create a trigger (webhook)
+//   deleteTrigger(connectionInfo, triggerData): delete a trigger (webhook)
 //
 //   provider: provider name
 //   image: provider image url (local to SPA)
@@ -37,7 +38,7 @@ exports.provider = providerName;
 exports.image = `/${providerName}-logo.png`;
 exports.type = provider.linkProvider;
 exports.definition = provider.getDefinition(providerName);
-exports.getAccessInfo = githubConfig.getGithubAccessInfo;
+exports.getAccessInfo = githubauth.getGithubAccessInfo;
 
 // api's defined by this provider
 exports.apis = {
@@ -115,8 +116,13 @@ exports.createHandlers = (app) => {
         return;
       }
 
-      // dispatch the webhook payload to the handler
-      handleWebhook(userId, activeSnapId, req.headers["x-github-event"], req.body);
+      // don't propagate a 'ping' event
+      if (req.headers["x-github-event"] !== 'ping') {
+        // dispatch the webhook payload to the handler
+        handleWebhook(userId, activeSnapId, req.headers["x-github-event"], req.body);
+      }
+
+      // return immediately to the caller
       res.status(200).send();
     } catch (error) {
       console.error(`githubWebhook caught exception: ${error}`);
@@ -125,7 +131,7 @@ exports.createHandlers = (app) => {
   });
 }
 
-exports.createTrigger = async (userId, activeSnapId, param) => {
+exports.createTrigger = async (connectionInfo, userId, activeSnapId, param) => {
   try {
     // validate params
     const repoName = param.repo;
@@ -140,7 +146,8 @@ exports.createTrigger = async (userId, activeSnapId, param) => {
       return null;
     }
 
-    const [client] = await getClient(userId);
+    const token = await getToken(connectionInfo);
+    // const [client] = await getClient(userId);
 
     const [owner, repo] = repoName.split('/');
     if (!owner || !repo) {
@@ -156,18 +163,35 @@ exports.createTrigger = async (userId, activeSnapId, param) => {
     }
 
     // create the hook, using the client ID as the secret
-    const config = {
-      url: url,
-      secret: githubConfig.github_client_id,
-      content_type: 'json',
+    const body = {
+      events: [event],
+      config: {
+        url: url,
+        secret: githubConfig.github_client_id,
+        content_type: 'json',
+      }
     };
 
+    const headers = { 
+      'content-type': 'application/json',
+      'authorization': `token ${token}`
+     };
+
+    const hook = await axios.post(
+      `https://api.github.com/repos/${repoName}/hooks`,
+      body,
+      {
+        headers: headers
+      });
+
+    /*
     const hook = await client.repos.createHook({
       owner,
       repo,
       config,
       events: [event]
     });
+    */
 
     // construct trigger data from returned hook info
     const triggerData = {
@@ -182,7 +206,7 @@ exports.createTrigger = async (userId, activeSnapId, param) => {
   }
 }
 
-exports.deleteTrigger = async (userId, triggerData) => {
+exports.deleteTrigger = async (connectionInfo, triggerData) => {
   try {
     // validate params
     if (!triggerData || !triggerData.url) {
@@ -190,7 +214,7 @@ exports.deleteTrigger = async (userId, triggerData) => {
       return null;
     }
 
-    const token = await getToken(userId);
+    const token = await getToken(connectionInfo);
     const headers = { 
       'content-type': 'application/json',
       'authorization': `token ${token}`
@@ -294,13 +318,12 @@ const getClient = async (userId) => {
   }
 }
 
-const getToken = async (userId) => {
+const getToken = async (connectionInfo) => {
   try {
-    const user = await githubauth.getGithubAccessInfo(userId);
-    const accessToken = user && user.accessToken;
+    const accessToken = connectionInfo && connectionInfo.accessToken;
 
     if (!accessToken) {
-      console.log('getToken: getGithubAccessToken failed');
+      console.log('getToken: could not find access token in connection info');
       return null;
     }
     return accessToken;

@@ -4,7 +4,8 @@
 //   apis.
 //
 //   createHandlers(app): create all route handlers
-//   invokeAction(providerName, connectionInfo, activeSnapId, param): invoke an action
+//   createTrigger(connectionInfo, userId, activeSnapId, params): create a trigger (webhook)
+//   deleteTrigger(connectionInfo, triggerData): delete a trigger (webhook)
 // 
 //   provider: provider name
 //   image: provider image url (local to SPA)
@@ -46,7 +47,7 @@ exports.createHandlers = (app) => {
   });
 }
 
-exports.createTrigger = async (userId, activeSnapId, param) => {
+exports.createTrigger = async (connectionInfo, userId, activeSnapId, param) => {
   try {
     // validate params
     const repoName = param.repo;
@@ -72,7 +73,7 @@ exports.createTrigger = async (userId, activeSnapId, param) => {
       registry: "registry-1.docker.io"
     };
   
-    const token = await getToken(userId);
+    const token = await getToken(connectionInfo);
     if (!token) {
       console.error('createTrigger: could not obtain token');
       return null;
@@ -107,7 +108,7 @@ exports.createTrigger = async (userId, activeSnapId, param) => {
   }
 }
 
-exports.deleteTrigger = async (userId, triggerData) => {
+exports.deleteTrigger = async (connectionInfo, triggerData) => {
   try {
     // validate params
     if (!triggerData || !triggerData.url) {
@@ -115,7 +116,7 @@ exports.deleteTrigger = async (userId, triggerData) => {
       return null;
     }
 
-    const token = await getToken(userId);
+    const token = await getToken(connectionInfo);
     const headers = { 
       'content-type': 'application/json',
       'authorization': `JWT ${token}`
@@ -132,42 +133,6 @@ exports.deleteTrigger = async (userId, triggerData) => {
     console.log(`deleteTrigger: caught exception: ${error}`);
     return null;
   }
-}
-
-exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param) => {
-  const action = param.action;
-  const channel = param.channel;
-  const message = param.message;
-
-  console.log(`${providerName}: action ${action}, channel ${channel}, message ${message}`);
-
-  if (!action || !channel || !message) {
-    console.error('invokeAction: missing required parameter');
-    return null;
-  }
-
-  // get token for calling API
-  const token = await getToken(connectionInfo);
-
-  const url = 'https://slack.com/api/chat.postMessage';
-  const headers = { 
-    'content-type': 'application/json',
-    'authorization': `Bearer ${token}`
-   };
-
-  const body = JSON.stringify({
-    channel,
-    text: message
-  });
-
-  const response = await axios.post(
-    url,
-    body,
-    {
-      headers: headers
-    });
-
-  return response.data;  
 }
 
 const getToken = async (connectionInfo) => {

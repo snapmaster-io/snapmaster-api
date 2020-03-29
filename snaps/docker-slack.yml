@@ -19,4 +19,4 @@ config:
     provider: slack
     action: send
     channel: $channel
-    message: received push on $repo
+    message: new image pushed into $repo in dockerhub
