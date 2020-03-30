@@ -28,6 +28,18 @@ actions:
     - name: repo
       description: repo to clone and build
       required: true
+  - name: copyimage
+    description: copy container image from a dockerhub $repo to gcr.io/$project/$image
+    parameters:
+    - name: project
+      description: project ID
+      required: true
+    - name: repo
+      description: dockerhub repo name
+      required: true
+    - name: image
+      description: image name
+      required: true
   - name: deploy
     description: deploy a container image 
     parameters:
