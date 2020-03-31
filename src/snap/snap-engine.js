@@ -23,7 +23,7 @@ const keys = {
 }
 
 // activate a snap into the user's environment
-exports.activateSnap = async (userId, snapId, params = null) => {
+exports.activateSnap = async (userId, snapId, params, activeSnapId = null) => {
   try {
     // get the snap object
     const snap = await snapdal.getSnap(snapId);
@@ -54,7 +54,7 @@ exports.activateSnap = async (userId, snapId, params = null) => {
 
     // active snap ID is current timestamp
     const timestamp = new Date().getTime();
-    const activeSnapId = "" + timestamp;
+    activeSnapId = activeSnapId || ("" + timestamp);
 
     const activeSnap = {
       activeSnapId: activeSnapId,
@@ -90,7 +90,7 @@ exports.activateSnap = async (userId, snapId, params = null) => {
     // store the activated snap information
     await database.storeDocument(userId, dbconstants.activeSnapsCollection, activeSnapId, activeSnap);
 
-    return { message: 'success' };
+    return { message: 'success', activeSnap: activeSnap };
   } catch (error) {
     console.log(`activateSnap: caught exception: ${error}`);
     return { message: 'could not activate snap' };
@@ -129,6 +129,36 @@ exports.deactivateSnap = async (userId, activeSnapId) => {
   } catch (error) {
     console.log(`deactivateSnap: caught exception: ${error}`);
     return { message: `deactivateSnap error: ${error.message}`};
+  }
+}
+
+// edit a running snap in the user's environment
+exports.editSnap = async (userId, activeSnapId, params) => {
+  try {
+    // get the active snap object
+    const activeSnap = await database.getDocument(userId, dbconstants.activeSnapsCollection, activeSnapId);
+    if (!activeSnap) {
+      return { message: `could not find active snap ID ${activeSnapId}`};
+    }
+
+    // retrieve the provider
+    const provider = providers.getProvider(activeSnap.provider);
+
+    // get the provider's connection information
+    const connInfo = await getConnectionInfo(userId, activeSnap.provider);
+    if (!connInfo) {
+      console.error('deactivateSnap: could not obtain connection info');
+      return { message: 'could not obtain connection info to deactivate snap' };
+    }
+    
+    // delete the snap trigger
+    await provider.deleteTrigger(connInfo, activeSnap.triggerData);
+
+    // now, activate the snap using the new parameters
+    return await exports.activateSnap(userId, activeSnap.snapId, params, activeSnapId);
+  } catch (error) {
+    console.log(`editSnap: caught exception: ${error}`);
+    return { message: `editSnap error: ${error.message}`};
   }
 }
 
@@ -275,7 +305,7 @@ exports.pauseSnap = async (userId, activeSnapId) => {
     
     // store the new state of the active snap 
     await database.storeDocument(userId, dbconstants.activeSnapsCollection, activeSnapId, activeSnap);
-    return { message: 'success' };
+    return { message: 'success', activeSnap: activeSnap };
   } catch (error) {
     console.log(`pauseSnap: caught exception: ${error}`);
     return { message: `pauseSnap error: ${error.message}`};
@@ -317,7 +347,7 @@ exports.resumeSnap = async (userId, activeSnapId) => {
 
     // store the new state of the active snap 
     await database.storeDocument(userId, dbconstants.activeSnapsCollection, activeSnapId, activeSnap);
-    return { message: 'success' };
+    return { message: 'success', activeSnap: activeSnap };
   } catch (error) {
     console.log(`resumeSnap: caught exception: ${error}`);
     return { message: `resumeSnap error: ${error.message}`};

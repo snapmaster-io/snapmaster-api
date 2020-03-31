@@ -54,7 +54,10 @@ exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param)
 
     // send message
     const response = await client.messages.create(msg);
-    return response;
+
+    // return only the data 
+    const output = JSON.parse(JSON.stringify(response));
+    return output;
   } catch (error) {
     console.log(`invokeAction: caught exception: ${error}`);
     return null;

@@ -4,6 +4,7 @@
 //   createHandlers(app): create handlers for GET and POST endpoints
 //   createSnap(account, definition, private): create a snap in a user's account using the definition
 //   getActveSnap(userId, activeSnapId): get an active snap record from the user's environment
+//   getLogs(userId): get all logs for this user
 //   getSnap(snapId): get a snap definition from the user's environment
 
 const database = require('../data/database');
@@ -24,7 +25,7 @@ exports.createHandlers = (app) => {
   // Get logs API endpoint
   app.get('/logs', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
     const returnLogs = async () => {
-      const logs = await getLogs(req.userId) || {};
+      const logs = await exports.getLogs(req.userId) || {};
       res.status(200).send(logs);
     }
     returnLogs();
@@ -146,37 +147,26 @@ exports.createHandlers = (app) => {
     
     const activateSnap = async () => {
       const status = await snapengine.activateSnap(req.userId, snapId, req.body.params);
-      if (status.message === 'success') {
-        const activesnaps = await getActiveSnaps(req.userId) || {};
-        status.data = activesnaps;
-      }
       res.status(200).send(status);
     }
 
     const deactivateSnap = async () => {
       const status = await snapengine.deactivateSnap(req.userId, snapId);
-      if (status.message === 'success') {
-        const activesnaps = await getActiveSnaps(req.userId) || {};
-        status.data = activesnaps;
-      }
       res.status(200).send(status);
     }
 
+    const editSnap = async () => {
+      const status = await snapengine.editSnap(req.userId, snapId, req.body.params);
+      res.status(200).send(status);
+    }
+    
     const pauseSnap = async () => {
       const status = await snapengine.pauseSnap(req.userId, snapId);
-      if (status.message === 'success') {
-        const activesnaps = await getActiveSnaps(req.userId) || {};
-        status.data = activesnaps;
-      }
       res.status(200).send(status);
     }
 
     const resumeSnap = async () => {
       const status = await snapengine.resumeSnap(req.userId, snapId);
-      if (status.message === 'success') {
-        const activesnaps = await getActiveSnaps(req.userId) || {};
-        status.data = activesnaps;
-      }
       res.status(200).send(status);
     }
 
@@ -192,6 +182,9 @@ exports.createHandlers = (app) => {
       case 'deactivate':
         deactivateSnap();
         return;
+      case 'edit':
+        editSnap();
+        return;
       case 'pause':
         pauseSnap();
         return;
@@ -204,6 +197,19 @@ exports.createHandlers = (app) => {
     }
   });
 }
+
+/* 
+ * A snap definition is specified as follows:
+ * { 
+ *   snapId: string,      // [account/name]
+ *   description: string, 
+ *   private: boolean,
+ *   trigger: string,     // tool name
+ *   actions: [string],   // array of tool names
+ *   url: string,         // typically points to a git repo file
+ *   text: string         // inline definition of snap, in case URL doesn't exist
+ * }
+ */
 
 exports.createSnap = async (userId, definition, private = false) => {
   try {
@@ -243,6 +249,17 @@ exports.getActiveSnap = async (userId, activeSnapId) => {
   }
 }
 
+// get all snap execution logs across this user's environments
+exports.getLogs = async (userId) => {
+  try {
+    const logs = await database.queryGroup(userId, dbconstants.logsCollection);
+    return logs;
+  } catch (error) {
+    console.log(`getLogs: caught exception: ${error}`);
+    return null;
+  }
+}
+
 // get a snap definition from the user's environment
 exports.getSnap = async (snapId) => {
   try {
@@ -261,19 +278,6 @@ exports.getSnap = async (snapId) => {
     return null;
   }
 }
-
-/* 
- * A snap definition is specified as follows:
- * { 
- *   snapId: string,      // [account/name]
- *   description: string, 
- *   private: boolean,
- *   trigger: string,     // tool name
- *   actions: [string],   // array of tool names
- *   url: string,         // typically points to a git repo file
- *   text: string         // inline definition of snap, in case URL doesn't exist
- * }
- */
   
 // delete a snap in the user's environment
 const deleteSnap = async (userId, snapId) => {
@@ -364,17 +368,6 @@ const getAllSnaps = async () => {
     return snaps;
   } catch (error) {
     console.log(`getAllSnaps: caught exception: ${error}`);
-    return null;
-  }
-}
-
-// get all snap execution logs across this user's environments
-const getLogs = async (userId) => {
-  try {
-    const logs = await database.queryGroup(userId, dbconstants.logsCollection);
-    return logs;
-  } catch (error) {
-    console.log(`getLogs: caught exception: ${error}`);
     return null;
   }
 }
