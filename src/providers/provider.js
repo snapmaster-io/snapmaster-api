@@ -15,6 +15,7 @@ const environment = require('../modules/environment');
 
 exports.simpleProvider = 'simple';
 exports.linkProvider = 'link';
+exports.hybridProvider = 'hybrid';
 
 exports.getDefinition = (providerName) => {
   try {

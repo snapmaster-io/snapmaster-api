@@ -16,6 +16,7 @@ const axios = require('axios');
 const googleauth = require('../../services/googleauth');
 const provider = require('../provider');
 const requesthandler = require('../../modules/requesthandler');
+const database = require('../../data/database');
 //const environment = require('../../modules/environment');
 
 const providerName = 'gcp';
@@ -25,7 +26,7 @@ const providerName = 'gcp';
 
 exports.provider = providerName;
 exports.image = `/${providerName}-logo.png`;
-exports.type = provider.simpleProvider;
+exports.type = provider.hybridProvider;
 exports.definition = provider.getDefinition(providerName);
 exports.getAccessInfo = googleauth.getGoogleAccessToken;
 
@@ -41,8 +42,31 @@ const actions = {
 
 // api's defined by this provider
 exports.apis = {
+  addProject: {
+    name: 'addProject',
+    provider: 'gcp',
+    entity: 'gcp:projects',
+    itemKey: 'project'
+  },
   getProjects: {
     name: 'getProjects',
+    provider: 'gcp',
+    entity: 'gcp:projects',
+    itemKey: 'project'
+  },
+  getProject: {
+    name: 'getProject',
+    provider: 'gcp',
+    itemKey: 'project',
+  },
+  removeProject: {
+    name: 'removeProject',
+    provider: 'gcp',
+    entity: 'gcp:projects',
+    itemKey: 'project'
+  },
+  getAuthorizedProjects: {
+    name: 'getAuthorizedProjects',
     provider: 'google-oauth2',
     entity: 'google-oauth2:projects',
     arrayKey: 'projects',
@@ -52,19 +76,162 @@ exports.apis = {
 
 exports.createHandlers = (app) => {
   // Get GCP projects endpoint
-  app.get('/gcp', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
+  app.get('/gcpprojects', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
     const refresh = req.query.refresh || false;  
 
     requesthandler.getData(
       res, 
       req.userId, 
-      exports.apis.getProjects, 
+      exports.apis.getAuthorizedProjects, 
       null,     // default entity name
       [req.userId], // parameter array
       refresh);
   });    
+
+  // Get gcp api data endpoint - returns list of projects
+  app.get('/gcp', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
+    requesthandler.invokeProvider(
+      res, 
+      req.userId, 
+      exports.apis.getProjects, 
+      null,     // use the default entity name
+      [req.userId]); // parameter array
+  });
+
+  // Get gcp api data endpoint
+  app.get('/gcp/projects/:projectId', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
+    const projectId = req.params.projectId;
+    const refresh = req.query.refresh || false;
+    requesthandler.getData(
+      res, 
+      req.userId, 
+      exports.apis.getProject, 
+      `gcp:${projectId}`,  // entity name must be constructed dynamically
+      [projectId], // parameter array
+      refresh);
+  });
+
+  // Post gcp project API - adds or removes a project
+  app.post('/gcp', requesthandler.checkJwt, requesthandler.processUser, function (req, res){
+    const action = req.body && req.body.action;
+
+    const add = async () => {
+      requesthandler.invokeProvider(
+        res, 
+        req.userId, 
+        exports.apis.addProject, 
+        null,     // use the default entity name
+        [req.body.connectionInfo]); // parameter array
+    }
+
+    const remove = async () => {
+      requesthandler.invokeProvider(
+        res, 
+        req.userId, 
+        exports.apis.removeProject, 
+        null,     // use the default entity name
+        [req.userId, req.body.project]); // parameter array
+    }
+
+    if (action === 'add' && req.body && req.body.connectionInfo) {
+      add();
+      return;
+    }
+
+    if (action === 'remove' && req.body && req.body.project) {
+      remove();
+      return;
+    }
+
+    res.status(200).send({ message: 'Unknown action'}); 
+  });
 }
 
+exports.apis.addProject.func = async ([connectionInfo]) => {
+  try {
+    /* replace with testing the key info */
+    /*
+    const normalizedPhoneNumber = normalize(phone);
+    const url = `https://api.yelp.com/v3/businesses/search/phone?phone=${normalizedPhoneNumber}`;
+    const headers = { 
+      'content-type': 'application/json',
+      'authorization': `Bearer ${yelpConfig.api_key}`
+     };
+
+    const response = await axios.get(
+      url,
+      {
+        headers: headers
+      });
+    
+    // if the API found a business with this phone number return it
+    if (response.data && response.data.businesses && response.data.businesses.length) {
+      return response.data;
+    }
+    
+    // return null if the business was not found
+    return null;
+    */
+    // construct project information from connection info passed in
+    const project = {};
+    for (const param of connectionInfo) {
+      project[param.name] = param.value;
+    }
+    return [project];
+  } catch (error) {
+    await error.response;
+    console.log(`addProject: caught exception: ${error}`);
+    return null;
+  }
+};
+
+exports.apis.getProjects.func = async () => {
+  // this is a no-op - invokeProvider does the work to return the gcp:projects entity
+  return [];
+};
+
+exports.apis.getProject.func = async ([projectId]) => {
+  try {
+    /*
+    const url = `https://api.yelp.com/v3/businesses/${projectId}/reviews`;
+    const headers = { 
+      'content-type': 'application/json',
+      'authorization': `Bearer ${yelpConfig.api_key}`
+     };
+
+    const response = await axios.get(
+      url,
+      {
+        headers: headers
+      });
+    
+    // response received successfully
+    return response.data;
+    */
+    return {
+      projectId: projectId,
+      name: projectId,
+    }
+  } catch (error) {
+    await error.response;
+    console.log(`getProject: caught exception: ${error}`);
+    return null;
+  }
+};
+
+exports.apis.removeProject.func = async ([userId, projectId]) => {
+  try {
+    // remove the document from the projects collection
+    await database.removeDocument(userId, 'gcp:projects', projectId);
+
+    // invokeProvider will re-read the gcp:projects collection and return it
+    return [];
+  } catch (error) {
+    await error.response;
+    console.log(`removeProject: caught exception: ${error}`);
+    return null;
+  }
+}
 /* 
 exports.OLDinvokeAction = async (connectionInfo, activeSnapId, param) => {
   try {
@@ -137,21 +304,30 @@ exports.OLDinvokeAction = async (connectionInfo, activeSnapId, param) => {
 }
 */
 
-exports.apis.getProjects.func = async ([userId]) => {
+exports.apis.getAuthorizedProjects.func = async ([userId]) => {
   try {
-    const accessToken = await googleauth.getGoogleAccessToken(userId);
-    if (!accessToken) {
+    const accessInfo = await googleauth.getGoogleAccessInfo(userId);
+    if (!accessInfo) {
       console.log('getProjects: getGoogleAccessToken failed');
       return null;
     }
 
-    //const apiKey = gcpConfig.google_client_id;
-    const apiKey = 'AIzaSyB3vyXRLTezNsrGMTskFTTXUY3FVXpLOyE'; //AIzaSyAa8yy0GdcGPHdtD083HiGGx_S0vMPScDM';
+    // get access token and apiKey
+    const accessToken = accessInfo.accessToken;
+    if (!accessToken) {
+      console.log('getProjects: could not obtain access token');
+      return null;
+    }
+    const apiKey = accessInfo.apiKey;
+    if (!apiKey) {
+      console.log('getProjects: could not obtain api key');
+      return null;
+    }
+
     const url = `https://cloudresourcemanager.googleapis.com/v1/projects?key=${apiKey}`;
     const headers = { 
       'content-type': 'application/json',
       'authorization': `Bearer ${accessToken}`
-      //'authorization': 'Bearer ya29.a0Adw1xeWFLiUaL2fUo98E45Mz8mAZThgw0bSjQp_vIcKhLtSXhx5OQtrfe8u3eIheEk2sso_S570b_UeGq3WfMxPS0rFPtpYpoBDUxYF5asLlTeOQBw_S_3fiLj8FMaD9CUa0Z5ffqStZQyzZMCT3v7cAsSdr1ozrZT2Ox-7h0S8'
      };
 
     const response = await axios.get(
@@ -160,7 +336,7 @@ exports.apis.getProjects.func = async ([userId]) => {
         headers: headers
       });
 
-      // response received successfully
+    // response received successfully
     return response.data;
   } catch (error) {
     await error.response;

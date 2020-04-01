@@ -3,7 +3,7 @@ version: provider-v1alpha1
 name: gcp
 description: GCP Provider Definition
 connection: 
-  type: simple
+  type: hybrid
   infoText: create a service account and download the key file
   infoUrl: https://console.cloud.google.com/apis/credentials
   connectionInfo:    

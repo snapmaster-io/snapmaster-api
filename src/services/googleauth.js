@@ -1,6 +1,7 @@
 // google authentication utilities
 // 
 // exports:
+//   getGoogleAccessInfo(userId): abstracts all logic to retrieve all google access information (token and API key)
 //   getGoogleAccessToken(userId): abstracts all logic to retrieve a google access token
 //   validateJwt(token): validate bearer token provided by google cloud
 
@@ -13,13 +14,13 @@ const googleConfig = environment.getConfig(environment.google);
 const { OAuth2Client } = require('google-auth-library');
 const authClient = new OAuth2Client();
 
-exports.getGoogleAccessToken = async (userId) => {
+exports.getGoogleAccessInfo = async (userId) => {
 
   const user = await database.getUserData(userId, 'google-oauth2');
 
   // if an access token is already cached, and not expired, return it
   if (user && !database.tokenExpired(user)) {
-    return user.accessToken;
+    return user;
   }
 
   // we don't have a token, or it's already expired; need to 
@@ -27,23 +28,28 @@ exports.getGoogleAccessToken = async (userId) => {
   try {
     const profile = await auth0.getAuth0Profile(userId);
     if (!profile) {
-      console.log('getGoogleAccessToken: getAuth0Profile failed');
+      console.log('getGoogleAccessInfo: getAuth0Profile failed');
       return null;
     }
-    const token = await getGoogleTokenFromAuth0Profile(userId, profile);
-    if (!token) {
-      console.log('getGoogleAccessToken: getGoogleTokenFromAuth0Profile failed');
+    const userInfo = await getGoogleInfoFromAuth0Profile(userId, profile);
+    if (!userInfo) {
+      console.log('getGoogleAccessInfo: getGoogleInfoFromAuth0Profile failed');
       return null;
     }
 
     // return the google access token
-    return token;
+    return userInfo;
   } catch (error) {
     await error.response;
-    console.log(`getGoogleAccessToken: caught exception: ${error}`);
+    console.log(`getGoogleAccessInfo: caught exception: ${error}`);
     return null;
   }
-};
+}
+
+exports.getGoogleAccessToken = async (userId) => {
+  const userInfo = await exports.getGoogleAccessInfo(userId);
+  return userInfo && userInfo.accessToken;
+}
 
 exports.validateJwt = async (token) => {
   try {
@@ -58,14 +64,14 @@ exports.validateJwt = async (token) => {
     console.log(`validateJwt: caught exception: ${error}`);
     return false;
   }
-};
+}
 
 // extract google access token from auth0 profile information
 // this method will cache the access token, check for expiration, and refresh it if 
 // necessary
 //   userId is the Auth0 userid (key)
 //   user is the struct returned from Auth0 management API
-const getGoogleTokenFromAuth0Profile = async (userId, user) => {
+const getGoogleInfoFromAuth0Profile = async (userId, user) => {
   try {
     const userIdentity = user && user.identities && 
                          user.identities.find(i => i.provider === 'google-oauth2');
@@ -101,7 +107,7 @@ const getGoogleTokenFromAuth0Profile = async (userId, user) => {
       userData.refreshToken = refreshToken;
     }
     
-    // store / cache the access token 
+    // store / cache the newly retrieved user data 
     const thisUser = await database.setUserData(
       userId,
       'google-oauth2',
@@ -122,14 +128,18 @@ const getGoogleTokenFromAuth0Profile = async (userId, user) => {
       return null;
     }
 
-    // return the (potentially refreshed) access token
-    return accessToken;
+    // replace the access token in the user data
+    // we don't save it because we don't receive expiration info from google for the new access token...
+    thisUser.accessToken = accessToken;
+
+    // return the user info containing the (potentially refreshed) access token
+    return thisUser;
   } catch (error) {
     await error.response;
     console.log(`getGoogleTokenFromAuth0Profile: caught exception: ${error}`);
     return null;
   }
-};
+}
 
 // retrieve an access token from a refresh token, and cache the resulting 
 // access token for that userId
@@ -180,4 +190,4 @@ const getAccessTokenForGoogleRefreshToken = async(userId, refreshToken) => {
     console.log(`getAccessTokenForGoogleRefreshToken: caught exception: ${error}`);
     return null;
   }
-};
+}
