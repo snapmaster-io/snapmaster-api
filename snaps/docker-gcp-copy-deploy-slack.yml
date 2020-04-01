@@ -1,0 +1,43 @@
+---
+version: snap-v1alpha1 
+name: docker-gcp-copy-deploy-slack
+description: Docker push -> GCR copy image, GCR deploy, Slack notification
+trigger: docker-push
+actions:
+  - gcr-copy
+  - gcr-deploy
+  - slack-message
+parameters: 
+  - name: repo
+    description: name of docker repository
+  - name: project
+    description: name of GCP project
+  - name: image
+    description: name of GCR image
+  - name: service
+    description: name of GCR service
+  - name: channel
+    description: name of slack channel
+config:
+  - name: docker-push
+    provider: docker
+    event: push
+    repo: $repo
+  - name: gcr-copy
+    provider: gcp
+    action: copyimage
+    project: $project
+    repo: $repo
+    image: $image
+  - name: gcr-deploy
+    provider: gcp
+    action: deploy
+    project: $project
+    image: $image
+    service: $service
+    region: us-central1
+  - name: slack-message
+    provider: slack
+    action: send
+    channel: $channel
+    message: dockerhub $repo copied to gcr.io/$project/$image and deployed to GCR!

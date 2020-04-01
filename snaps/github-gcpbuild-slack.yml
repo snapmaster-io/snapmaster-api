@@ -1,7 +1,7 @@
 ---
 version: snap-v1alpha1 
 name: github-gcpbuild-slack
-description: GitHub merge -> Google Cloud build / Slack message
+description: GitHub merge -> Google Cloud Build, Slack message
 trigger: github-push
 actions:
   - gcp-build
@@ -9,22 +9,25 @@ actions:
 parameters: 
   - name: repo
     description: name of git repository
-  - name: branch
-    description: name of branch
+  - name: project
+    description: project ID
+  - name: image
+    description: image name
   - name: channel
-    description: name of slack channel
+    description: slack channel
 config: 
   - name: github-push
     provider: github
     event: push
     repo: $repo
-    branch: $branch
   - name: gcp-build
     provider: gcp
     action: build
-    repo: https://github.com/$repo
+    project: $project
+    image: $image
+    repo: $.repository.html_url
   - name: slack-message
     provider: slack
     action: send
     channel: $channel
-    message: kicked off new build of $repo:$branch
+    message: built $repo into gcr.io/$project/$image

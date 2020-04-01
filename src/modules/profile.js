@@ -75,7 +75,7 @@ exports.createHandlers = (app) => {
       }
     }
 
-    if (!accountName || !validateAccountName(account)) {
+    if (!accountName || !validateAccountName(accountName)) {
       res.status(200).send({ message: 'error' } );
       return;
     }
