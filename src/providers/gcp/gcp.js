@@ -11,18 +11,15 @@
 //   definition: provider definition
 
 const axios = require('axios');
-// const { mkdir, cd, rm, exec, echo, tempdir } = require('shelljs');
-// const { execAsync } = require('../../modules/execasync');
+const {auth} = require('google-auth-library');
+const {google} = require('googleapis');
+
 const googleauth = require('../../services/googleauth');
 const provider = require('../provider');
 const requesthandler = require('../../modules/requesthandler');
 const database = require('../../data/database');
-//const environment = require('../../modules/environment');
 
 const providerName = 'gcp';
-
-// get GCP configuration
-//const gcpConfig = environment.getConfig(providerName);
 
 exports.provider = providerName;
 exports.image = `/${providerName}-logo.png`;
@@ -32,13 +29,6 @@ exports.getAccessInfo = googleauth.getGoogleAccessToken;
 
 // invokeAction is implemented by a separate service
 exports.invokeAction = provider.invokeAction;  
-
-/*
-const actions = {
-  build: 'build',
-  deploy: 'deploy'
-}
-*/
 
 // api's defined by this provider
 exports.apis = {
@@ -149,35 +139,37 @@ exports.createHandlers = (app) => {
 
 exports.apis.addProject.func = async ([connectionInfo]) => {
   try {
-    /* replace with testing the key info */
-    /*
-    const normalizedPhoneNumber = normalize(phone);
-    const url = `https://api.yelp.com/v3/businesses/search/phone?phone=${normalizedPhoneNumber}`;
-    const headers = { 
-      'content-type': 'application/json',
-      'authorization': `Bearer ${yelpConfig.api_key}`
-     };
-
-    const response = await axios.get(
-      url,
-      {
-        headers: headers
-      });
-    
-    // if the API found a business with this phone number return it
-    if (response.data && response.data.businesses && response.data.businesses.length) {
-      return response.data;
-    }
-    
-    // return null if the business was not found
-    return null;
-    */
-    // construct project information from connection info passed in
+    // construct an object with all project and auth info
     const project = {};
     for (const param of connectionInfo) {
       project[param.name] = param.value;
     }
-    return [project];
+
+    // verify we have everything we need to authenticate
+    if (!project.project || !project.key) {
+      console.error('addProject: did not receive all authorization information');
+      return null;
+    }
+
+    // retrieve all enabled services
+    const response = await getProject(project.key);
+    if (!response) {
+      console.error('addProject: could not retrieve project information');
+      return null;
+    }
+
+    // add the project attributes to the result
+    const result = { ...project, ...response };
+
+    /*
+    // get the enabled services on the project
+    const services = await getEnabledServices(result);
+    if (services && services.data) {
+      result.services = services.data;
+    }
+    */
+
+    return [result];
   } catch (error) {
     await error.response;
     console.log(`addProject: caught exception: ${error}`);
@@ -192,22 +184,6 @@ exports.apis.getProjects.func = async () => {
 
 exports.apis.getProject.func = async ([projectId]) => {
   try {
-    /*
-    const url = `https://api.yelp.com/v3/businesses/${projectId}/reviews`;
-    const headers = { 
-      'content-type': 'application/json',
-      'authorization': `Bearer ${yelpConfig.api_key}`
-     };
-
-    const response = await axios.get(
-      url,
-      {
-        headers: headers
-      });
-    
-    // response received successfully
-    return response.data;
-    */
     return {
       projectId: projectId,
       name: projectId,
@@ -232,77 +208,6 @@ exports.apis.removeProject.func = async ([userId, projectId]) => {
     return null;
   }
 }
-/* 
-exports.OLDinvokeAction = async (connectionInfo, activeSnapId, param) => {
-  try {
-    // get required parameters
-    const action = param.action;
-    if (!action) {
-      console.error('invokeAction: missing required parameter "action"');
-      return null;
-    }
-
-    const project = param.project;
-    if (!project) {
-      console.error('invokeAction: missing required parameter "project"');
-      return null;
-    }
-
-    // IMPLEMENTATION NOTE:
-    //   current implementation shell-execs gcloud SDK commands, because the REST API for 
-    //   google cloud build and google cloud run is pretty gnarly, and the node.js packages 
-    //   are either difficult to use or nonexistent.
-
-    // set up the environment
-    const serviceCredentials = await getServiceCredentials(connectionInfo);
-    if (!serviceCredentials) {
-      console.error(`invokeAction: service credentials not found`);
-      return null;
-    }
-
-    // run registered functions on the worker via exec
-    console.log(`gcp: executing action ${action}`);
-
-    const output = await pool.exec('invokeAction', [action, serviceCredentials, activeSnapId, param]);
-
-    console.log(`gcp: finished executing action ${action} with output ${output}`);
-
-    *** /*
-    // construct script name, environment, and full command
-    //const script = `./src/providers/${providerName}/${action}.sh`;
-    //const env = getEnvironment(param);
-    //const env = { ...process.env, ...getEnvironment(param), ACTIVESNAPID: activeSnapId, SERVICECREDS: serviceCredentials };
-    const command = getCommand(action, project, param);
-    //const command = `ACTIVESNAPID=${activeSnapId} SERVICECREDS='${serviceCredentials}' ${env} ${cmd}`;
-
-    // log a message before executing command
-    console.log(`executing command: ${command}`);
-
-    // setup environment
-    setupEnvironment(serviceCredentials, activeSnapId, project);
-
-    // execute the action and obtain the output
-    //const output = await executeCommand(script, env);
-    exec(command, function(code, stdout, stderr) {
-      // setup environment
-      teardownEnvironment(activeSnapId, project);
-
-      // log a message after executing command
-      console.log(`finished executing command: ${command}, return code ${code}`);
-      
-      // return to caller
-      return { code, stdout, stderr };
-    });
-
-    return `gcp: executed ${command}`;
-    * /
-    return output;
-  } catch (error) {
-    console.log(`invokeAction: caught exception: ${error}`);
-    return null;
-  }
-}
-*/
 
 exports.apis.getAuthorizedProjects.func = async ([userId]) => {
   try {
@@ -344,117 +249,56 @@ exports.apis.getAuthorizedProjects.func = async ([userId]) => {
     return null;
   }
 }
-/*
 
-const executeCommand = async (command, env) => {
+const getEnabledServices = async (projectInfo) => {
   try {
-    // execute asynchronously so as to not block the web thread
-    const returnVal = await execAsync(command, [], { env: env });
-    return returnVal;
+    const keys = JSON.parse(projectInfo.key);
+    const client = auth.fromJSON(keys);
+    client.scopes = ['https://www.googleapis.com/auth/cloud-platform'];
+    const url = `https://serviceusage.googleapis.com/v1/projects/${projectInfo.projectNumber}/services`;    
+    const res = await client.request({url});
+    return res;
   } catch (error) {
-    console.error(`executeCommand: caught exception: ${error}`);
-    return error;
+    console.log(`getEnabledServices: caught exception: ${error}`);
+    return null;
   }
 }
 
-const getCommand = (action, project, param) => {
+const getProject = async (serviceCredentials) => {
   try {
-    const image = param.image;
-    if (!image) {
-      console.error(`getCommand: action ${action} requires image name`);
-      return null;
+    const client = getClient(serviceCredentials);
+    client.scopes = ['https://www.googleapis.com/auth/cloud-platform'];
+    const keys = JSON.parse(serviceCredentials);
+
+    const request = {
+      auth: client,
+      projectId: keys.project_id
+    };
+
+    const cloudresourcemanager = google.cloudresourcemanager('v1');
+    const project = await cloudresourcemanager.projects.get(request);
+
+    // return the project information
+    if (project && project.data) {
+      return project.data
     }
 
-    // set up the base command with the account and project information
-    const baseCommand = `gcloud --account snapmaster@${project}.iam.gserviceaccount.com --project ${project} `;
-
-    // return the right shell command to exec for the appropriate action
-    switch (action) {
-      case actions.build:
-        return `${baseCommand} builds submit --tag gcr.io/${project}/${image}`;
-      case actions.deploy: 
-        const service = param.service;
-        if (!service) {
-          console.error(`getCommand: action ${action} requires service name`);
-          return null;
-        }
-        const region = param.region;
-        if (!region) {
-          console.error(`getCommand: action ${action} requires region name`);
-          return null;
-        }
-        return `${baseCommand} run deploy ${service} --image gcr.io/${project}/${image} --platform managed --allow-unauthenticated --region ${region}`;
-      default:
-        console.error(`getCommand: unknown command ${action}`);
-        return null;
-    }
+    // no data - return null
+    return null;
   } catch (error) {
-    console.error(`getCommand: caught exception: ${error}`);
+    console.log(`getProject: caught exception: ${error}`);
     return null;
   }
 }
 
-const getEnvironment = (param) => {
-  let env = '';
-  //const env = {};
-  for (const key in param) {
-    env += `${key.toUpperCase()}=${param[key]} `;
-    //const upperKey = key.toUpperCase();
-    //env[upperKey] = param[key];
-  }
-  return env;
-}
-
-const getServiceCredentials = async (connectionInfo) => {
+const getClient = (serviceCredentials) => {
   try {
-    const key = connectionInfo && connectionInfo.find(c => c.name === 'key');
-    if (!key) {
-      console.error('getServiceCredentials: could not find key in connection info');
-      return null;
-    }
-
-    return key.value;
+    const keys = JSON.parse(serviceCredentials);
+    const client = google.auth.fromJSON(keys);
+    return client;
   } catch (error) {
-    console.error(`getServiceCredentials: caught exception: ${error}`);
+    console.log(`getClient: caught exception: ${error}`);
     return null;
   }
 }
 
-const setupEnvironment = (serviceCredentials, activeSnapId, project) => {
-  try {
-    // create temporary directory
-    const tmp = tempdir();
-    const dirName = `${tmp}/${activeSnapId}`;
-    mkdir(dirName);
-    cd(dirName);
-
-    // create creds.json file
-    // BUGBUG: make sure this doesn't log to the console
-    echo(serviceCredentials).to('creds.json');
-
-    // execute the gcloud auth call
-    const output = exec(`gcloud auth activate-service-account snapmaster@${project}.iam.gserviceaccount.com --key-file=creds.json --project=${project}`);  
-    return output;
-  } catch (error) {
-    console.error(`setupEnvironment: caught exception: ${error}`);
-    return null;
-  }
-}
-
-const teardownEnvironment = (activeSnapId, project) => {
-  try {
-    // remove the cached gcloud credential
-    const output = exec(`gcloud auth revoke snapmaster@${project}.iam.gserviceaccount.com`);  
-
-    // remove temporary directory and everything in it
-    const tmp = tempdir();
-    const dirName = `${tmp}/${activeSnapId}`;
-    rm('-rf', dirName);
-
-    return output;
-  } catch (error) {
-    console.error(`teardownEnvironment: caught exception: ${error}`);
-    return null;
-  }
-} 
-*/
