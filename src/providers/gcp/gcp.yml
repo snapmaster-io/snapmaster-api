@@ -6,7 +6,8 @@ connection:
   type: hybrid
   infoText: create a service account and download the key file
   infoUrl: https://console.cloud.google.com/apis/credentials
-  connectionInfo:    
+  entity: gcp:projects
+  connectionInfo:
   - name: project
     description: project ID 
   - name: key
@@ -21,6 +22,7 @@ actions:
     parameters:
     - name: project
       description: project ID
+      entity: gcp:projects
       required: true
     - name: image
       description: image name
@@ -33,6 +35,7 @@ actions:
     parameters:
     - name: project
       description: project ID
+      entity: gcp:projects
       required: true
     - name: repo
       description: dockerhub repo name
@@ -45,6 +48,7 @@ actions:
     parameters:
     - name: project
       description: project ID
+      entity: gcp:projects
       required: true
     - name: image
       description: image to deploy

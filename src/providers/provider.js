@@ -2,6 +2,7 @@
 //
 // exported methods:
 //   getDefinition: load and parse the yml definition of a provider
+//   invokeAction: invoke an action for an "out of tree" provider (one that is running in a separate service)
 //   
 // exported constants:
 //   simpleProvider: simple provider
@@ -33,6 +34,7 @@ exports.getDefinition = (providerName) => {
 exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param) => {
   try {
     // get an access token for the provider service
+    // currently  provider services all do auth via Auth0, and all share an Auth0 API service clientID / secret
     const token = await auth0.getAPIAccessToken();
     if (!token) {
       console.error('invokeAction: could not retrieve API access token');
@@ -40,7 +42,6 @@ exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param)
     }
 
     const providerUrl = environment.getProviderUrl(providerName);
-    //const providerUrl = 'http://localhost:8081'
     const url = `${providerUrl}/invokeAction`;
     const body = {
       connectionInfo,

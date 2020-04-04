@@ -64,7 +64,31 @@ exports.apis = {
   },
 };
 
+// entities defined by this provider
+exports.entities = {
+  'gcp:projects': {
+    entity: 'gcp:projects',
+    route: '/gcp',
+    //get: getProjectsHandler
+    //post: postProjectsHandler
+  }, 
+  'gcp:authorizedProjects': {
+    entity: 'gcp:authorizedProjects',
+    route: '/gcpprojects',
+    //get: getAuthorizedProjectsHandler
+  }
+};
+
 exports.createHandlers = (app) => {
+  if (exports.entities) {
+    for (const key of Object.keys(exports.entities)) {
+      const entity = exports.entities[key];
+      entity.get && app.get(entity.route, requesthandler.checkJwt, requesthandler.processUser, entity.get);
+      entity.post && app.post(entity.route, requesthandler.checkJwt, requesthandler.processUser, entity.post);
+    }
+  }
+
+/*
   // Get GCP projects endpoint
   app.get('/gcpprojects', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
     const refresh = req.query.refresh || false;  
@@ -80,6 +104,8 @@ exports.createHandlers = (app) => {
 
   // Get gcp api data endpoint - returns list of projects
   app.get('/gcp', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
+    const refresh = req.query.refresh || false;  
+
     requesthandler.invokeProvider(
       res, 
       req.userId, 
@@ -87,6 +113,7 @@ exports.createHandlers = (app) => {
       null,     // use the default entity name
       [req.userId]); // parameter array
   });
+  */  
 
   // Get gcp api data endpoint
   app.get('/gcp/projects/:projectId', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
@@ -101,6 +128,7 @@ exports.createHandlers = (app) => {
       refresh);
   });
 
+  /*
   // Post gcp project API - adds or removes a project
   app.post('/gcp', requesthandler.checkJwt, requesthandler.processUser, function (req, res){
     const action = req.body && req.body.action;
@@ -135,6 +163,62 @@ exports.createHandlers = (app) => {
 
     res.status(200).send({ message: 'Unknown action'}); 
   });
+  */
+}
+
+exports.entities['gcp:projects'].get = (req, res) => {
+  requesthandler.invokeProvider(
+    res, 
+    req.userId, 
+    exports.apis.getProjects, 
+    null,     // use the default entity name
+    [req.userId]); // parameter array
+}
+
+exports.entities['gcp:projects'].post = (req, res) => {
+  const action = req.body && req.body.action;
+
+  const add = async () => {
+    requesthandler.invokeProvider(
+      res, 
+      req.userId, 
+      exports.apis.addProject, 
+      null,     // use the default entity name
+      [req.body.connectionInfo]); // parameter array
+  }
+
+  const remove = async () => {
+    requesthandler.invokeProvider(
+      res, 
+      req.userId, 
+      exports.apis.removeProject, 
+      null,     // use the default entity name
+      [req.userId, req.body.project]); // parameter array
+  }
+
+  if (action === 'add' && req.body && req.body.connectionInfo) {
+    add();
+    return;
+  }
+
+  if (action === 'remove' && req.body && req.body.project) {
+    remove();
+    return;
+  }
+
+  res.status(200).send({ message: 'Unknown action'}); 
+}
+
+exports.entities['gcp:authorizedProjects'].handler = (req, res) => {
+  const refresh = req.query.refresh || false;  
+
+  requesthandler.getData(
+    res, 
+    req.userId, 
+    exports.apis.getAuthorizedProjects, 
+    null,     // default entity name
+    [req.userId], // parameter array
+    refresh);
 }
 
 exports.apis.addProject.func = async ([connectionInfo]) => {
@@ -159,7 +243,7 @@ exports.apis.addProject.func = async ([connectionInfo]) => {
     }
 
     // add the project attributes to the result
-    const result = { ...project, ...response };
+    const result = { ...project, ...response, __id: project.project };
 
     /*
     // get the enabled services on the project

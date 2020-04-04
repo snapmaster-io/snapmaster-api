@@ -11,6 +11,7 @@ parameters:
     description: name of docker repository
   - name: project
     description: name of GCP project
+    entity: gcp:projects
   - name: image
     description: name of GCR image
   - name: channel

@@ -27,6 +27,7 @@ const dal = require('./src/data/dal');
 const datapipeline = require('./src/modules/datapipeline');
 const profile = require('./src/modules/profile');
 const connections = require('./src/modules/connections');
+const entities = require('./src/modules/entities');
 
 // import snap data access layer and engine
 const snapdal = require('./src/snap/snap-dal');
@@ -67,6 +68,7 @@ app.use(express.static(path.join(__dirname, 'build')));
 // create route handlers for modules that process incoming calls
 connections.createHandlers(app);
 profile.createHandlers(app);
+entities.createHandlers(app);
 snapdal.createHandlers(app);
 beta.createHandlers(app);
 

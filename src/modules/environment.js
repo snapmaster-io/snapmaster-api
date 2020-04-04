@@ -118,8 +118,12 @@ exports.getLocation = () => {
 }
 
 exports.getProviderUrl = (providerName) => {
-  const endpoint = `https://provider-${providerName}${environment === 'dev' && '-dev'}.snapmaster.io`;
-  return endpoint;
+  if (exports.getDevMode()) {
+    return 'http://localhost:8081';
+  } else {
+    const endpoint = `https://provider-${providerName}${environment === 'dev' && '-dev'}.snapmaster.io`;
+    return endpoint;  
+  }
 }
 
 exports.getUrl = () => {

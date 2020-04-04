@@ -201,19 +201,26 @@ exports.executeSnap = async (userId, activeSnapId, params, payload) => {
       const provider = providers.getProvider(param.provider);
 
       // bind the payload to the parameter
-      const newParam = bindPayloadToParameter(param, payload);
+      param = bindPayloadToParameter(param, payload);
+
+      // bind entities to the parameter (this mutates the parameter)
+      // this is where connection information that is stored on a per-entity basis gets added to the parameter
+      // for example, for GCP, the gcp:projects entity for the project gets retrieved and added to parameter
+      bindEntitiesToParameter(userId, provider, param);
 
       // get the provider's connection information
+      // this brings in global connection information stored in the top-level user struct
+      // TODO: phase this out so that all connection info comes from provider entities as above
       const connInfo = await getConnectionInfo(userId, param.provider);
 
       // invoke the provider
-      const output = await provider.invokeAction(param.provider, connInfo, activeSnapId, newParam);
+      const output = await provider.invokeAction(param.provider, connInfo, activeSnapId, param);
 
       // log the action execution
       const actionLog = {
         provider: param.provider,
         state: dbconstants.executionStateExecuted,
-        param: newParam,
+        param: param,
         output: output
       }
 
@@ -351,6 +358,35 @@ exports.resumeSnap = async (userId, activeSnapId) => {
   } catch (error) {
     console.log(`resumeSnap: caught exception: ${error}`);
     return { message: `resumeSnap error: ${error.message}`};
+  }
+}
+
+// bind entities to parameter by retrieving the entity value and adding to the parameter
+const bindEntitiesToParameter = async (userId, provider, param) => {
+  try {
+    // find the definition in the provider action definitions based on the key
+    const definition = provider.definition.actions.find(t => t.name === param.action);
+    if (!definition) {
+      console.error(`bindEntitiesToParameter: action ${param.action} not found in provider definition`);
+    }
+
+    // retrieve the entity for each parameter annotated with an entity
+    for (const p of definition.parameters) {
+      if (p.entity) {
+        // find the parameter value
+        const value = param[p.name];
+        if (value) {
+          // get the entity
+          const entity = await database.getDocument(userId, p.entity, value);
+          if (entity) {
+            // augment the parameter with the entity using the entity name as a key
+            param[p.entity] = entity;
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error(`bindEntitiesToParameter: caught exception: ${error}`);
   }
 }
 

@@ -11,6 +11,7 @@ parameters:
     description: name of git repository
   - name: project
     description: project ID
+    entity: gcp:projects
   - name: image
     description: image name
   - name: channel
