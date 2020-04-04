@@ -142,7 +142,10 @@ exports.invokeProvider = async (userId, provider, entity, params) => {
       return null;
     }
 
-    return data;
+    // filter out any key fields
+    const cleanData = filterKeysFromData(provider, data);
+
+    return cleanData;
   } catch (error) {
     console.log(`invokeProvider: caught exception: ${error}`);
     return null;
@@ -210,6 +213,29 @@ const callProvider = async (provider, params) => {
     return array;
   } catch (error) {
     console.log(`callProvider: caught exception: ${error}`);
+    return null;
+  }
+}
+
+const filterKeysFromData = (provider, data) => {
+  try {
+    const keyFields = provider.keyFields;
+    if (keyFields && keyFields.length) {
+      // make an new copy of the data
+      const cleanData = [...data];
+
+      // for each row, for each key field, remove that key field
+      for (const row of cleanData) {
+        for (const key of keyFields) {
+          delete row[key];
+        }
+      }
+      return cleanData;
+    } else {
+      return data;
+    }
+  } catch (error) {
+    console.log(`cleanData: caught exception: ${error}`);
     return null;
   }
 }

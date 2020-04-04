@@ -12,6 +12,7 @@ connection:
     description: project ID 
   - name: key
     description: paste the JSON from the service account key file
+    password: true
 parameters: 
   - name: region
     description: region to operate in

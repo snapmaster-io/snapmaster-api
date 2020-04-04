@@ -42,7 +42,8 @@ exports.apis = {
     name: 'getProjects',
     provider: 'gcp',
     entity: 'gcp:projects',
-    itemKey: 'project'
+    itemKey: 'project',
+    keyFields: ['key']
   },
   getProject: {
     name: 'getProject',
@@ -60,7 +61,8 @@ exports.apis = {
     provider: 'google-oauth2',
     entity: 'google-oauth2:projects',
     arrayKey: 'projects',
-    itemKey: 'projectId'
+    itemKey: 'projectId',
+    keyFields: ['key']
   },
 };
 

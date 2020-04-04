@@ -13,10 +13,10 @@ const requesthandler = require('./requesthandler');
 
 exports.createHandlers = (app) => {
   // entities API endpoint
-  app.use('/entities/:entityName', requesthandler.checkJwt, requesthandler.processUser, getEntities);
+  app.use('/entities/:entityName', requesthandler.checkJwt, requesthandler.processUser, handler);
 }
 
-const getEntities = (req, res) => {
+const handler = (req, res) => {
   try {
     // get the entity name from the parameters
     const entity = req.params.entityName;
