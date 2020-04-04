@@ -2,13 +2,21 @@
 
 // exports:
 //   apis.
+//        addProject() - add a project
+//        getProjects() - get all projects
+//        getProject() - get a specific project
+//        removeProject() - remove a project
+//   entities.
+//        projects - the projects entity
 //
-//   createHandlers(app, [middlewaree]): create all route handlers
+//   createHandlers(app): create all route handlers
 // 
 //   provider: provider name
 //   image: provider image url (local to SPA)
 //   type: provider type (simple or link)
 //   definition: provider definition
+//   getAccessInfo: get access info function
+//   invokeAction: use the cross-service generic implementation (not in-tree)
 
 const axios = require('axios');
 const {auth} = require('google-auth-library');
@@ -211,7 +219,7 @@ exports.entities['gcp:projects'].post = (req, res) => {
   res.status(200).send({ message: 'Unknown action'}); 
 }
 
-exports.entities['gcp:authorizedProjects'].handler = (req, res) => {
+exports.entities['gcp:authorizedProjects'].get = (req, res) => {
   const refresh = req.query.refresh || false;  
 
   requesthandler.getData(
@@ -245,9 +253,15 @@ exports.apis.addProject.func = async ([connectionInfo]) => {
     }
 
     // add the project attributes to the result
-    const result = { ...project, ...response, __id: project.project };
+    const result = { 
+      ...project, 
+      ...response, 
+      __id: project.project,
+      __name: project.project,
+      __url: `https://console.cloud.google.com/home/dashboard?project=${project.project}`
+    };
 
-    /*
+      /*
     // get the enabled services on the project
     const services = await getEnabledServices(result);
     if (services && services.data) {
@@ -261,12 +275,12 @@ exports.apis.addProject.func = async ([connectionInfo]) => {
     console.log(`addProject: caught exception: ${error}`);
     return null;
   }
-};
+}
 
 exports.apis.getProjects.func = async () => {
   // this is a no-op - invokeProvider does the work to return the gcp:projects entity
   return [];
-};
+}
 
 exports.apis.getProject.func = async ([projectId]) => {
   try {
@@ -279,7 +293,7 @@ exports.apis.getProject.func = async ([projectId]) => {
     console.log(`getProject: caught exception: ${error}`);
     return null;
   }
-};
+}
 
 exports.apis.removeProject.func = async ([userId, projectId]) => {
   try {

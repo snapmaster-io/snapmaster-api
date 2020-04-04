@@ -4,6 +4,7 @@ name: docker
 description: Docker Provider Definition
 connection: 
   type: simple
+  entity: docker:accounts
   connectionInfo:
   - name: username
     description: user name

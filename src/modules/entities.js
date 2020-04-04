@@ -35,13 +35,13 @@ const handler = (req, res) => {
     // validate entity
     const providerEntities = provider.entities;
     if (!providerEntities) {
-      console.error(`getEntities: provider ${provider} does not support any entities`);
+      console.error(`getEntities: ${provider.provider} provider does not support any entities`);
       res.status(200).send([]);
       return;
     }
     const providerEntity = providerEntities[entity];
     if (!providerEntity) {
-      console.error(`getEntities: provider ${provider} does not support entity ${entity}`);
+      console.error(`getEntities: ${provider.provider} provider does not support entity ${entity}`);
       res.status(200).send([]);
       return;
     }
