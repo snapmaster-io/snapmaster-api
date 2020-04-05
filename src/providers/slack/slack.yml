@@ -6,14 +6,22 @@ connection:
   type: simple
   infoUrl: https://api.slack.com/legacy/custom-integrations/legacy-tokens
   infoText: Click here to create a legacy access token
+  entity: slack:workspaces
   connectionInfo:
+  - name: workspace
+    description: workspace name ({workspace}.slack.com)
   - name: token
     description: personal access token
+    type: password
 triggers: 
 actions:
   - name: send
     description: send a message to a channel 
     parameters:
+    - name: workspace
+      description: workspace name
+      entity: slack:workspaces
+      required: true 
     - name: channel
       description: channel to send to
       required: true

@@ -19,7 +19,7 @@ const snapengine = require('../../snap/snap-engine');
 const environment = require('../../modules/environment');
 
 const providerName = 'docker';
-const entityName = 'docker:accounts';
+const entityName = `${providerName}:accounts`;
 
 exports.provider = providerName;
 exports.image = `/${providerName}-logo.png`;
@@ -141,6 +141,9 @@ exports.deleteTrigger = async (connectionInfo, triggerData) => {
   }
 }
 
+// this function is called when a new entity (e.g. account) is added
+// it validates the provider-specific account info, and constructs 
+// the entity that will be stored by the caller
 exports.entities[entityName].func = async ([connectionInfo]) => {
   try {
     // construct an object with all entity info

@@ -15,6 +15,10 @@ triggers:
   - name: push
     description: push event into a repository
     parameters:
+    - name: account
+      description: account name
+      entity: docker:accounts
+      required: true 
     - name: repo
       description: name of docker repository
       required: true 

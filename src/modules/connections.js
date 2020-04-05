@@ -6,6 +6,7 @@
 const database = require('../data/database');
 const providers = require('../providers/providers');
 const requesthandler = require('./requesthandler');
+const entities = require('./entities');
 const auth0 = require('../services/auth0');
 
 exports.createHandlers = (app) => {
@@ -26,11 +27,13 @@ exports.createHandlers = (app) => {
   
     const add = async () => {
       await addConnection(req.userId, provider, req.body.connectionInfo);
-      res.status(200).send({ message: 'success'});
+      entities.entityHandler(req, res);
+
+      //res.status(200).send({ message: 'success'});
     }
   
     const remove = async () => {
-      await removeConnection(req.userId, provider);
+      await removeConnection(req.userId, provider, req.body.entityName);
       res.status(200).send({ message: 'success'});
     }
   
@@ -132,6 +135,7 @@ const getConnections = async (userId) => {
   }
 }
 
-const removeConnection = async (userId, connection) => {
+const removeConnection = async (userId, connection, entity) => {
   await database.removeConnection(userId, connection);
+  await database.removeCollection(userId, entity);
 }

@@ -6,16 +6,26 @@ connection:
   type: simple
   infoUrl: https://www.twilio.com/console
   infoText: Click here to view Twilio Account SID and Auth Token
+  entity: twilio:accounts
   connectionInfo:
   - name: account
+    description: account name
+    type: key
+  - name: sid
     description: account SID
+    type: password
   - name: token
     description: auth token
+    type: password
 triggers: 
 actions:
   - name: send
     description: send a message to a phone number 
     parameters:
+    - name: account
+      description: account name
+      entity: twilio:accounts
+      required: true 
     - name: to
       description: phone number to send SMS to
       required: true

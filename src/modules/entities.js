@@ -7,6 +7,7 @@
 
 // exports:
 //   createHandlers(app): create handlers for GET endpoint
+//   entityHandler(req, res): handle entity operations (get, add, edit, remove)
 
 const database = require('../data/database')
 const providers = require('../providers/providers');
@@ -14,13 +15,13 @@ const requesthandler = require('./requesthandler');
 
 exports.createHandlers = (app) => {
   // entities API endpoint
-  app.use('/entities/:entityName', requesthandler.checkJwt, requesthandler.processUser, handler);
+  app.use('/entities/:entityName', requesthandler.checkJwt, requesthandler.processUser, exports.entityHandler);
 }
 
-const handler = (req, res) => {
+exports.entityHandler = (req, res) => {
   try {
     // get the entity name from the parameters
-    const entity = req.params.entityName;
+    const entity = req.params.entityName || req.body.entityName;
 
     // get the provider for the entity
     const [providerName] = entity.split(':');

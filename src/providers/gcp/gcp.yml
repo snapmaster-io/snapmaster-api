@@ -10,9 +10,10 @@ connection:
   connectionInfo:
   - name: project
     description: project ID 
+    type: key
   - name: key
     description: paste the JSON from the service account key file
-    password: true
+    type: password
 parameters: 
   - name: region
     description: region to operate in
