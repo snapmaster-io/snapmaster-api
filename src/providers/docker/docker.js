@@ -1,17 +1,12 @@
 // Docker provider
 
 // exports:
-//   apis.
-//        addProject() - add a project
-//        getProjects() - get all projects
-//        getProject() - get a specific project
-//        removeProject() - remove a project
-//   entities.
-//        accounts - the accpimts entity
-// 
 //   createHandlers(app): create all route handlers
 //   createTrigger(connectionInfo, userId, activeSnapId, params): create a trigger (webhook)
 //   deleteTrigger(connectionInfo, triggerData): delete a trigger (webhook)
+// 
+//   entities.
+//        accounts - the accounts entity
 // 
 //   provider: provider name
 //   image: provider image url (local to SPA)
@@ -20,66 +15,27 @@
 
 const axios = require('axios');
 const provider = require('../provider');
-const requesthandler = require('../../modules/requesthandler');
 const snapengine = require('../../snap/snap-engine');
 const environment = require('../../modules/environment');
 
 const providerName = 'docker';
 const entityName = 'docker:accounts';
-const entityKey = 'username';
 
 exports.provider = providerName;
 exports.image = `/${providerName}-logo.png`;
 exports.type = provider.simpleProvider;
 exports.definition = provider.getDefinition(providerName);
 
-// api's defined by this provider
-exports.apis = {
-  addAccount: {
-    name: 'addAccount',
-    provider: providerName,
-    entity: entityName,
-    itemKey: entityKey,
-  },
-  getAccounts: {
-    name: 'getAccounts',
-    provider: providerName,
-    entity: entityName,
-    itemKey: entityKey,
-    keyFields: ['password', 'token']
-  },
-  getAccount: {
-    name: 'getAccount',
-    provider: providerName,
-    itemKey: entityKey,
-  },
-  removeAccount: {
-    name: 'removeAccount',
-    provider: providerName,
-    entity: entityName,
-    itemKey: entityKey,
-  },
-};
-
 // entities defined by this provider
 exports.entities = {};
 exports.entities[entityName] = {
   entity: entityName,
-  route: `/${providerName}`,
-  // get: getAccountsHandler
-  // post: postAccountsHandler
+  provider: providerName,
+  itemKey: '__id',
+  keyFields: ['password', 'token'],
 };
 
-exports.createHandlers = (app) => {
-  // add get and post handlers for any entities exposed by the provider
-  if (exports.entities) {
-    for (const key of Object.keys(exports.entities)) {
-      const entity = exports.entities[key];
-      entity.get && app.get(entity.route, requesthandler.checkJwt, requesthandler.processUser, entity.get);
-      entity.post && app.post(entity.route, requesthandler.checkJwt, requesthandler.processUser, entity.post);
-    }
-  }
-  
+exports.createHandlers = (app) => {  
   // Docker webhooks endpoint - called by dockerhub
   app.post('/docker/webhooks/:userId/:activeSnapId', function(req, res){
     try {
@@ -185,50 +141,7 @@ exports.deleteTrigger = async (connectionInfo, triggerData) => {
   }
 }
 
-exports.entities[entityName].get = (req, res) => {
-  requesthandler.invokeProvider(
-    res, 
-    req.userId, 
-    exports.apis.getAccounts, 
-    null,     // use the default entity name
-    [req.userId]); // parameter array
-}
-
-exports.entities[entityName].post = (req, res) => {
-  const action = req.body && req.body.action;
-
-  const add = async () => {
-    requesthandler.invokeProvider(
-      res, 
-      req.userId, 
-      exports.apis.addAccount, 
-      null,     // use the default entity name
-      [req.body.connectionInfo]); // parameter array
-  }
-
-  const remove = async () => {
-    requesthandler.invokeProvider(
-      res, 
-      req.userId, 
-      exports.apis.removeAccount, 
-      null,     // use the default entity name
-      [req.userId, req.body.username]); // parameter array
-  }
-
-  if (action === 'add' && req.body && req.body.connectionInfo) {
-    add();
-    return;
-  }
-
-  if (action === 'remove' && req.body && req.body.project) {
-    remove();
-    return;
-  }
-
-  res.status(200).send({ message: 'Unknown action'}); 
-}
-
-exports.apis.addAccount.func = async ([connectionInfo]) => {
+exports.entities[entityName].func = async ([connectionInfo]) => {
   try {
     // construct an object with all entity info
     const entity = {};
@@ -238,14 +151,14 @@ exports.apis.addAccount.func = async ([connectionInfo]) => {
 
     // verify we have everything we need to authenticate
     if (!entity.username || !entity.password) {
-      console.error('addAccount: did not receive all authorization information');
+      console.error('entityHandler: did not receive all authorization information');
       return null;
     }
 
     // get a long-lived access token
     const token = await getToken(connectionInfo);
     if (!token) {
-      console.error('addAccount: authorization failure');
+      console.error('entityHandler: authorization failure');
       return null;
     }
 
@@ -255,45 +168,15 @@ exports.apis.addAccount.func = async ([connectionInfo]) => {
       token: token, 
       __id: entity.username,
       __name: entity.username,
-      __url: `https://hub.docker.com/u/${entity.username}`
+      __url: `https://hub.docker.com/u/${entity.username}`,
+      __triggers: exports.definition.triggers,
+      __actions: exports.definition.actions,
     };
 
     return [result];
   } catch (error) {
     await error.response;
-    console.log(`addAccount: caught exception: ${error}`);
-    return null;
-  }
-};
-
-exports.apis.getAccounts.func = async () => {
-  // this is a no-op - invokeProvider does the work to return the entity
-  return [];
-};
-
-exports.apis.getAccount.func = async ([entityId]) => {
-  try {
-    return {
-      entityId: entityId,
-      name: entityId,
-    }
-  } catch (error) {
-    await error.response;
-    console.log(`getAccount: caught exception: ${error}`);
-    return null;
-  }
-};
-
-exports.apis.removeAccount.func = async ([userId, username]) => {
-  try {
-    // remove the document from the projects collection
-    await database.removeDocument(userId, entityName, username);
-
-    // invokeProvider will re-read the gcp:projects collection and return it
-    return [];
-  } catch (error) {
-    await error.response;
-    console.log(`removeAccount: caught exception: ${error}`);
+    console.log(`entityHandler: caught exception: ${error}`);
     return null;
   }
 }

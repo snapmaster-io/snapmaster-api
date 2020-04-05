@@ -28,6 +28,7 @@ const requesthandler = require('../../modules/requesthandler');
 const database = require('../../data/database');
 
 const providerName = 'gcp';
+const entityName = 'gcp:projects';
 
 exports.provider = providerName;
 exports.image = `/${providerName}-logo.png`;
@@ -75,6 +76,19 @@ exports.apis = {
 };
 
 // entities defined by this provider
+exports.entities = {};
+exports.entities[entityName] = {
+  entity: entityName,
+  provider: providerName,
+  itemKey: '__id',
+  keyFields: ['key'],
+  //entityHandler: getAccount
+  route: `/${providerName}`,
+  // get: getAccountsHandler
+  // post: postAccountsHandler
+};
+
+/*
 exports.entities = {
   'gcp:projects': {
     entity: 'gcp:projects',
@@ -87,9 +101,10 @@ exports.entities = {
     route: '/gcpprojects',
     //get: getAuthorizedProjectsHandler
   }
-};
+};*/
 
 exports.createHandlers = (app) => {
+  /* not needed
   if (exports.entities) {
     for (const key of Object.keys(exports.entities)) {
       const entity = exports.entities[key];
@@ -97,6 +112,7 @@ exports.createHandlers = (app) => {
       entity.post && app.post(entity.route, requesthandler.checkJwt, requesthandler.processUser, entity.post);
     }
   }
+  */
 
 /*
   // Get GCP projects endpoint
@@ -176,6 +192,55 @@ exports.createHandlers = (app) => {
   */
 }
 
+exports.entities[entityName].func = async ([connectionInfo]) => {
+  try {
+    // construct an object with all project and auth info
+    const project = {};
+    for (const param of connectionInfo) {
+      project[param.name] = param.value;
+    }
+
+    // verify we have everything we need to authenticate
+    if (!project.project || !project.key) {
+      console.error('addProject: did not receive all authorization information');
+      return null;
+    }
+
+    // retrieve all enabled services
+    const response = await getProject(project.key);
+    if (!response) {
+      console.error('addProject: could not retrieve project information');
+      return null;
+    }
+
+    // add the project attributes to the result
+    const result = { 
+      ...project, 
+      ...response, 
+      __id: project.project,
+      __name: project.project,
+      __url: `https://console.cloud.google.com/home/dashboard?project=${project.project}`,
+      __triggers: exports.definition.triggers,
+      __actions: exports.definition.actions,    
+    };
+
+      /*
+    // get the enabled services on the project
+    const services = await getEnabledServices(result);
+    if (services && services.data) {
+      result.services = services.data;
+    }
+    */
+
+    return [result];
+  } catch (error) {
+    await error.response;
+    console.log(`gcpEntityHandler: caught exception: ${error}`);
+    return null;
+  }
+}
+
+/*
 exports.entities['gcp:projects'].get = (req, res) => {
   requesthandler.invokeProvider(
     res, 
@@ -230,6 +295,7 @@ exports.entities['gcp:authorizedProjects'].get = (req, res) => {
     [req.userId], // parameter array
     refresh);
 }
+*/
 
 exports.apis.addProject.func = async ([connectionInfo]) => {
   try {
@@ -258,7 +324,9 @@ exports.apis.addProject.func = async ([connectionInfo]) => {
       ...response, 
       __id: project.project,
       __name: project.project,
-      __url: `https://console.cloud.google.com/home/dashboard?project=${project.project}`
+      __url: `https://console.cloud.google.com/home/dashboard?project=${project.project}`,
+      __triggers: exports.definition.triggers,
+      __actions: exports.definition.actions,    
     };
 
       /*
