@@ -25,7 +25,7 @@ const entityName = 'gcp:projects';
 
 exports.provider = providerName;
 exports.image = `/${providerName}-logo.png`;
-exports.type = provider.hybridProvider;
+exports.type = provider.simpleProvider;
 exports.definition = provider.getDefinition(providerName);
 exports.getAccessInfo = googleauth.getGoogleAccessToken;
 
