@@ -17,6 +17,7 @@ config:
     event: issues
   - name: slack-message
     provider: slack
+    workspace: slack:workspaces:default
     action: send
     channel: $channel
     message: received event $.action on issue $.issue.title in repo $repo

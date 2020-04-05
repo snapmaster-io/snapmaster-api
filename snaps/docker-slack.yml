@@ -13,10 +13,12 @@ parameters:
 config:
   - name: docker-push
     provider: docker
+    account: docker:accounts:default
     event: push
     repo: $repo
   - name: slack-message
     provider: slack
+    workspace: slack:workspaces:default
     action: send
     channel: $channel
     message: new image pushed into $repo in dockerhub

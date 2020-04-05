@@ -17,6 +17,7 @@ const provider = require('../provider');
 
 const providerName = 'slack';
 const entityName = `${providerName}:workspaces`;
+const defaultEntityName = `${entityName}:default`;
 
 exports.provider = providerName;
 exports.image = `/${providerName}-logo.png`;
@@ -38,18 +39,23 @@ exports.createHandlers = (app) => {
 exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param) => {
   try {
     const action = param.action;
+    const workspace = param.workspace;
     const channel = param.channel;
     const message = param.message;
 
-    console.log(`${providerName}: action ${action}, channel ${channel}, message ${message}`);
+    console.log(`${providerName}: workspace ${workspace}, action ${action}, channel ${channel}, message ${message}`);
 
-    if (!action || !channel || !message) {
+    if (!action || !workspace || !channel || !message) {
       console.error('invokeAction: missing required parameter');
       return null;
     }
 
-    // get token for calling API
-    const token = await getToken(connectionInfo);
+    // get token for calling API (either from the default workspace in connection info, or the workspace passed in)
+    const token = await getToken(
+      workspace === defaultEntityName ? 
+        connectionInfo :
+        workspace
+    );
 
     const url = 'https://slack.com/api/chat.postMessage';
     const headers = { 

@@ -20,6 +20,7 @@ const environment = require('../../modules/environment');
 
 const providerName = 'docker';
 const entityName = `${providerName}:accounts`;
+const defaultEntityName = `${entityName}:default`;
 
 exports.provider = providerName;
 exports.image = `/${providerName}-logo.png`;
@@ -56,6 +57,11 @@ exports.createHandlers = (app) => {
 exports.createTrigger = async (connectionInfo, userId, activeSnapId, param) => {
   try {
     // validate params
+    const account = param.account;
+    if (!account) {
+      console.error(`createTrigger: missing required parameter "account"`);
+      return null;
+    }
     const repoName = param.repo;
     if (!repoName) {
       console.error(`createTrigger: missing required parameter "repo"`);
@@ -79,7 +85,12 @@ exports.createTrigger = async (connectionInfo, userId, activeSnapId, param) => {
       registry: "registry-1.docker.io"
     };
   
-    const token = await getToken(connectionInfo);
+    // get token for calling API (either from the default account in connection info, or the account passed in)
+    const token = await getToken(
+      account === defaultEntityName ? 
+        connectionInfo :
+        account
+    );
     if (!token) {
       console.error('createTrigger: could not obtain token');
       return null;

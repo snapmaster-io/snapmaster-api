@@ -29,6 +29,7 @@ config:
     repo: $.repository.html_url
   - name: slack-message
     provider: slack
+    workspace: slack:workspaces:default
     action: send
     channel: $channel
     message: built $repo into gcr.io/$project/$image

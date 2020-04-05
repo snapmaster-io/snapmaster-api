@@ -19,6 +19,7 @@ config:
     event: push
   - name: twilio-message
     provider: twilio
+    account: twilio:accounts:default
     action: send
     from: $from
     to: $to

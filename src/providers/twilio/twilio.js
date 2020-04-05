@@ -17,6 +17,7 @@ const provider = require('../provider');
 
 const providerName = 'twilio';
 const entityName = `${providerName}:accounts`;
+const defaultEntityName = `${entityName}:default`;
 
 exports.provider = providerName;
 exports.image = `/${providerName}-logo.png`;
@@ -38,20 +39,26 @@ exports.createHandlers = (app) => {
 exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param) => {
   try {
     const action = param.action;
+    const account = param.account;
     const to = param.to;
     const message = param.message;
     const from = param.from;
     const mediaUrl = param.mediaUrl || 'https://github.com/snapmaster-io/snapmaster/raw/master/public/SnapMaster-logo-220.png';
 
-    console.log(`${providerName}: action ${action}, to ${to}, message ${message}`);
+    console.log(`${providerName}: account ${account}, action ${action}, to ${to}, message ${message}`);
 
-    if (!action || !to || !from || !message) {
+    if (!action || !account || !to || !from || !message) {
       console.error('invokeAction: missing required parameter');
       return null;
     }
 
-    // get token for calling API
-    const client = await getClient(connectionInfo);
+    // get client for calling API (either from the default account in connection info, or the account passed in)
+    const client = await getClient(
+      account === defaultEntityName ? 
+        connectionInfo :
+        account
+    );
+
     const msg = {
       body: message, 
       from,

@@ -22,6 +22,7 @@ parameters:
 config:
   - name: docker-push
     provider: docker
+    account: docker:accounts:default
     event: push
     repo: $repo
   - name: gcr-copy
@@ -39,6 +40,7 @@ config:
     region: us-central1
   - name: slack-message
     provider: slack
+    workspace: slack:workspaces:default
     action: send
     channel: $channel
     message: dockerhub $repo copied to gcr.io/$project/$image and deployed to GCR!

@@ -17,6 +17,7 @@ config:
     event: push
   - name: slack-message
     provider: slack
+    workspace: slack:workspaces:default
     action: send
     channel: $channel
     message: received push on $repo
