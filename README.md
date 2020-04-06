@@ -6,15 +6,13 @@ This repository contains the API for the SnapMaster single-page application.
 
 SnapMaster-API utilizes the express web server, and relies on [Auth0](https://auth0.com) for authentication and authorization.
 
-It is a Google Cloud Platform app, with dependencies on Google Cloud Build, Google Cloud Run, Google Cloud Pubsub, 
-Google Cloud Scheduler, and Google Cloud Natural Language API's. 
+It is a Google Cloud Platform app, with dependencies on Google Cloud Build, Google Cloud Run, Google Cloud Pubsub, and Google Cloud Scheduler. 
 
 ## Available scripts
 
 ### `npm start` (or `npm run start:dev`)
 
-Runs the backend with ENV=dev, which invokes the dev environment.  This will append "-dev" to the Firebase collection
-(`users-dev`), the pubsub topic (`invoke-load-dev`), etc.
+Runs the backend with ENV=dev, which invokes the dev environment.  This will append "-dev" to the pubsub topic (`invoke-load-dev`), scheduler job, etc.
 
 The pub-sub subscription will run in pull mode, and is invoked by the scheduler every hour on the hour.
 
@@ -22,8 +20,7 @@ The express webserver will default to listening on port 8080.  Override with POR
 
 ### `npm run start:prod`
 
-Runs the backend with ENV=prod, which invokes the production environment. This will choose the main Firebase 
-collection (`users`), and append "-prod" to various resources such as the pubsub topic (`invoke-load-prod`), etc.  
+Runs the backend with ENV=prod, which invokes the production environment. This will append "-prod" to various resources such as the pubsub topic (`invoke-load-prod`), scheduler job, etc.  
 
 The pub-sub subscription will run in push mode, calling the /invoke-load API, and is invoked by the scheduler 
 every hour on the hour.
@@ -35,10 +32,10 @@ The express webserver will default to listening on port 8080.  Override with POR
 Runs the backend with dev account credentials but with the `prod` configuration, which runs 
 a production-like hosted environment in the dev account. 
 
-### `npm run build-spa` and `npm run copy`
+### `npm run build-spa:dev` | `npm run build-spa:prod`, and `npm run copy`
 
 These will build the production (minified) version of the [SnapMaster](https://github.com/snapmaster-io/snapmaster) front-end, 
-and copy the files into the `build` subdirectory.  It assumes that the snapmaster project is in a peer directory to 
+and copy the files into the `build` subdirectory.  It assumes that the snapmaster project is cloned into a peer directory of 
 the snapmaster-api project.
 
 ### `npm run build:dev | build:prod` and `npm run deploy:dev | deploy:prod`
@@ -57,8 +54,11 @@ The app is bootstrapped out of `server.js`, which pulls in all other source depe
 
 Contains all the config for the project.  These files aren't committed to source control since they contain secrets.
 The API expects an `auth0_config_{dev|prod}.json` file for application keys and secret keys for Auth0; 
-a `{google|facebook|twitter|yelp}_config_{dev|prod}.json` for client ID's and secret keys Google, Facebook, Twitter; and a 
+a `{google|twilio|sendgrid|etc}_config_{dev|prod}.json` for client ID's and secret keys for various service providers; and a 
 `cloud_platform_config_{dev|prod}.json` file for the Google Cloud Platform service account used with this application.
+
+In particular, the `cloud_platform_config_{dev|prod}.json` file is required for proper bring-up of the service.  It is the 
+key file associated with a service account that has "project/owner" permissions on your GCP project.
 
 ### `scripts`
 
@@ -66,21 +66,27 @@ Contains scripts to build and deploy the app to GCP, as well as to set up the IA
 
 ### `src/data`
 
-Contains the data access layer, database abstraction layer, and data pipeline
+Contains the data access layer, database abstraction layer, and data pipeline.
 
 ### `src/modules`
 
-Contains various app modules such as the environment, data pipeline, profile, connections 
+Contains various app modules such as the environment, data pipeline, profile, connections, entities, etc.
 
 ### `src/providers`
 
-Contains the provider implementations for the supported social media accounts.  `providers.js` pulls these all together and 
-consumers can import all providers by importing `providers.js`.
+Contains the provider implementations for the supported social media accounts.  `providers.js` pulls these all together. 
 
 ### `src/services`
 
-Contains wrappers around all of the services used: Auth0, Facebook, Google, Twitter, and GCP (pubsub, scheduler, 
-sentiment servcies).
+Contains wrappers around all of the services used: Auth0, GCP (pubsub, scheduler, etc), twilio, sendgrid, etc.
+
+### `src/snap`
+
+Contains the Snap Engine and the snap data access layer.
+
+### `snaps`
+
+Contains YAML definitions for common snaps.
 
 ### `utils`
 
