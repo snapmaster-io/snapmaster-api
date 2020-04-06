@@ -61,11 +61,15 @@ exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param)
         headers: headers
       });
 
-    const data = response.data;
+    // construct output message
+    const output = response.data;
+    const message = 
+      `${output && output.error && output.error.message ? `error: ${output.error.message}, ` : ''}` + 
+      `stdout: ${output && output.stdout}, stderr: ${output && output.stderr}`;
 
-    console.log(`invokeAction: ${providerName} executed and returned ${data}`);
+    console.log(`invokeAction: ${providerName} executed action ${param.action} and returned ${message}`);
 
-    return data;
+    return output;
   } catch (error) {
     console.error(`invokeAction: caught exception: ${error}`);
     return null;
