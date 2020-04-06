@@ -37,7 +37,8 @@ exports.createHandlers = (app) => {
   app.post('/validatecode', function(req, res){
     console.log('POST /validatecode');
     const email = req.body.email;
-    console.log(`\Email: ${email}`);
+    const code = req.body.code;
+    console.log(`\Email: ${email}, code: ${code}`);
 
     // validate simple auth token
     const auth = req.headers.authorization;
@@ -47,7 +48,7 @@ exports.createHandlers = (app) => {
     const isValid = phrase.match(regex);
     
     const validate = async () => {
-      const data = validateEmail(email);
+      const data = await validateBetaCode(email, code);
       res.status(200).send(data);
     }
 
@@ -68,10 +69,15 @@ const requestAccess = async (email, document) => {
   }
 }
 
-const validateEmail = async (email) => {
+const validateBetaCode = async (email, code) => {
   try {
-    return await database.getDocument(dbconstants.signups, dbconstants.emailsCollection, email);
+    const signup = await database.getDocument(dbconstants.signups, dbconstants.emailsCollection, email);
+    if (signup && signup.code === code) {
+      return signup;
+    }
+    return null;
   } catch (error) {
-    console.log(`validateEmail: caught exception: ${error}`);    
+    console.log(`validateEmail: caught exception: ${error}`);
+    return null;
   }
 }
