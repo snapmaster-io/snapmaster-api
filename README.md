@@ -60,6 +60,17 @@ a `{google|twilio|sendgrid|etc}_config_{dev|prod}.json` for client ID's and secr
 In particular, the `cloud_platform_config_{dev|prod}.json` file is required for proper bring-up of the service.  It is the 
 key file associated with a service account that has "project/owner" permissions on your GCP project.
 
+Also, the `auth0_config_{dev|prod}.json` file is required for the client ID and client secret for your Auth0 tenant.
+
+```
+{
+  "domain": "YOURDOMAIN.auth0.com",
+  "client_id": "THE CLIENT ID FOR YOUR DOMAIN",
+  "client_secret": "THE CLIENT SECRET FOR YOUR DOMAIN",
+  "audience": "https://api.snapmaster.io"
+}
+```
+
 ### `scripts`
 
 Contains scripts to build and deploy the app to GCP, as well as to set up the IAM rules for the app.
