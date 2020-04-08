@@ -25,12 +25,30 @@ const keys = {
 // activate a snap into the user's environment
 exports.activateSnap = async (userId, snapId, params, activeSnapId = null) => {
   try {
-    // get the snap object
-    const snap = await snapdal.getSnap(snapId);
+    let activeSnap = {};
+    let snap;
+    if (activeSnapId) {
+      // get the active snap object
+      activeSnap = await database.getDocument(userId, dbconstants.activeSnapsCollection, activeSnapId);
+      if (!activeSnap) {
+        const message = `could not find active snap ID ${activeSnapId}`;
+        console.error(`activateSnap: ${message}`);
+        return { message: message };
+      }
+
+      // use the snap definition that is embedded in the activeSnap
+      snap = activeSnap.snap;
+    } 
+
+    // if we don't have a snap yet, retrieve it.  older activeSnaps didn't embed the 
+    // snap yet, and this code path helps with migration
     if (!snap) {
-      const message = `could not find snap ${snapId}`;
-      console.error(`activateSnap: ${message}`);
-      return { message: message };
+      snap = await snapdal.getSnap(snapId);
+      if (!snap) {
+        const message = `could not find snap ${snapId}`;
+        console.error(`activateSnap: ${message}`);
+        return { message: message };
+      }
     }
 
     if (!snap.provider) {
@@ -56,17 +74,19 @@ exports.activateSnap = async (userId, snapId, params, activeSnapId = null) => {
     const timestamp = new Date().getTime();
     activeSnapId = activeSnapId || ("" + timestamp);
 
-    const activeSnap = {
+    activeSnap = {
+      ...activeSnap,
       activeSnapId: activeSnapId,
       userId: userId,
       snapId: snapId,
+      snap: snap,
       provider: provider.provider,
       state: dbconstants.snapStateActive,
       activated: timestamp,
       trigger: snap.trigger,
       params: params,
       boundParams: boundParams
-    }
+    };
 
     // find the trigger parameter
     const triggerParam = boundParams.find(p => p.name === snap.trigger);
@@ -188,7 +208,7 @@ exports.executeSnap = async (userId, activeSnapId, params, payload) => {
     await database.storeDocument(userId, dbconstants.activeSnapsCollection, activeSnapId, activeSnap);
 
     // load snap definition via snapId
-    const snap = await snapdal.getSnap(activeSnap.snapId);
+    const snap = activeSnap.snap;//await snapdal.getSnap(activeSnap.snapId);
     if (!snap) {
       console.error(`executeSnap: cannot find snapId ${activeSnap.snapId}`);
       return null;
