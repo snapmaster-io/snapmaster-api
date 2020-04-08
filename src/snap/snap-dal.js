@@ -74,7 +74,7 @@ exports.createHandlers = (app) => {
     
     const create = async () => {
       const definition = req.body.definition;
-      const snap = await exports.createSnap(req.userId, definition);
+      const snap = await exports.createSnap(req.userId, definition, true);
       if (snap) {
         res.status(200).send({ message: 'success', snap: snap });
       } else {
@@ -85,6 +85,11 @@ exports.createHandlers = (app) => {
     const del = async () => {
       await deleteSnap(req.userId, snapId);
       res.status(200).send({ message: 'success' });
+    }
+
+    const edit = async () => {
+      const snap = await editSnap(req.userId, snapId, req.body.private);
+      res.status(200).send(snap ? { message: 'success', snap: snap } : { message: 'error' });
     }
 
     const fork = async () => {
@@ -100,7 +105,11 @@ exports.createHandlers = (app) => {
         del();
         return;
       case 'edit':
-        create();
+        if (req.body.definition) {
+          create();
+        } else {
+          edit();
+        }
         return;
       case 'fork':
         fork();
@@ -292,6 +301,41 @@ const deleteSnap = async (userId, snapId) => {
     const nameArray = snapId.split('/');
     const snapName = nameArray.length > 1 ? nameArray[1] : snapId;
     await database.removeDocument(account, dbconstants.snapsCollection, snapName);
+  } catch (error) {
+    console.log(`deleteSnap: caught exception: ${error}`);
+    return null;
+  }
+}
+
+// edit a snap in the user's environment
+const editSnap = async (userId, snapId, privacy) => {
+  try {
+    // get the account name associated with the user
+    const account = await getAccount(userId);
+    if (!account) {
+      console.error(`editSnap: cannot find account for userId ${userId}`);
+      return null;
+    }
+
+    // get the snap definition 
+    const snap = await exports.getSnap(snapId);
+    if (!snap) {
+      console.error(`editSnap: cannot find snap ${snapId}`);
+      return null;
+    }
+
+    // set the privacy flag
+    snap.private = privacy;
+
+    // re-construct snap name to ensure it's in the user's account
+    const nameArray = snapId.split('/');
+    const snapName = nameArray.length > 1 ? nameArray[1] : snapId;
+
+    // save the updated snap and return it
+    await database.storeDocument(account, dbconstants.snapsCollection, snapName, snap);
+
+    // return the updated snap
+    return exports.getSnap(snapId);
   } catch (error) {
     console.log(`deleteSnap: caught exception: ${error}`);
     return null;
