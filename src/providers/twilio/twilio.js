@@ -56,7 +56,7 @@ exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param)
     const client = await getClient(
       account === defaultEntityName ? 
         connectionInfo :
-        account
+        param[entityName]
     );
 
     const msg = {
@@ -96,7 +96,7 @@ exports.entities[entityName].func = async ([connectionInfo]) => {
     }
 
     // retrieve the client
-    const client = await getClient(connectionInfo);
+    const client = await getClient(entity);
     if (!client) {
       console.error('entityHandler: authorization failure');
       return null;
@@ -122,14 +122,19 @@ exports.entities[entityName].func = async ([connectionInfo]) => {
 
 const getClient = async (connectionInfo) => {
   try {
-    const sid = connectionInfo.find(p => p.name === 'sid');
-    const token = connectionInfo.find(p => p.name === 'token');
-
-    if (!sid || !token) {
+    const sid = connectionInfo.sid;
+    if (!sid) {
+      console.error('getClient: sid not found');
       return null;
     }
 
-    const client = new Twilio(sid.value, token.value);
+    const token = connectionInfo.token;
+    if (!token) {
+      console.error('getClient: token not found');
+      return null;
+    }    
+
+    const client = new Twilio(sid, token);
     return client;
   } catch (error) {
     console.log(`getClient: caught exception: ${error}`);

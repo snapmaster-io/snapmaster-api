@@ -54,7 +54,7 @@ exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param)
     const token = await getToken(
       workspace === defaultEntityName ? 
         connectionInfo :
-        workspace
+        param[entityName]
     );
 
     const url = 'https://slack.com/api/chat.postMessage';
@@ -100,11 +100,15 @@ exports.entities[entityName].func = async ([connectionInfo]) => {
     }
 
     // retrieve the access token
-    const token = await getToken(connectionInfo);
+    const token = await getToken(entity);
     if (!token) {
       console.error('entityHandler: authorization failure');
       return null;
     }
+
+    const url = entity.workspace.substring('.slack.com') ? 
+      entity.workspace : 
+      `${entity.workspace}.slack.com`;
 
     // add the entity attributes to the result
     const result = { 
@@ -112,7 +116,7 @@ exports.entities[entityName].func = async ([connectionInfo]) => {
       token: token, 
       __id: entity.workspace,
       __name: entity.workspace,
-      __url: `https://${entity.workspace}.slack.com`,
+      __url: `https://${url}`,
       __triggers: exports.definition.triggers,
       __actions: exports.definition.actions,
     };
@@ -127,8 +131,12 @@ exports.entities[entityName].func = async ([connectionInfo]) => {
 
 const getToken = async (connectionInfo) => {
   try {
-    const token = connectionInfo.find(p => p.name === 'token');
-    return token && token.value;
+    const token = connectionInfo.token;
+    if (!token) {
+      console.error('getToken: token not found');
+      return null;
+    }    
+    return token;
   } catch (error) {
     console.log(`getToken: caught exception: ${error}`);
     return null;

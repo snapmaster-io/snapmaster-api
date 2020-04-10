@@ -10,7 +10,7 @@ connection:
     description: user name
   - name: password
     description: triggers require password (not a personal access token)
-    password: true
+    type: password
 triggers: 
   - name: push
     description: push event into a repository

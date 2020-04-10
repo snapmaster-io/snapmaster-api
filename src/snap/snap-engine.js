@@ -70,6 +70,14 @@ exports.activateSnap = async (userId, snapId, params, activeSnapId = null) => {
     // bind the parameters for the snap
     const boundParams = bindParameters(snap.config, params);
 
+    // get the parameter object for the trigger
+    const triggerParam = boundParams.find(c => c.name === snap.trigger);
+
+    // bind entities to the parameter (this mutates the parameter)
+    // this is where connection information that is stored on a per-entity basis gets added to the parameter
+    // for example, for Docker, the docker:accounts entity for the account gets retrieved and added to parameter
+    bindEntitiesToParameter(userId, provider.definition.triggers, triggerParam, keys.triggers);
+
     // active snap ID is current timestamp
     const timestamp = new Date().getTime();
     activeSnapId = activeSnapId || ("" + timestamp);
@@ -87,9 +95,6 @@ exports.activateSnap = async (userId, snapId, params, activeSnapId = null) => {
       params: params,
       boundParams: boundParams
     };
-
-    // find the trigger parameter
-    const triggerParam = boundParams.find(p => p.name === snap.trigger);
 
     // get the provider's connection information
     const connInfo = await getConnectionInfo(userId, snap.provider);
@@ -226,7 +231,7 @@ exports.executeSnap = async (userId, activeSnapId, params, payload) => {
       // bind entities to the parameter (this mutates the parameter)
       // this is where connection information that is stored on a per-entity basis gets added to the parameter
       // for example, for GCP, the gcp:projects entity for the project gets retrieved and added to parameter
-      bindEntitiesToParameter(userId, provider, param);
+      bindEntitiesToParameter(userId, provider.definition.actions, param, keys.actions);
 
       // get the provider's connection information
       // this brings in global connection information stored in the top-level user struct
@@ -382,12 +387,13 @@ exports.resumeSnap = async (userId, activeSnapId) => {
 }
 
 // bind entities to parameter by retrieving the entity value and adding to the parameter
-const bindEntitiesToParameter = async (userId, provider, param) => {
+const bindEntitiesToParameter = async (userId, definitions, param, key) => {
   try {
     // find the definition in the provider action definitions based on the key
-    const definition = provider.definition.actions.find(t => t.name === param.action);
+    const definition = definitions.find(t => t.name === param[key]);
     if (!definition) {
       console.error(`bindEntitiesToParameter: action ${param.action} not found in provider definition`);
+      return;
     }
 
     // retrieve the entity for each parameter annotated with an entity
@@ -413,24 +419,34 @@ const bindEntitiesToParameter = async (userId, provider, param) => {
 // bind parameters to config by replacing ${paramname} with the parameter value
 // returns the bound config object
 const bindParameters = (config, params) => {
-  // iterate over each entry in the config array
-  const boundConfig = config.map(c => {
-    // construct a new config entry
-    const configEntry = { ...c };
-    for (const key of Object.keys(c)) {
-      for (const param of params) {
-        const paramNameRegex = new RegExp(`\$${param.name}`, 'g');
-        const paramValue = param.value;
-        // copy the config entry, replacing the ${param} with its value
-        configEntry[key] = configEntry[key].replace(`$${param.name}`, paramValue);
-      }
-    }
-    // return the newly constructed entry
-    return configEntry;
-  });
+  try {
+    // iterate over each entry in the config array
+    const boundConfig = config.map(c => {
+      // construct a new config entry
+      const configEntry = { ...c };
+      for (const key of Object.keys(c)) {
+        for (const param of params) {
+          //const paramNameRegex = new RegExp(`\$${param.name}`, 'g');
 
-  // return the bound config
-  return boundConfig;
+          // grab the current value as a string
+          const currentValue = '' + configEntry[key];
+
+          // grab the value of the parameter
+          const paramValue = param.value;
+
+          // set the config entry value, replacing the ${param} with its value
+          configEntry[key] = currentValue.replace(`$${param.name}`, paramValue);
+        }
+      }
+      // return the newly constructed entry
+      return configEntry;
+    });
+
+    // return the bound config
+    return boundConfig;
+  } catch (error) {
+    console.error(`bindParameters: caught exception: ${error}`);
+  }
 }
 
 // bind payload by finding all JSONPath expressions and evaluating against the payload value
@@ -474,7 +490,14 @@ const getConnectionInfo = async (userId, providerName) => {
     // retrieve connection info from the user's connection info in the profile
     const connection = await database.getUserData(userId, providerName);
     const connectionInfo = connection && connection.connectionInfo;
-    return connectionInfo;
+
+    // normalize connection info into a single object
+    const connectionInfoObject = {};
+    for (const param of connectionInfo) {
+      connectionInfoObject[param.name] = param.value;
+    }
+
+    return connectionInfoObject;
   } catch (error) {
     console.error(`getConnectionInfo: caught exception: ${error}`);
     return null;
@@ -543,32 +566,35 @@ const validateConfigSection = (definitions, key, config) => {
     // ensure config contains the key
     const definitionKey = config[key];
     if (!definitionKey) {
-      console.error(`validateConfigSection: ${key} not specified`);
-      return false;
+      const message = `'${key}' not specified`;
+      console.error(`validateConfigSection: ${message}`);
+      return message;
     }
 
     // find the definition in the provider definitions based on the key
     const definition = definitions.find(t => t.name === definitionKey);
     if (!definition) {
-      console.error(`validateConfigSection: key ${key} not found in provider definition`);
-      return false;
+      const message = `'${key}' not found in provider definition`;
+      console.error(`validateConfigSection: ${message}`);
+      return message;
     }
 
     // validate that we have each of the required parameters
     for (const param of definition.parameters) {
       if (param.required) {
         if (!config[param.name]) {
-          console.error(`validateTriggerConfig: required parameter ${param.name} not found in snap config`);
-          return false;
+          const message = `required parameter '${param.name}' not found in snap config`;
+          console.error(`validateConfigSection: ${message}`);
+          return message;
         }
       }
     }
 
     // config is valid
-    return true;
+    return null;
   } catch (error) {
     console.error(`validateConfigSection: caught exception: ${error}`);
-    return false;
+    return 'unknown error validating config section';
   }
 }
 
@@ -583,11 +609,11 @@ const validateSnap = async (snap) => {
     const provider = providers.getProvider(config.provider);
 
     // validate parameters against the trigger definitions
-    const valid = validateConfigSection(provider.definition.triggers, keys.triggers, config);
-    if (!valid) {
-      const message = `${provider.provider} failed to validate config in snap ${snap.snapId}`;
-      console.error(`activateSnap: ${message}`);
-      return { message: message };
+    const invalid = validateConfigSection(provider.definition.triggers, keys.triggers, config);
+    if (invalid) {
+      const message = `${provider.provider} provider failed to validate config in snap ${snap.snapId}`;
+      console.error(`validateSnap: ${message}`);
+      return { message: `${message}: ${invalid}` };
     }
 
     // validate parameters against the action definitions
@@ -599,11 +625,11 @@ const validateSnap = async (snap) => {
       const provider = providers.getProvider(config.provider);
 
       // validate parameters against the action definitions
-      const valid = validateConfigSection(provider.definition.actions, keys.actions, config);
-      if (!valid) {
-        const message = `${provider.provider} failed to validate config in snap ${snap.snapId}`;
-        console.error(`activateSnap: ${message}`);
-        return { message: message };
+      const invalid = validateConfigSection(provider.definition.actions, keys.actions, config);
+      if (invalid) {
+        const message = `${provider.provider} provider failed to validate config in snap ${snap.snapId}`;
+        console.error(`validateSnap: ${message}`);
+        return { message: `${message}: ${invalid}` };
       }
     }
 
@@ -611,5 +637,6 @@ const validateSnap = async (snap) => {
     return null;
   } catch (error) {
     console.error(`validateSnap: caught exception: ${error}`);
+    return { message: 'unknown error validating snap config' };
   }
 }

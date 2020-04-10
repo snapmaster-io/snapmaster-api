@@ -54,7 +54,7 @@ exports.createHandlers = (app) => {
   });
 }
 
-exports.createTrigger = async (connectionInfo, userId, activeSnapId, param) => {
+exports.createTrigger = async (defaultConnectionInfo, userId, activeSnapId, param) => {
   try {
     // validate params
     const account = param.account;
@@ -88,8 +88,8 @@ exports.createTrigger = async (connectionInfo, userId, activeSnapId, param) => {
     // get token for calling API (either from the default account in connection info, or the account passed in)
     const token = await getToken(
       account === defaultEntityName ? 
-        connectionInfo :
-        account
+        defaultConnectionInfo :
+        param[entityName]
     );
     if (!token) {
       console.error('createTrigger: could not obtain token');
@@ -115,7 +115,8 @@ exports.createTrigger = async (connectionInfo, userId, activeSnapId, param) => {
     const triggerData = {
       id: data.slug,
       name: data.name,
-      url: `${url}${data.slug}/`
+      url: `${url}${data.slug}/`,
+      token: token
     }
 
     return triggerData;
@@ -133,7 +134,7 @@ exports.deleteTrigger = async (connectionInfo, triggerData) => {
       return null;
     }
 
-    const token = await getToken(connectionInfo);
+    const token = triggerData.token;
     const headers = { 
       'content-type': 'application/json',
       'authorization': `JWT ${token}`
@@ -170,7 +171,7 @@ exports.entities[entityName].func = async ([connectionInfo]) => {
     }
 
     // get a long-lived access token
-    const token = await getToken(connectionInfo);
+    const token = await getToken(entity);
     if (!token) {
       console.error('entityHandler: authorization failure');
       return null;
@@ -197,15 +198,23 @@ exports.entities[entityName].func = async ([connectionInfo]) => {
 
 const getToken = async (connectionInfo) => {
   try {
+    // check whether an unexpired token already exists in the connection info
+    if (connectionInfo.token && 
+        connectionInfo.expiresAt && 
+        !tokenExpired(connectionInfo.expiresAt)) {
+      // return the unexpired token
+      return token;
+    }
+
     // extract username and password from profile
-    const username = connectionInfo.find(p => p.name === 'username');
-    if (!username || !username.value) {
+    const username = connectionInfo.username;
+    if (!username) {
       console.error('getToken: username not found');
       return null;
     }
 
-    const password = connectionInfo.find(p => p.name === 'password');
-    if (!password || !password.value) {
+    const password = connectionInfo.password;
+    if (!password) {
       console.error('getToken: password not found');
       return null;
     }
@@ -213,11 +222,18 @@ const getToken = async (connectionInfo) => {
     const url = 'https://hub.docker.com/v2/users/login/';
     const response = await axios.post(
       url,
-      { "username": username.value, "password": password.value },
+      { "username": username, "password": password },
       { 'content-type': 'application/json' }
     );
 
     const data = response.data;
+
+    // store the token and expiration info
+    if (data && data.token) {
+      connectionInfo.token = data.token;
+      connectionInfo.expiresAt = Date.now();
+    }    
+
     return data && data.token;
   } catch (error) {
     console.log(`getToken: caught exception: ${error}`);
@@ -230,3 +246,16 @@ const handleWebhook = (userId, activeSnapId, name, payload) => {
   snapengine.executeSnap(userId, activeSnapId, [name], payload);
 }
 
+// calculate whether an token has expired based on this provider
+const tokenExpired = (expiresAt) => {
+  try {
+    const now = Date.now();
+    if (expiresAt > now) {
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.log(`tokenExpired: caught exception: ${error}`);
+    return true;
+  }
+}
