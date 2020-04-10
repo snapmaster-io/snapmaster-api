@@ -46,14 +46,11 @@ exports.createHandlers = (app) => {
 
 exports.entities[entityName].func = async ([connectionInfo]) => {
   try {
-    /*
     // construct an object with all project and auth info
     const project = {};
     for (const param of connectionInfo) {
       project[param.name] = param.value;
     }
-    */
-    const project = connectionInfo;
 
     // verify we have everything we need to authenticate
     if (!project.project || !project.key) {
