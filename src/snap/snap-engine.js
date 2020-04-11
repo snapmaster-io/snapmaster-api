@@ -104,7 +104,7 @@ exports.activateSnap = async (userId, snapId, params, activeSnapId = null) => {
     }
 
     // create the snap trigger
-    const triggerData = await provider.createTrigger(connInfo, userId, activeSnapId, triggerParam);
+    const triggerData = await provider.createTrigger(provider.provider, connInfo, userId, activeSnapId, triggerParam);
     if (!triggerData) {
       return { message: 'could not activate snap' };
     }
@@ -142,7 +142,7 @@ exports.deactivateSnap = async (userId, activeSnapId) => {
     }
     
     // delete the snap trigger
-    await provider.deleteTrigger(connInfo, activeSnap.triggerData);
+    await provider.deleteTrigger(providerName, connInfo, activeSnap.triggerData);
 
     // delete all docs in the logs collection under the active snap document
     const docName = `${userId}/${dbconstants.activeSnapsCollection}/${activeSnapId}`;
@@ -177,7 +177,7 @@ exports.editSnap = async (userId, activeSnapId, params) => {
     }
     
     // delete the snap trigger
-    await provider.deleteTrigger(connInfo, activeSnap.triggerData);
+    await provider.deleteTrigger(activeSnap.provider, connInfo, activeSnap.triggerData);
 
     // now, activate the snap using the new parameters
     return await exports.activateSnap(userId, activeSnap.snapId, params, activeSnapId);
@@ -329,7 +329,7 @@ exports.pauseSnap = async (userId, activeSnapId) => {
     }
 
     // delete the snap trigger
-    await provider.deleteTrigger(connInfo, activeSnap.triggerData);
+    await provider.deleteTrigger(activeSnap.provider, connInfo, activeSnap.triggerData);
 
     // set the snap state to "paused"
     activeSnap.state = dbconstants.snapStatePaused;
@@ -367,7 +367,7 @@ exports.resumeSnap = async (userId, activeSnapId) => {
     }
 
     // re-create the snap trigger
-    const triggerData = await provider.createTrigger(connInfo, userId, activeSnapId, triggerParam);
+    const triggerData = await provider.createTrigger(provider.provider, connInfo, userId, activeSnapId, triggerParam);
     if (!triggerData) {
       return { message: 'could not re-create trigger for this snap - try deactivating it' };
     }

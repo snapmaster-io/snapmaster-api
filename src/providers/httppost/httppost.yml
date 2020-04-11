@@ -1,0 +1,22 @@
+---
+version: provider-v1alpha1 
+name: httppost
+description: HTTP POST Provider Definition
+connection: 
+  type: simple
+  entity: httppost:webhooks
+  connectionInfo:
+  - name: webhook
+    description: name of HTTP POST trigger
+  - name: secret
+    description: secret that the caller must use to trigger snap
+    type: password
+triggers: 
+  - name: post
+    description: HTTP POST event
+    parameters:
+    - name: webhook
+      description: webhook name
+      entity: httppost:webhooks
+      required: true 
+actions:

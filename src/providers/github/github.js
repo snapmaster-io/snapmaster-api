@@ -8,8 +8,8 @@
 //        getAllRepos(userId): get all repos for this user
 //
 //   createHandlers(app, [middlewaree]): create all route handlers
-//   createTrigger(connectionInfo, userId, activeSnapId, params): create a trigger (webhook)
-//   deleteTrigger(connectionInfo, triggerData): delete a trigger (webhook)
+//   createTrigger(providerName, connectionInfo, userId, activeSnapId, params): create a trigger (webhook)
+//   deleteTrigger(providerName, connectionInfo, triggerData): delete a trigger (webhook)
 //
 //   provider: provider name
 //   image: provider image url (local to SPA)
@@ -131,7 +131,7 @@ exports.createHandlers = (app) => {
   });
 }
 
-exports.createTrigger = async (connectionInfo, userId, activeSnapId, param) => {
+exports.createTrigger = async (providerName, connectionInfo, userId, activeSnapId, param) => {
   try {
     // validate params
     const repoName = param.repo;
@@ -206,7 +206,7 @@ exports.createTrigger = async (connectionInfo, userId, activeSnapId, param) => {
   }
 }
 
-exports.deleteTrigger = async (connectionInfo, triggerData) => {
+exports.deleteTrigger = async (providerName, connectionInfo, triggerData) => {
   try {
     // validate params
     if (!triggerData || !triggerData.url) {

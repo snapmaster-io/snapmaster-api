@@ -2,8 +2,8 @@
 
 // exports:
 //   createHandlers(app): create all route handlers
-//   createTrigger(connectionInfo, userId, activeSnapId, params): create a trigger (webhook)
-//   deleteTrigger(connectionInfo, triggerData): delete a trigger (webhook)
+//   createTrigger(providerName, connectionInfo, userId, activeSnapId, params): create a trigger (webhook)
+//   deleteTrigger(providerName, connectionInfo, triggerData): delete a trigger (webhook)
 // 
 //   entities.
 //        accounts - the accounts entity
@@ -54,7 +54,7 @@ exports.createHandlers = (app) => {
   });
 }
 
-exports.createTrigger = async (defaultConnectionInfo, userId, activeSnapId, param) => {
+exports.createTrigger = async (providerName, defaultConnectionInfo, userId, activeSnapId, param) => {
   try {
     // validate params
     const account = param.account;
@@ -126,7 +126,7 @@ exports.createTrigger = async (defaultConnectionInfo, userId, activeSnapId, para
   }
 }
 
-exports.deleteTrigger = async (connectionInfo, triggerData) => {
+exports.deleteTrigger = async (providerName, connectionInfo, triggerData) => {
   try {
     // validate params
     if (!triggerData || !triggerData.url) {

@@ -18,6 +18,86 @@ exports.simpleProvider = 'simple';
 exports.linkProvider = 'link';
 exports.hybridProvider = 'hybrid';
 
+// create a provider trigger across service boundaries
+exports.createTrigger = async (providerName, connectionInfo, userId, activeSnapId, param) => {
+  try {
+    // get an access token for the provider service
+    // currently  provider services all do auth via Auth0, and all share an Auth0 API service clientID / secret
+    const token = await auth0.getAPIAccessToken();
+    if (!token) {
+      console.error('createTrigger: could not retrieve API access token');
+      return null;
+    }
+
+    const providerUrl = environment.getProviderUrl(providerName);
+    const url = `${providerUrl}/createTrigger`;
+    const body = {
+      connectionInfo,
+      userId,
+      activeSnapId,
+      param
+    };
+
+    const headers = { 
+      'content-type': 'application/json',
+      'authorization': `Bearer ${token}`
+    };
+
+    const response = await axios.post(
+      url,
+      body,
+      {
+        headers: headers
+      });
+
+    // construct output message
+    const triggerData = response.data;
+    return triggerData;
+  } catch (error) {
+    console.error(`createTrigger: caught exception: ${error}`);
+    return null;
+  }
+}
+
+// delete a provider trigger across service boundaries
+exports.deleteTrigger = async (providerName, connectionInfo, triggerData) => {
+  try {
+    // get an access token for the provider service
+    // currently  provider services all do auth via Auth0, and all share an Auth0 API service clientID / secret
+    const token = await auth0.getAPIAccessToken();
+    if (!token) {
+      console.error('invokeAction: could not retrieve API access token');
+      return null;
+    }
+
+    const providerUrl = environment.getProviderUrl(providerName);
+    const url = `${providerUrl}/deleteTrigger`;
+    const body = {
+      connectionInfo,
+      triggerData
+    };
+
+    const headers = { 
+      'content-type': 'application/json',
+      'authorization': `Bearer ${token}`
+    };
+
+    const response = await axios.post(
+      url,
+      body,
+      {
+        headers: headers
+      });
+
+    // construct output message
+    const output = response.data;
+    return output;
+  } catch (error) {
+    console.error(`deleteTrigger: caught exception: ${error}`);
+    return null;
+  }
+}
+
 exports.getDefinition = (providerName) => {
   try {
     const definition = fs.readFileSync(`./src/providers/${providerName}/${providerName}.yml`, 'utf8');

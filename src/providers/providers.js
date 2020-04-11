@@ -16,6 +16,7 @@ const providerNames = [
   'github', 
   'gitlab', 
   'pagerduty', 
+  'httppost',
   'slack', 
   'twilio'
 ];

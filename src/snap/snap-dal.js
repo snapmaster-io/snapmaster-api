@@ -205,6 +205,19 @@ exports.createHandlers = (app) => {
         return;
     }
   });
+
+  // Execute snap engine API endpoint
+  // this endpoint is executed without a user context 
+  // it is called from a provider, using a M2M token
+  app.post('/executesnap/:userId/:activeSnapId', requesthandler.checkJwt, function(req, res){
+    const userId = req.params.userId;
+    const activeSnapId = req.params.activeSnapId;
+    const executeSnap = async () => {
+      snapengine.executeSnap(userId, activeSnapId, req.body.event, req.body);
+      res.status(200).send();
+    }
+    executeSnap();
+  });  
 }
 
 /* 
