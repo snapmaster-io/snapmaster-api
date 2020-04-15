@@ -348,25 +348,26 @@ const editSnap = async (userId, snapId, privacy) => {
       return null;
     }
 
+    // re-construct snap name to ensure it's in the user's account
+    const nameArray = snapId.split('/');
+    const snapName = nameArray.length > 1 ? nameArray[1] : snapId;
+    const localSnapId = `${account}/${snapName}`;
+
     // get the snap definition 
-    const snap = await exports.getSnap(snapId);
+    const snap = await exports.getSnap(localSnapId);
     if (!snap) {
-      console.error(`editSnap: cannot find snap ${snapId}`);
+      console.error(`editSnap: cannot find snap ${localSnapId}`);
       return null;
     }
 
     // set the privacy flag
     snap.private = privacy;
 
-    // re-construct snap name to ensure it's in the user's account
-    const nameArray = snapId.split('/');
-    const snapName = nameArray.length > 1 ? nameArray[1] : snapId;
-
     // save the updated snap and return it
     await database.storeDocument(account, dbconstants.snapsCollection, snapName, snap);
 
     // return the updated snap
-    return exports.getSnap(snapId);
+    return exports.getSnap(localSnapId);
   } catch (error) {
     console.log(`deleteSnap: caught exception: ${error}`);
     return null;
