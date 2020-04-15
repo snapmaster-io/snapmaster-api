@@ -142,7 +142,7 @@ exports.deactivateSnap = async (userId, activeSnapId) => {
     }
     
     // delete the snap trigger
-    await provider.deleteTrigger(providerName, connInfo, activeSnap.triggerData);
+    await provider.deleteTrigger(activeSnap.provider, connInfo, activeSnap.triggerData);
 
     // delete all docs in the logs collection under the active snap document
     const docName = `${userId}/${dbconstants.activeSnapsCollection}/${activeSnapId}`;

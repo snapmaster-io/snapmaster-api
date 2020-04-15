@@ -14,6 +14,12 @@ const requesthandler = require('../modules/requesthandler');
 
 exports.createHandlers = (app) => {
   // Get gallery API endpoint
+  /**
+   * @swagger
+   * /gallery:
+   *    get:
+   *      description: return all public snaps in this deployment
+   */  
   app.get('/gallery', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
     const returnGallery = async () => {
       const gallery = await getAllSnaps() || {};
@@ -83,8 +89,11 @@ exports.createHandlers = (app) => {
     }
 
     const del = async () => {
-      await deleteSnap(req.userId, snapId);
-      res.status(200).send({ message: 'success' });
+      const snap = await deleteSnap(req.userId, snapId);
+      res.status(200).send(
+        snap ? 
+        { message: 'success' } :
+        { message: `error: could not delete snap ${snapId}` });
     }
 
     const edit = async () => {
@@ -93,8 +102,8 @@ exports.createHandlers = (app) => {
     }
 
     const fork = async () => {
-      await forkSnap(req.userId, snapId);
-      res.status(200).send({ message: 'success' });
+      const snap = await forkSnap(req.userId, snapId);
+      res.status(200).send({ message: 'success', snap: snap });
     }
 
     switch (action) {
@@ -313,7 +322,16 @@ const deleteSnap = async (userId, snapId) => {
 
     const nameArray = snapId.split('/');
     const snapName = nameArray.length > 1 ? nameArray[1] : snapId;
-    await database.removeDocument(account, dbconstants.snapsCollection, snapName);
+
+    // get the snap definition 
+    const snap = await database.getDocument(account, dbconstants.snapsCollection, snapName);
+    if (snap) {
+      // if the snap was found, remove it
+      await database.removeDocument(account, dbconstants.snapsCollection, snapName);
+      return snap;
+    }
+
+    return null;
   } catch (error) {
     console.log(`deleteSnap: caught exception: ${error}`);
     return null;
@@ -381,6 +399,9 @@ const forkSnap = async (userId, snapId) => {
 
     // store the new snap
     await database.storeDocument(account, dbconstants.snapsCollection, snap.name, snap);
+
+    // return the new snapId
+    return snap;
   } catch (error) {
     console.log(`forkSnap: caught exception: ${error}`);
     return null;

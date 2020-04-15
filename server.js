@@ -20,7 +20,7 @@ environment.setDevMode(configuration === environment.dev);
 // import middleware
 const { checkJwt, processUser } = require('./src/modules/requesthandler');
 
-// import providers, database, storage, data access, datapipeline, profile, connections layers
+// import providers, database, storage, data access, datapipeline, profile, connections, entities, apidocs layers
 const providers = require('./src/providers/providers');
 const database = require('./src/data/database');
 const dal = require('./src/data/dal');
@@ -28,6 +28,7 @@ const datapipeline = require('./src/modules/datapipeline');
 const profile = require('./src/modules/profile');
 const connections = require('./src/modules/connections');
 const entities = require('./src/modules/entities');
+const apidocs = require('./src/modules/apidocs');
 
 // import snap data access layer and engine
 const snapdal = require('./src/snap/snap-dal');
@@ -71,6 +72,7 @@ profile.createHandlers(app);
 entities.createHandlers(app);
 snapdal.createHandlers(app);
 beta.createHandlers(app);
+apidocs.createHandlers(app);
 
 // create route handlers for each of the providers
 providers.createHandlers(app);

@@ -1,0 +1,42 @@
+{
+  "openapi": "3.0.2",
+  "info": {
+    "title": "Sample Pet Store App",
+    "description": "This is a sample server for a pet store.",
+    "version": "1.0.1"
+  },
+  "components": {
+    "securitySchemes": {
+      "auth0": {
+        "type": "oauth2",
+        "flows": {
+          "implicit": {
+            "authorizationUrl": "https://snapmaster-dev.auth0.com/authorize",
+            "scopes": {
+              "https://api.snapmaster.io": "grants access to api"
+            }
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "auth0": [
+        "https://api.snapmaster.io"
+      ]
+    }
+  ],
+  "paths": {
+    "/gallery": {
+      "get": {
+        "description": "get stuff",
+        "responses": {
+          "200": {
+            "description": "get more stuff"
+          }
+        }
+      }
+    }
+  }
+}
