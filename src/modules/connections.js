@@ -8,6 +8,7 @@ const providers = require('../providers/providers');
 const requesthandler = require('./requesthandler');
 const entities = require('./entities');
 const auth0 = require('../services/auth0');
+const dbconstants = require('../data/database-constants');
 
 exports.createHandlers = (app) => {
   // Get connections API endpoint
@@ -110,7 +111,7 @@ const getConnections = async (userId) => {
     // generate an array of connections which includes conneted state
     const connections = providerDefinitions.map(p => {
       const name = p.provider;
-      const connected = user[name] && user[name].connected !== false ? 'linked' : null;
+      let connected = user[name] && user[name].connected !== false ? 'linked' : null;
       // if the connection is the same as the provider of the base userId, note it that way
       if (name === baseConnection) {
         connected = 'base';
