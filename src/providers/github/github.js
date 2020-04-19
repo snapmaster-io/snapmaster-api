@@ -131,7 +131,7 @@ exports.createHandlers = (app) => {
   });
 }
 
-exports.createTrigger = async (providerName, connectionInfo, userId, activeSnapId, param) => {
+exports.createTrigger = async (providerName, defaultConnectionInfo, userId, activeSnapId, param) => {
   try {
     // validate params
     const repoName = param.repo;
@@ -146,7 +146,7 @@ exports.createTrigger = async (providerName, connectionInfo, userId, activeSnapI
       return null;
     }
 
-    const token = await getToken(connectionInfo);
+    const token = await getToken(defaultConnectionInfo);
     // const [client] = await getClient(userId);
 
     const [owner, repo] = repoName.split('/');
@@ -206,7 +206,7 @@ exports.createTrigger = async (providerName, connectionInfo, userId, activeSnapI
   }
 }
 
-exports.deleteTrigger = async (providerName, connectionInfo, triggerData, param) => {
+exports.deleteTrigger = async (providerName, defaultConnectionInfo, triggerData, param) => {
   try {
     // validate params
     if (!triggerData || !triggerData.url) {
@@ -214,7 +214,7 @@ exports.deleteTrigger = async (providerName, connectionInfo, triggerData, param)
       return null;
     }
 
-    const token = await getToken(connectionInfo);
+    const token = await getToken(defaultConnectionInfo);
     const headers = { 
       'content-type': 'application/json',
       'authorization': `token ${token}`

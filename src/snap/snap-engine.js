@@ -70,12 +70,14 @@ exports.activateSnap = async (userId, snapId, params, activeSnapId = null) => {
     // bind the parameters for the snap
     const boundParams = bindParameters(snap.config, params);
 
-    // get the parameter object for the trigger
-    const triggerParam = boundParams.find(c => c.name === snap.trigger);
+    // create a new object based on the trigger parameter
+    const triggerParam = { ...boundParams.find(c => c.name === snap.trigger) };
 
     // bind entities to the parameter (this mutates the parameter)
     // this is where connection information that is stored on a per-entity basis gets added to the parameter
     // for example, for Docker, the docker:accounts entity for the account gets retrieved and added to parameter
+    // 
+    // this is done on a new object (triggerParam) so that it is never stored/logged in the activesnap
     bindEntitiesToParameter(userId, provider.definition.triggers, triggerParam, keys.triggers);
 
     // active snap ID is current timestamp
@@ -134,7 +136,7 @@ exports.deactivateSnap = async (userId, activeSnapId) => {
     // if the snap is active (not paused), delete the trigger
     if (activeSnap.state !== "paused") {
       // find the trigger parameter
-      const triggerParam = activeSnap.boundParams.find(p => p.name === activeSnap.trigger);
+      const param = activeSnap.boundParams.find(p => p.name === activeSnap.trigger);
 
       // retrieve the provider
       const provider = providers.getProvider(activeSnap.provider);
@@ -145,6 +147,16 @@ exports.deactivateSnap = async (userId, activeSnapId) => {
         console.error('deactivateSnap: could not obtain connection info');
         return { message: 'could not obtain connection info to deactivate snap' };
       }
+
+      // create a new object based on the trigger parameter
+      const triggerParam = { ...param };
+
+      // bind entities to the parameter (this mutates the parameter)
+      // this is where connection information that is stored on a per-entity basis gets added to the parameter
+      // for example, for Docker, the docker:accounts entity for the account gets retrieved and added to parameter
+      // 
+      // this is done on a new object (triggerParam) so that it is never stored/logged in the activesnap
+      bindEntitiesToParameter(userId, provider.definition.triggers, triggerParam, keys.triggers);
       
       // delete the snap trigger
       const response = await provider.deleteTrigger(activeSnap.provider, connInfo, activeSnap.triggerData, triggerParam);
@@ -178,7 +190,7 @@ exports.editSnap = async (userId, activeSnapId, params) => {
     // if the snap is active (not paused), delete the trigger
     if (activeSnap.state !== "paused") {
       // find the trigger parameter
-      const triggerParam = activeSnap.boundParams.find(p => p.name === activeSnap.trigger);
+      const param = activeSnap.boundParams.find(p => p.name === activeSnap.trigger);
 
       // retrieve the provider
       const provider = providers.getProvider(activeSnap.provider);
@@ -189,7 +201,17 @@ exports.editSnap = async (userId, activeSnapId, params) => {
         console.error('deactivateSnap: could not obtain connection info');
         return { message: 'could not obtain connection info to deactivate snap' };
       }
-      
+
+      // create a new object based on the trigger parameter
+      const triggerParam = { ...param };
+
+      // bind entities to the parameter (this mutates the parameter)
+      // this is where connection information that is stored on a per-entity basis gets added to the parameter
+      // for example, for Docker, the docker:accounts entity for the account gets retrieved and added to parameter
+      // 
+      // this is done on a new object (triggerParam) so that it is never stored/logged in the activesnap
+      bindEntitiesToParameter(userId, provider.definition.triggers, triggerParam, keys.triggers);
+            
       // delete the snap trigger
       const response = await provider.deleteTrigger(activeSnap.provider, connInfo, activeSnap.triggerData, triggerParam);
       if (response == null) {
@@ -239,8 +261,10 @@ exports.executeSnap = async (userId, activeSnapId, params, payload) => {
 
     // execute actions
     for (const action of snap.actions) {
-      // get the parameter object
+      // locate the parameter object for this action
       let param = activeSnap.boundParams.find(c => c.name === action);
+
+      // get the provider for this action
       const provider = providers.getProvider(param.provider);
 
       // bind the payload to the parameter
@@ -249,7 +273,11 @@ exports.executeSnap = async (userId, activeSnapId, params, payload) => {
       // bind entities to the parameter (this mutates the parameter)
       // this is where connection information that is stored on a per-entity basis gets added to the parameter
       // for example, for GCP, the gcp:projects entity for the project gets retrieved and added to parameter
-      bindEntitiesToParameter(userId, provider.definition.actions, param, keys.actions);
+      // 
+      // this is done on a new object (actionParam) so that it is never stored/logged in the activesnap
+      // create a new object based on the the parameters for this action
+      const actionParam = { ...param };
+      bindEntitiesToParameter(userId, provider.definition.actions, actionParam, keys.actions);
 
       // get the provider's connection information
       // this brings in global connection information stored in the top-level user struct
@@ -257,9 +285,9 @@ exports.executeSnap = async (userId, activeSnapId, params, payload) => {
       const connInfo = await getConnectionInfo(userId, param.provider);
 
       // invoke the provider
-      const output = await provider.invokeAction(param.provider, connInfo, activeSnapId, param);
+      const output = await provider.invokeAction(param.provider, connInfo, activeSnapId, actionParam);
 
-      // log the action execution
+      // log the action execution (with the parameter object that doesn't contain entity info)
       const actionLog = {
         provider: param.provider,
         state: dbconstants.executionStateExecuted,
@@ -342,7 +370,7 @@ exports.pauseSnap = async (userId, activeSnapId) => {
     }
 
     // find the trigger parameter
-    const triggerParam = activeSnap.boundParams.find(p => p.name === activeSnap.trigger);
+    const param = activeSnap.boundParams.find(p => p.name === activeSnap.trigger);
 
     // retrieve the provider
     const provider = providers.getProvider(activeSnap.provider);
@@ -354,6 +382,16 @@ exports.pauseSnap = async (userId, activeSnapId) => {
       return { message: 'could not obtain connection info to pause snap' };
     }
 
+    // create a new object based on the trigger parameter
+    const triggerParam = { ...param };
+
+    // bind entities to the parameter (this mutates the parameter)
+    // this is where connection information that is stored on a per-entity basis gets added to the parameter
+    // for example, for Docker, the docker:accounts entity for the account gets retrieved and added to parameter
+    // 
+    // this is done on a new object (triggerParam) so that it is never stored/logged in the activesnap
+    bindEntitiesToParameter(userId, provider.definition.triggers, triggerParam, keys.triggers);
+          
     // delete the snap trigger
     const response = await provider.deleteTrigger(activeSnap.provider, connInfo, activeSnap.triggerData, triggerParam);
     if (response == null) {
@@ -388,7 +426,7 @@ exports.resumeSnap = async (userId, activeSnapId) => {
     }
 
     // find the trigger parameter
-    const triggerParam = activeSnap.boundParams.find(p => p.name === activeSnap.trigger);
+    const param = activeSnap.boundParams.find(p => p.name === activeSnap.trigger);
 
     // retrieve the provider
     const provider = providers.getProvider(activeSnap.provider);
@@ -400,6 +438,16 @@ exports.resumeSnap = async (userId, activeSnapId) => {
       return { message: 'could not obtain connection info to resume snap' };
     }
 
+    // create a new object based on the trigger parameter
+    const triggerParam = { ...param };
+
+    // bind entities to the parameter (this mutates the parameter)
+    // this is where connection information that is stored on a per-entity basis gets added to the parameter
+    // for example, for Docker, the docker:accounts entity for the account gets retrieved and added to parameter
+    // 
+    // this is done on a new object (triggerParam) so that it is never stored/logged in the activesnap
+    bindEntitiesToParameter(userId, provider.definition.triggers, triggerParam, keys.triggers);
+    
     // re-create the snap trigger
     const triggerData = await provider.createTrigger(provider.provider, connInfo, userId, activeSnapId, triggerParam);
     if (!triggerData) {

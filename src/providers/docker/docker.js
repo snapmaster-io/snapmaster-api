@@ -125,7 +125,7 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
   }
 }
 
-exports.deleteTrigger = async (providerName, connectionInfo, triggerData, param) => {
+exports.deleteTrigger = async (providerName, defaultConnectionInfo, triggerData, param) => {
   try {
     // validate params
     const account = param.account;
