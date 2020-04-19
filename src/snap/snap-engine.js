@@ -175,23 +175,26 @@ exports.editSnap = async (userId, activeSnapId, params) => {
       return { message: `could not find active snap ID ${activeSnapId}`};
     }
 
-    // find the trigger parameter
-    const triggerParam = activeSnap.boundParams.find(p => p.name === activeSnap.trigger);
+    // if the snap is active (not paused), delete the trigger
+    if (activeSnap.state !== "paused") {
+      // find the trigger parameter
+      const triggerParam = activeSnap.boundParams.find(p => p.name === activeSnap.trigger);
 
-    // retrieve the provider
-    const provider = providers.getProvider(activeSnap.provider);
+      // retrieve the provider
+      const provider = providers.getProvider(activeSnap.provider);
 
-    // get the provider's connection information
-    const connInfo = await getConnectionInfo(userId, activeSnap.provider);
-    if (!connInfo) {
-      console.error('deactivateSnap: could not obtain connection info');
-      return { message: 'could not obtain connection info to deactivate snap' };
-    }
-    
-    // delete the snap trigger
-    const response = await provider.deleteTrigger(activeSnap.provider, connInfo, activeSnap.triggerData, triggerParam);
-    if (response == null) {
-      return { message: 'could not remove trigger for this snap - try deactivating and reactivating it with new parameters' };
+      // get the provider's connection information
+      const connInfo = await getConnectionInfo(userId, activeSnap.provider);
+      if (!connInfo) {
+        console.error('deactivateSnap: could not obtain connection info');
+        return { message: 'could not obtain connection info to deactivate snap' };
+      }
+      
+      // delete the snap trigger
+      const response = await provider.deleteTrigger(activeSnap.provider, connInfo, activeSnap.triggerData, triggerParam);
+      if (response == null) {
+        return { message: 'could not remove trigger for this snap - try deactivating and reactivating it with new parameters' };
+      }
     }
 
     // now, activate the snap using the new parameters
@@ -333,6 +336,11 @@ exports.pauseSnap = async (userId, activeSnapId) => {
       return { message: `could not find active snap ID ${activeSnapId}`};
     }
 
+    // if the snap is paused (not active), return a message to that effect
+    if (activeSnap.state === "paused") {
+      return { message: `active snap ${activeSnapId} is already paused` };
+    }
+
     // find the trigger parameter
     const triggerParam = activeSnap.boundParams.find(p => p.name === activeSnap.trigger);
 
@@ -372,6 +380,11 @@ exports.resumeSnap = async (userId, activeSnapId) => {
     const activeSnap = await database.getDocument(userId, dbconstants.activeSnapsCollection, activeSnapId);
     if (!activeSnap) {
       return { message: `could not find active snap ID ${activeSnapId}`};
+    }
+
+    // if the snap is active (not paused), return a message to that effect
+    if (activeSnap.state !== "paused") {
+      return { message: `active snap ${activeSnapId} is already active` };
     }
 
     // find the trigger parameter
