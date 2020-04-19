@@ -131,19 +131,28 @@ exports.deactivateSnap = async (userId, activeSnapId) => {
       return { message: `could not find active snap ID ${activeSnapId}`};
     }
 
-    // retrieve the provider
-    const provider = providers.getProvider(activeSnap.provider);
+    // if the snap is active (not paused), delete the trigger
+    if (activeSnap.state !== "paused") {
+      // find the trigger parameter
+      const triggerParam = activeSnap.boundParams.find(p => p.name === activeSnap.trigger);
 
-    // get the provider's connection information
-    const connInfo = await getConnectionInfo(userId, activeSnap.provider);
-    if (!connInfo) {
-      console.error('deactivateSnap: could not obtain connection info');
-      return { message: 'could not obtain connection info to deactivate snap' };
+      // retrieve the provider
+      const provider = providers.getProvider(activeSnap.provider);
+
+      // get the provider's connection information
+      const connInfo = await getConnectionInfo(userId, activeSnap.provider);
+      if (!connInfo) {
+        console.error('deactivateSnap: could not obtain connection info');
+        return { message: 'could not obtain connection info to deactivate snap' };
+      }
+      
+      // delete the snap trigger
+      const response = await provider.deleteTrigger(activeSnap.provider, connInfo, activeSnap.triggerData, triggerParam);
+      if (response == null) {
+        return { message: 'could not remove trigger for this snap - use the trigger info action to remove it manually from the provider' };
+      }
     }
     
-    // delete the snap trigger
-    await provider.deleteTrigger(activeSnap.provider, connInfo, activeSnap.triggerData);
-
     // delete all docs in the logs collection under the active snap document
     const docName = `${userId}/${dbconstants.activeSnapsCollection}/${activeSnapId}`;
     await database.removeCollection(docName, dbconstants.logsCollection);
@@ -166,6 +175,9 @@ exports.editSnap = async (userId, activeSnapId, params) => {
       return { message: `could not find active snap ID ${activeSnapId}`};
     }
 
+    // find the trigger parameter
+    const triggerParam = activeSnap.boundParams.find(p => p.name === activeSnap.trigger);
+
     // retrieve the provider
     const provider = providers.getProvider(activeSnap.provider);
 
@@ -177,7 +189,10 @@ exports.editSnap = async (userId, activeSnapId, params) => {
     }
     
     // delete the snap trigger
-    await provider.deleteTrigger(activeSnap.provider, connInfo, activeSnap.triggerData);
+    const response = await provider.deleteTrigger(activeSnap.provider, connInfo, activeSnap.triggerData, triggerParam);
+    if (response == null) {
+      return { message: 'could not remove trigger for this snap - try deactivating and reactivating it with new parameters' };
+    }
 
     // now, activate the snap using the new parameters
     return await exports.activateSnap(userId, activeSnap.snapId, params, activeSnapId);
@@ -318,6 +333,9 @@ exports.pauseSnap = async (userId, activeSnapId) => {
       return { message: `could not find active snap ID ${activeSnapId}`};
     }
 
+    // find the trigger parameter
+    const triggerParam = activeSnap.boundParams.find(p => p.name === activeSnap.trigger);
+
     // retrieve the provider
     const provider = providers.getProvider(activeSnap.provider);
 
@@ -329,7 +347,10 @@ exports.pauseSnap = async (userId, activeSnapId) => {
     }
 
     // delete the snap trigger
-    await provider.deleteTrigger(activeSnap.provider, connInfo, activeSnap.triggerData);
+    const response = await provider.deleteTrigger(activeSnap.provider, connInfo, activeSnap.triggerData, triggerParam);
+    if (response == null) {
+      return { message: 'could not remove trigger for this snap - try deactivating it' };
+    }
 
     // set the snap state to "paused"
     activeSnap.state = dbconstants.snapStatePaused;

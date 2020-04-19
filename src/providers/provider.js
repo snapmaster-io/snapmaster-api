@@ -60,7 +60,7 @@ exports.createTrigger = async (providerName, connectionInfo, userId, activeSnapI
 }
 
 // delete a provider trigger across service boundaries
-exports.deleteTrigger = async (providerName, connectionInfo, triggerData) => {
+exports.deleteTrigger = async (providerName, connectionInfo, triggerData, param) => {
   try {
     // get an access token for the provider service
     // currently  provider services all do auth via Auth0, and all share an Auth0 API service clientID / secret
@@ -74,7 +74,8 @@ exports.deleteTrigger = async (providerName, connectionInfo, triggerData) => {
     const url = `${providerUrl}/deleteTrigger`;
     const body = {
       connectionInfo,
-      triggerData
+      triggerData,
+      param
     };
 
     const headers = { 

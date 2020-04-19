@@ -116,7 +116,6 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
       id: data.slug,
       name: data.name,
       url: `${url}${data.slug}/`,
-      token: token
     }
 
     return triggerData;
@@ -126,15 +125,32 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
   }
 }
 
-exports.deleteTrigger = async (providerName, connectionInfo, triggerData) => {
+exports.deleteTrigger = async (providerName, connectionInfo, triggerData, param) => {
   try {
     // validate params
+    const account = param.account;
+    if (!account) {
+      console.error(`deleteTrigger: missing required parameter "account"`);
+      return null;
+    }
+    
+    // validate trigger data
     if (!triggerData || !triggerData.url) {
       console.log(`deleteTrigger: invalid trigger data`);
       return null;
     }
 
-    const token = triggerData.token;
+    // get token for calling API (either from the default account in connection info, or the account passed in)
+    const token = await getToken(
+      account === defaultEntityName ? 
+        defaultConnectionInfo :
+        param[entityName]
+    );
+    if (!token) {
+      console.error('deleteTrigger: could not obtain token');
+      return null;
+    }
+
     const headers = { 
       'content-type': 'application/json',
       'authorization': `JWT ${token}`

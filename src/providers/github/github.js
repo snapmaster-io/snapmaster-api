@@ -206,7 +206,7 @@ exports.createTrigger = async (providerName, connectionInfo, userId, activeSnapI
   }
 }
 
-exports.deleteTrigger = async (providerName, connectionInfo, triggerData) => {
+exports.deleteTrigger = async (providerName, connectionInfo, triggerData, param) => {
   try {
     // validate params
     if (!triggerData || !triggerData.url) {
