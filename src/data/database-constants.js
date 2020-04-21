@@ -15,6 +15,9 @@ exports.logsCollection = 'logs';
 // define userId field for queryGroup queries over userId
 exports.userIdField = 'userId';
 
+// define the "key" field that denotes a key to a secret in the secret store
+exports.keyField = "__key";
+
 // snap field names
 exports.snapPrivateField = 'private';
 

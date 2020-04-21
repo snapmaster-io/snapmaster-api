@@ -10,8 +10,10 @@
 //   entityHandler(req, res): handle entity operations (get, add, edit, remove)
 
 const database = require('../data/database')
+const dbconstants = require('../data/database-constants')
 const providers = require('../providers/providers');
 const requesthandler = require('./requesthandler');
+const secrets = require('../services/secrets');
 
 exports.createHandlers = (app) => {
   // entities API endpoint
@@ -48,13 +50,6 @@ exports.entityHandler = (req, res) => {
       return;
     }
     
-    // invoke the GET entity handler
-    /*
-    if (req.method === 'GET' && providerEntity.get) {
-      providerEntity.get(req, res);
-      return;
-    } 
-    */
     if (req.method === 'GET') {
       getHandler(req, res, providerEntity);
       return;
@@ -62,7 +57,7 @@ exports.entityHandler = (req, res) => {
   
     // invoke the POST entity handler
     if (req.method === 'POST') {
-      postHandler(req, res, providerEntity);
+      postHandler(req, res, provider, providerEntity);
       return;
     } 
 
@@ -87,21 +82,24 @@ const getHandler = (req, res, entity) => {
     [req.userId]); // parameter array
 }
 
-const postHandler = (req, res, entity) => {  
+const postHandler = (req, res, provider, entity) => {  
   const action = req.body && req.body.action;
 
   // construct the api description that the DAL machinery expects
   const apiDescription = { ...entity, func: entity.entityHandler };
   
   const add = async () => {
+    // use the generic edit handler as the function the DAL will call
+    apiDescription.func = addHandler;
     // use the entity's func as the function the DAL will call
-    apiDescription.func = entity.func;
+    //apiDescription.func = entity.func;
     requesthandler.invokeProvider(
       res, 
       req.userId, 
       apiDescription, 
       null,     // use the default entity name
-      [req.body.connectionInfo]); // parameter array
+      //[req.body.connectionInfo]); // parameter array
+      [req.userId, entity, req.body.connectionInfo]);
   }
 
   const edit = async () => {
@@ -144,6 +142,36 @@ const postHandler = (req, res, entity) => {
   res.status(200).send({ message: 'Unknown action'}); 
 }
 
+// generic add handler
+const addHandler = async ([userId, entity, connectionInfo]) => {
+  try {
+    // 
+    const entityName = entity.entity;
+    const func = entity.func;
+
+    const response = await func([connectionInfo]);
+    if (!response) {
+      return { message: 'could not add the new entity'};
+    }
+
+    // store any secrets in the secret store
+    if (response.secret) {
+      const secretId = response[entity.itemKey];
+      const jsonValue = JSON.stringify(response.secret);
+      const key = await secrets.set(`${userId}:${entityName}:${secretId}`, jsonValue);
+
+      // substitute the key name for the secret info in the response
+      response[dbconstants.keyField] = key;
+      delete response.secret;
+    }
+
+    return [response];
+  } catch (error) {
+    console.log(`addHandler: caught exception: ${error}`);
+    return null;
+  }
+}
+
 // generic edit handler
 const editHandler = async ([userId, entityName, payload]) => {
   try {
@@ -169,7 +197,6 @@ const editHandler = async ([userId, entityName, payload]) => {
     // invokeProvider will re-read the entity collection and return it
     return [];
   } catch (error) {
-    await error.response;
     console.log(`editHandler: caught exception: ${error}`);
     return null;
   }
@@ -178,13 +205,19 @@ const editHandler = async ([userId, entityName, payload]) => {
 // generic remove handler
 const removeHandler = async ([userId, entityName, id]) => {
   try {
+    // get the key if it exists
+    const connectionInfo = await database.getDocument(userId, entityName, id);
+    if (connectionInfo && connectionInfo[dbconstants.keyField]) {
+      // remove the secret associated with the key
+      secrets.remove(connectionInfo[dbconstants.keyField]);
+    }
+
     // remove the document from the entity collection
     await database.removeDocument(userId, entityName, id);
 
     // invokeProvider will re-read the entity collection and return it
     return [];
   } catch (error) {
-    await error.response;
     console.log(`removeHandler: caught exception: ${error}`);
     return null;
   }

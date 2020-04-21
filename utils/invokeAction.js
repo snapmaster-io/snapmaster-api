@@ -11,6 +11,7 @@ environment.setEnv(env);
 const database = require('../src/data/database');
 database.setEnv(env);
 
+const connections = require('../src/modules/connections');
 const providers = require('../src/providers/providers');
 const { linkProvider } = require('../src/providers/provider');
 
@@ -47,8 +48,9 @@ const getConnectionInfo = async (userId, providerName) => {
   }
 
   // retrieve connection info from the user's connection info in the profile
-  const connection = await database.getUserData(userId, providerName);
-  const connectionInfo = connection && connection.connectionInfo;
+  //const connection = await database.getUserData(userId, providerName);
+  //const connectionInfo = connection && connection.connectionInfo;
+  const connectionInfo = connections.getConnectionInfo(userId, providerName);
   return connectionInfo;
 }
 

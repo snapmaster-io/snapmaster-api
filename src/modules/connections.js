@@ -2,12 +2,14 @@
 
 // exports:
 //   createHandlers(app): create handlers for GET and POST endpoints
+//   getConnectionInfo(userId, connection): retrieves secrets associated with this connection
 
 const database = require('../data/database');
 const providers = require('../providers/providers');
 const requesthandler = require('./requesthandler');
 const entities = require('./entities');
 const auth0 = require('../services/auth0');
+const secrets = require('../services/secrets');
 const dbconstants = require('../data/database-constants');
 
 exports.createHandlers = (app) => {
@@ -96,8 +98,30 @@ exports.createHandlers = (app) => {
   });
 }
 
+exports.getConnectionInfo = async (userId, connection) => {
+  const userData = await database.getUserData(userId, connection);
+  if (!userData) {
+    console.error(`getConnectionInfo: error getting connection ${connection} for user ${userId}`);
+    return null;
+  }
+
+  // if there is a key field, then connection information was stored in a secret store
+  if (userData[dbconstants.keyField]) {
+    const value = await secrets.get(userData[dbconstants.keyField]);
+    const parsedValue = JSON.parse(value);
+    return parsedValue;
+  }
+
+  // return the connection information stored directly in the userInfo structure
+  return userData.connectionInfo;
+}
+
 const addConnection = async (userId, connection, connectionInfo) => {
-  await database.setUserData(userId, connection, { connected: true, connectionInfo: connectionInfo });
+  const jsonValue = JSON.stringify(connectionInfo);
+  const name = await secrets.set(`${userId}:${connection}`, jsonValue);
+  const userData = { connected: true };
+  userData[dbconstants.keyField] = name;
+  await database.setUserData(userId, connection, userData);
 }
 
 const getConnections = async (userId) => {
@@ -137,6 +161,29 @@ const getConnections = async (userId) => {
 }
 
 const removeConnection = async (userId, connection, entity) => {
+  const userData = await database.getUserData(userId, connection);
+  if (!userData) {
+    console.error(`removeConnection: error getting connection ${connection} for user ${userId}`);
+    return null;
+  }
+
+  // if a key for a secret was stored, remove the secret
+  if (userData[dbconstants.keyField]) {
+    await secrets.remove(userData[dbconstants.keyField]);
+  }
+
+  // get all entities in the entity collection for this connection
+  const entities = await database.query(userId, entity);
+  if (entities && entities.length) {
+    for (const entity of entities) {
+      // if a key for a secret was stored, remove the secret
+      if (entity[dbconstants.keyField]) {
+        await secrets.remove(entity[dbconstants.keyField]);
+      }
+    }
+  }
+
+  // remove the connection and any entity information associated with it
   await database.removeConnection(userId, connection);
   await database.removeCollection(userId, entity);
 }

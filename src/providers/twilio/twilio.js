@@ -104,7 +104,9 @@ exports.entities[entityName].func = async ([connectionInfo]) => {
 
     // add the entity attributes to the result
     const result = { 
-      ...entity, 
+      secret: {
+        ...entity, 
+      },
       __id: entity.account,
       __name: entity.account,
       __url: `https://www.twilio.com/console`,
@@ -112,7 +114,7 @@ exports.entities[entityName].func = async ([connectionInfo]) => {
       __actions: exports.definition.actions,
     };
 
-    return [result];
+    return result;
   } catch (error) {
     await error.response;
     console.log(`entityHandler: caught exception: ${error}`);

@@ -67,7 +67,9 @@ exports.entities[entityName].func = async ([connectionInfo]) => {
 
     // add the project attributes to the result
     const result = { 
+      secret: {
       ...project, 
+      },
       ...response, 
       __id: project.project,
       __name: project.project,
@@ -84,7 +86,7 @@ exports.entities[entityName].func = async ([connectionInfo]) => {
     }
     */
 
-    return [result];
+    return result;
   } catch (error) {
     await error.response;
     console.log(`gcpEntityHandler: caught exception: ${error}`);

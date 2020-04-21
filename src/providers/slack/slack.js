@@ -112,8 +112,10 @@ exports.entities[entityName].func = async ([connectionInfo]) => {
 
     // add the entity attributes to the result
     const result = { 
-      ...entity, 
-      token: token, 
+      secret: {
+        ...entity, 
+        token: token, 
+      },
       __id: entity.workspace,
       __name: entity.workspace,
       __url: `https://${url}`,
@@ -121,7 +123,7 @@ exports.entities[entityName].func = async ([connectionInfo]) => {
       __actions: exports.definition.actions,
     };
 
-    return [result];
+    return result;
   } catch (error) {
     await error.response;
     console.log(`entityHandler: caught exception: ${error}`);
