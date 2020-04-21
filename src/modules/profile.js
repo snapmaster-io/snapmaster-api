@@ -2,6 +2,8 @@
 
 // exports:
 //   createHandlers(app): create handlers for GET and POST endpoints
+//   getProfile(userId): gets the profile for the userId
+//   storeProfile(userId, profile): stores the profile for the userId
 
 const database = require('../data/database');
 const dbconstants = require('../data/database-constants');
@@ -19,7 +21,7 @@ exports.createHandlers = (app) => {
   app.get('/profile', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
     const returnProfile = async () => {
       // retrieve the profile data from the app and from auth0 
-      const appProfile = await getProfile(req.userId) || {};
+      const appProfile = await exports.getProfile(req.userId) || {};
       const auth0profile = await auth0.getAuth0Profile(req.userId);
 
       // create a consolidated profile with app data overwriting auth0 data
@@ -37,7 +39,7 @@ exports.createHandlers = (app) => {
   // Post profile API endpoint
   app.post('/profile', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
     const store = async () => {
-      await storeProfile(req.userId, req.body);      
+      await exports.storeProfile(req.userId, req.body);      
       res.status(200).send({ message: 'success' });
     }
     store();
@@ -85,7 +87,7 @@ exports.createHandlers = (app) => {
 }
 
 // retrieve all metadata for all data entities 
-const getProfile = async (userId) => {
+exports.getProfile = async (userId) => {
   try {
     const profile = await database.getUserData(userId, dbconstants.profile);
     return profile;
@@ -96,7 +98,7 @@ const getProfile = async (userId) => {
 }
 
 // store metadata for a particular data entity
-const storeProfile = async (userId, profile) => {
+exports.storeProfile = async (userId, profile) => {
   try {
     await database.setUserData(userId, dbconstants.profile, profile);
   } catch (error) {

@@ -1,8 +1,9 @@
 // secret management using google cloud API
 // 
 // exports:
-//   get(name): returns the secret associated with "name"
-//   set(name, value): stores the secret value under "name"
+//   get(key): returns the secret associated with "key"
+//   remove(key): remove the secret value under "key"
+//   set(key, value): stores the secret value under "key"
 
 const secrets = require('@google-cloud/secret-manager');
 const environment = require('../modules/environment');
@@ -10,7 +11,6 @@ const cloudConfigFile = environment.getCloudPlatformConfigFile();
 const projectId = environment.getProjectId();
 
 // Import the Secret Manager client and instantiate it:
-//const client = new SecretManagerServiceClient();
 const client = new secrets.SecretManagerServiceClient({
   projectId: projectId,
   keyFilename: cloudConfigFile,
@@ -20,14 +20,13 @@ exports.get = async (key) => {
   try {
     const encodedKey = key.replace(/[\:\|]/g, '-');
     const [version] = await client.accessSecretVersion({
-      //name: `projects/${projectId}/secrets/${encodedKey}`,
       name: `${encodedKey}/versions/latest`
     });
 
     const payload = version.payload.data.toString('utf8');
     return payload;
   } catch (error) {
-    console.error(`set: caught exception: ${error}`);
+    console.error(`get: caught exception: ${error}`);
     return null;
   }
 }
@@ -35,7 +34,6 @@ exports.get = async (key) => {
 exports.remove = async (key) => {
   try {
     const encodedKey = key.replace(/[\:\|]/g, '-');
-    // create the secret with automation replication
     await client.deleteSecret({
       name: encodedKey,
     });

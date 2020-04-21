@@ -13,7 +13,7 @@ const database = require('../data/database')
 const dbconstants = require('../data/database-constants')
 const providers = require('../providers/providers');
 const requesthandler = require('./requesthandler');
-const secrets = require('../services/secrets');
+const credentials = require('./credentials');
 
 exports.createHandlers = (app) => {
   // entities API endpoint
@@ -158,7 +158,7 @@ const addHandler = async ([userId, entity, connectionInfo]) => {
     if (response.secret) {
       const secretId = response[entity.itemKey];
       const jsonValue = JSON.stringify(response.secret);
-      const key = await secrets.set(`${userId}:${entityName}:${secretId}`, jsonValue);
+      const key = await credentials.set(userId, `${userId}:${entityName}:${secretId}`, jsonValue);
 
       // substitute the key name for the secret info in the response
       response[dbconstants.keyField] = key;
@@ -209,7 +209,7 @@ const removeHandler = async ([userId, entityName, id]) => {
     const connectionInfo = await database.getDocument(userId, entityName, id);
     if (connectionInfo && connectionInfo[dbconstants.keyField]) {
       // remove the secret associated with the key
-      secrets.remove(connectionInfo[dbconstants.keyField]);
+      credentials.remove(userId, connectionInfo[dbconstants.keyField]);
     }
 
     // remove the document from the entity collection

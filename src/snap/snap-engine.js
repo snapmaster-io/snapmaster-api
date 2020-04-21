@@ -14,7 +14,7 @@ const snapdal = require('./snap-dal');
 const { simpleProvider, linkProvider } = require('../providers/provider');
 const providers = require('../providers/providers');
 const connections = require('../modules/connections');
-const secrets = require('../services/secrets');
+const credentials = require('../modules/credentials');
 const YAML = require('yaml');
 const {JSONPath} = require('jsonpath-plus');
 
@@ -492,7 +492,7 @@ const bindEntitiesToParameter = async (userId, definitions, param, key) => {
             // determine whether there is a secret associated with this entity
             if (entity[dbconstants.keyField]) {
               // get and parse the secret value
-              const value = await secrets.get(entity[dbconstants.keyField]);
+              const value = await credentials.get(userId, entity[dbconstants.keyField]);
               if (value) {
                 const parsedValue = JSON.parse(value);
                 entity = { ...entity, ...parsedValue };  

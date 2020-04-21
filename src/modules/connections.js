@@ -8,8 +8,8 @@ const database = require('../data/database');
 const providers = require('../providers/providers');
 const requesthandler = require('./requesthandler');
 const entities = require('./entities');
+const credentials = require('./credentials');
 const auth0 = require('../services/auth0');
-const secrets = require('../services/secrets');
 const dbconstants = require('../data/database-constants');
 
 exports.createHandlers = (app) => {
@@ -107,7 +107,7 @@ exports.getConnectionInfo = async (userId, connection) => {
 
   // if there is a key field, then connection information was stored in a secret store
   if (userData[dbconstants.keyField]) {
-    const value = await secrets.get(userData[dbconstants.keyField]);
+    const value = await credentials.get(userId, userData[dbconstants.keyField]);
     const parsedValue = JSON.parse(value);
     return parsedValue;
   }
@@ -118,7 +118,7 @@ exports.getConnectionInfo = async (userId, connection) => {
 
 const addConnection = async (userId, connection, connectionInfo) => {
   const jsonValue = JSON.stringify(connectionInfo);
-  const name = await secrets.set(`${userId}:${connection}`, jsonValue);
+  const name = await credentials.set(userId, `${userId}:${connection}`, jsonValue);
   const userData = { connected: true };
   userData[dbconstants.keyField] = name;
   await database.setUserData(userId, connection, userData);
@@ -169,7 +169,7 @@ const removeConnection = async (userId, connection, entity) => {
 
   // if a key for a secret was stored, remove the secret
   if (userData[dbconstants.keyField]) {
-    await secrets.remove(userData[dbconstants.keyField]);
+    await credentials.remove(userId, userData[dbconstants.keyField]);
   }
 
   // get all entities in the entity collection for this connection
@@ -178,7 +178,7 @@ const removeConnection = async (userId, connection, entity) => {
     for (const entity of entities) {
       // if a key for a secret was stored, remove the secret
       if (entity[dbconstants.keyField]) {
-        await secrets.remove(entity[dbconstants.keyField]);
+        await credentials.remove(userId, entity[dbconstants.keyField]);
       }
     }
   }
