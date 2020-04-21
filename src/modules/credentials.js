@@ -70,7 +70,7 @@ exports.set = async (userId, key, value) => {
       }
     } else {
       // retrieve the user secret based on the user key 
-      userSecret = secrets.get(userKey);
+      userSecret = await secrets.get(userKey);
     }
 
     // encrypt the secret value using the user secret
