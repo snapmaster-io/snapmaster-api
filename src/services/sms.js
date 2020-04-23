@@ -6,8 +6,8 @@
 //   sendSms: send a generic SMS
 
 const environment = require('../modules/environment');
-const twilioConfig = environment.getConfig(environment.twilio);
-const client = require('twilio')(twilioConfig.account_sid, twilioConfig.auth_token); 
+const config = require('../modules/config');
+const twilio = require('twilio');
 
 // constant indicating to send the SMS to the application admin
 exports.toAdmin = 'toAdmin';
@@ -40,6 +40,10 @@ exports.textReviews = async (to, reviews) => {
 
 exports.sendSms = async (to, from, mediaUrl, body) => {
   try {
+    // get twilio API key from config
+    const twilioConfig = config.getConfig(config.twilio);
+    const client = new twilio(twilioConfig.account_sid, twilioConfig.auth_token);
+
     // replace a "toAdmin" SMS number with the admin number in the twilio config
     if (to === exports.toAdmin) {
       to = twilioConfig.to;

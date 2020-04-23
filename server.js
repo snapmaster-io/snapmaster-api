@@ -18,7 +18,7 @@ environment.setEnv(account);
 environment.setDevMode(configuration === environment.dev);
 
 // import middleware
-const { checkJwt, processUser } = require('./src/modules/requesthandler');
+const requesthandler = require('./src/modules/requesthandler');
 
 // import providers, database, storage, data access, datapipeline, profile, connections, entities, apidocs layers
 const providers = require('./src/providers/providers');
@@ -82,7 +82,7 @@ providers.createHandlers(app);
 
 
 // Get metadata API endpoint
-app.get('/metadata', checkJwt, processUser, function(req, res){
+app.get('/metadata', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
   const returnMetadata = async () => {
     const metadata = await dal.getMetadata(req.userId) || {};
     res.status(200).send(metadata);
@@ -91,7 +91,7 @@ app.get('/metadata', checkJwt, processUser, function(req, res){
 });
   
 // Get history API endpoint
-app.get('/history', checkJwt, processUser, function(req, res){
+app.get('/history', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
   const returnHistory = async () => {
     const history = await dal.getHistory(req.userId) || {};
     res.status(200).send(history);
@@ -122,7 +122,7 @@ app.post('/invoke', function(req, res){
 
 
 // Get timesheets API endpoint (OLD - ONLY HERE TO SHOW jwtAuthz)
-app.get('/timesheets', checkJwt, jwtAuthz(['read:timesheets']), function(req, res){
+app.get('/timesheets', requesthandler.checkJwt, jwtAuthz(['read:timesheets']), function(req, res){
   res.status(200).send({});
 });
 

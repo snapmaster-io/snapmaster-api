@@ -5,9 +5,13 @@
 //   remove(userId, name): removes the secret value under "name"
 //   set(userId, name, value): stores the secret value under "name"
 
-const profile = require('./profile.js')
+const database = require('../data/database');
+const dbconstants = require('../data/database-constants');
 const secrets = require('../services/secrets');
 const CryptoJS = require('crypto-js');
+
+// cache the secret for the snapmaster UserID
+var snapmasterSecret;
 
 exports.get = async (userId, name) => {
   try {
@@ -20,6 +24,14 @@ exports.get = async (userId, name) => {
 
     // check if the secret was encrypted, based on its name prefix
     if (name.includes(`aes-`)) {
+      // check if this is the snapmaster user
+      if (userId === dbconstants.snapMasterUserId) {
+        // check if caching snapmaster secret key
+        if (snapmasterSecret) {
+          return decrypt(secret, snapmasterSecret);
+        }
+      }
+
       const userKey = await getUserKey(userId);
       if (!userKey) {
         console.error(`get: user key for userId ${userId} not found`);
@@ -28,6 +40,11 @@ exports.get = async (userId, name) => {
 
       // get the user secret stored under the user key
       const userSecret = await secrets.get(userKey);
+
+      // if this is the snapmaster userid, cache the snapmaster secret
+      if (userId === dbconstants.snapMasterUserId) {
+        snapmasterSecret = userSecret;
+      }
 
       // decrypt the secret using the CryptoJS library
       const bytes = CryptoJS.AES.decrypt(secret, userSecret);
@@ -92,15 +109,40 @@ const createRandomKey = () => {
   return Math.random().toString(36).replace('0.', '');
 }
 
+const decrypt = (secret, key) => {
+  // decrypt the secret using the CryptoJS library
+  const bytes = CryptoJS.AES.decrypt(secret, key);
+  const plaintext = bytes.toString(CryptoJS.enc.Utf8);
+  return plaintext;
+}
+
+const getProfile = async (userId) => {
+  try {
+    const profile = await database.getUserData(userId, dbconstants.profile);
+    return profile;
+  } catch (error) {
+    console.log(`getProfile: caught exception: ${error}`);
+    return null;
+  }
+}
+
 const getUserKey = async (userId) => {
-  const userProfile = await profile.getProfile(userId);
+  const userProfile = await getProfile(userId);
   if (userProfile.key) {
     return userProfile.key;
   }
 }
 
 const setUserKey = async (userId, key) => {
-  const userProfile = await profile.getProfile(userId) || {};
+  const userProfile = await getProfile(userId) || {};
   userProfile.key = key;
-  profile.storeProfile(userId, userProfile);
+  storeProfile(userId, userProfile);
+}
+
+const storeProfile = async (userId, profile) => {
+  try {
+    await database.setUserData(userId, dbconstants.profile, profile);
+  } catch (error) {
+    console.log(`storeProfile: caught exception: ${error}`);
+  }
 }

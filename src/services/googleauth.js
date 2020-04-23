@@ -9,7 +9,8 @@ const axios = require('axios');
 const database = require('../data/database');
 const auth0 = require('../services/auth0');
 const environment = require('../modules/environment');
-const googleConfig = environment.getConfig(environment.google);
+const config = require('../modules/config');
+const googleConfig = config.getConfig(config.google);
 
 const { OAuth2Client } = require('google-auth-library');
 const authClient = new OAuth2Client();

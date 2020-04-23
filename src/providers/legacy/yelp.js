@@ -17,8 +17,8 @@
 const axios = require('axios');
 const provider = require('../provider');
 const requesthandler = require('../../modules/requesthandler');
-const environment = require('../../modules/environment');
-const yelpConfig = environment.getConfig(environment.yelp);
+const config = require('../../modules/config');
+const yelpConfig = config.getConfig(config.yelp);
 const database = require('../../data/database.js');
 
 const providerName = 'yelp';

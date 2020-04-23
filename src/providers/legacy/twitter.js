@@ -16,8 +16,8 @@ const oauthSignature = require('oauth-signature');
 const twitterauth = require('../../services/twitterauth.js');
 const provider = require('../provider');
 const requesthandler = require('../../modules/requesthandler');
-const environment = require('../../modules/environment');
-const twitterConfig = environment.getConfig(environment.twitter);
+const config = require('../../modules/config');
+const twitterConfig = config.getConfig(config.twitter);
 
 // could never get the Twitter client to work :(
 // const Twitter = require('twitter');

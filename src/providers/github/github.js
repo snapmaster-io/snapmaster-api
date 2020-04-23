@@ -28,11 +28,12 @@ const provider = require('../provider');
 const requesthandler = require('../../modules/requesthandler');
 const snapengine = require('../../snap/snap-engine');
 const environment = require('../../modules/environment');
+const config = require('../../modules/config');
 
 const providerName = 'github';
 
 // get github configuration
-const githubConfig = environment.getConfig(providerName);
+const githubConfig = config.getConfig(providerName);
 
 exports.provider = providerName;
 exports.image = `/${providerName}-logo.png`;

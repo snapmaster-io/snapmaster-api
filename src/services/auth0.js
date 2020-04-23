@@ -10,17 +10,20 @@
 const axios = require('axios');
 const database = require('../data/database');
 const environment = require('../modules/environment');
-const auth0Config = environment.getConfig(environment.auth0);
+const config = require('../modules/config');
+const auth0Config = config.getConfig(config.auth0);
 
 // get a SnapMaster API access token
 exports.getAPIAccessToken = async () => {
   try {
-    const url = `https://${auth0Config.domain}/oauth/token`;
+    const domain = environment.getOAuth2Domain();
+    const audience = environment.getOAuth2Audience();
+    const url = `https://${domain}/oauth/token`;
     const headers = { 'content-type': 'application/json' };
     const body = { 
       client_id: auth0Config.client_id,
       client_secret: auth0Config.client_secret,
-      audience: `https://api.snapmaster.io`,
+      audience: audience,
       grant_type: 'client_credentials'
     };
 
@@ -68,12 +71,13 @@ exports.getAuth0Profile = async (userId) => {
 // get a management API access token
 exports.getManagementAPIAccessToken = async () => {
   try {
-    const url = `https://${auth0Config.domain}/oauth/token`;
+    const domain = environment.getOAuth2Domain();
+    const url = `https://${domain}/oauth/token`;
     const headers = { 'content-type': 'application/json' };
     const body = { 
       client_id: auth0Config.client_id,
       client_secret: auth0Config.client_secret,
-      audience: `https://${auth0Config.domain}/api/v2/`,
+      audience: `https://${domain}/api/v2/`,
       grant_type: 'client_credentials'
     };
 
@@ -107,7 +111,8 @@ exports.linkAccounts = async (primaryUserId, secondaryUserId) => {
     // get provider|userId out of compound userId passed in
     [provider, userId] = secondaryUserId.split('|');
 
-    const url = `https://${auth0Config.domain}/api/v2/users/${primaryUserId}/identities`;
+    const domain = environment.getOAuth2Domain();
+    const url = `https://${domain}/api/v2/users/${primaryUserId}/identities`;
     const headers = { 
       'content-type': 'application/json',
       'authorization': `Bearer ${managementToken}`      
@@ -124,6 +129,8 @@ exports.linkAccounts = async (primaryUserId, secondaryUserId) => {
         headers: headers
       });
     const data = response.data;
+
+    // TODO: check data for success?
 
     // add a provider section to the user data with the secondary userid
     await database.setUserData(primaryUserId, provider, { userId: userId });

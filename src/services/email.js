@@ -5,12 +5,11 @@
 
 const dbconstants = require('../data/database-constants');
 const environment = require('../modules/environment');
-const sendgridConfig = environment.getConfig(environment.sendgrid);
+const config = require('../modules/config');
 
 // using Twilio SendGrid's v3 Node.js Library
 // https://github.com/sendgrid/sendgrid-nodejs
 const sgMail = require('@sendgrid/mail');
-sgMail.setApiKey(sendgridConfig.api_key);
 
 exports.emailReviews = async (to, reviews) => {
   try {
@@ -71,6 +70,10 @@ Navigate to ${url} to handle these new reviews!`;
 
 exports.sendEmail = async (to, from, subject, text, html) => {
   try {
+    // get sendgrid API key from config
+    const sendgridConfig = config.getConfig(config.sendgrid);
+    sgMail.setApiKey(sendgridConfig.api_key);
+
     // provide a default html value
     if (!html) {
       html = `<strong>${text}</strong>`;

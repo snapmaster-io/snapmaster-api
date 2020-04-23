@@ -10,11 +10,14 @@ const environment = require('../modules/environment');
 const cloudConfigFile = environment.getCloudPlatformConfigFile();
 const projectId = environment.getProjectId();
 
-// Import the Secret Manager client and instantiate it:
+// import the Secret Manager client and instantiate it
+const client = new secrets.SecretManagerServiceClient();
+/*
 const client = new secrets.SecretManagerServiceClient({
   projectId: projectId,
   keyFilename: cloudConfigFile,
 });
+*/
 
 exports.get = async (key) => {
   try {

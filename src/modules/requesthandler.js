@@ -13,9 +13,8 @@ const jwt = require('express-jwt');
 const jwksRsa = require('jwks-rsa');
 const dal = require('../data/dal');
 const environment = require('../modules/environment');
-
-// import the auth config based on the environment
-const auth0Config = environment.getConfig(environment.auth0);
+const domain = environment.getOAuth2Domain();
+const audience = environment.getOAuth2Audience();
 
 // Create middleware for checking the JWT
 exports.checkJwt = jwt({
@@ -24,12 +23,12 @@ exports.checkJwt = jwt({
     cache: true,
     rateLimit: true,
     jwksRequestsPerMinute: 5,
-    jwksUri: `https://${auth0Config.domain}/.well-known/jwks.json`
+    jwksUri: `https://${domain}/.well-known/jwks.json`
   }),
 
   // Validate the audience and the issuer
-  audience: auth0Config.audience, 
-  issuer: `https://${auth0Config.domain}/`,
+  audience: audience, 
+  issuer: `https://${domain}/`,
   algorithms: [ 'RS256' ]
 });
   
@@ -37,7 +36,7 @@ exports.checkJwt = jwt({
 // it will also set the userId property on the request object for future pipeline stages
 exports.processUser = (req, res, next) => {
   const userId = req.user['sub'];
-  const email = req.user[`${auth0Config.audience}/email`];
+  const email = req.user[`${audience}/email`];
   const impersonatedUserId = req.headers.impersonateduser;
   const processingAs = impersonatedUserId ? `, processing as ${impersonatedUserId}` : '';
   console.log(`${req.method} ${req.url}: userId: ${userId} email: ${email}${processingAs}`);

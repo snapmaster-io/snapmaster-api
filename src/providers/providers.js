@@ -31,11 +31,14 @@ const providerList = providerNames.map(p => {
 //const providerList = [aws, azure, circleci, gcp, github, gitlab, slack];
 
 // legacy providers
+/*
 const google = require('./legacy/google');
 const facebook = require('./legacy/facebook');
 const twitter = require('./legacy/twitter');
 const yelp = require('./legacy/yelp');
+*/
 
+/*
 exports.providers = {
 //  'github': github.apis,
   'google-oauth2': google.apis,
@@ -43,6 +46,7 @@ exports.providers = {
   'twitter': twitter.apis,
   'yelp': yelp.apis
 }
+*/
 
 exports.createHandlers = (app) => {
   for (const provider of providerList) {
