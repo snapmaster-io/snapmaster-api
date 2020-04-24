@@ -69,22 +69,33 @@ const configSecrets = {
   },
 }
 
+// an object to cache the configs for each type 
 const configs = {};
 
-exports.getConfig = (type) => {
+exports.getConfig = async (type) => {
+  // if config for this type has not been loaded yet, do so now
   const env = environment.getEnv();
-  //const config = configs[type][env];
-  const config = configs[type];
-  return config;
+  configs[type] = configs[type] || await loadConfig(env, type);
+  return configs[type];
 }
 
-// load all the configs using the keys of all the config secrets
-const loadConfigs = async (env) => {
-  const projectId = environment.getProjectId();
-  for (const key of Object.keys(configSecrets)) {
-    const secretName = `projects/${projectId}/secrets/aes-${configSecrets[key][env]}`;
+const loadConfig = async (env, type) => {
+  try {
+    const projectId = environment.getProjectId();
+    const secretName = `projects/${projectId}/secrets/aes-${configSecrets[type][env]}`;
     const json = await credentials.get(dbconstants.snapMasterUserId, secretName);
-    configs[key] = JSON.parse(json);
+    const config = JSON.parse(json);  
+    return config;
+  } catch (error) {
+    console.error(`loadConfig: caught exception: ${error}`);
+    return null;
+  }
+}
+
+// pre-load all the configs using the keys of all the config secrets
+const loadConfigs = async (env) => {
+  for (const key of Object.keys(configSecrets)) {
+    configs[key] = await loadConfig(env, key);
   }
 }
 

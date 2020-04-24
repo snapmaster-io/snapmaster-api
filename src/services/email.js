@@ -71,7 +71,7 @@ Navigate to ${url} to handle these new reviews!`;
 exports.sendEmail = async (to, from, subject, text, html) => {
   try {
     // get sendgrid API key from config
-    const sendgridConfig = config.getConfig(config.sendgrid);
+    const sendgridConfig = await config.getConfig(config.sendgrid);
     sgMail.setApiKey(sendgridConfig.api_key);
 
     // provide a default html value

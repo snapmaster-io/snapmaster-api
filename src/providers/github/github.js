@@ -101,41 +101,47 @@ exports.createHandlers = (app) => {
 
   // Github webhooks endpoint - called by github
   app.post('/github/webhooks/:userId/:activeSnapId', function(req, res){
-    try {
-      // get github configuration
-      const githubConfig = config.getConfig(providerName);
+    // define an async function to await configuration
+    const process = async () => {
+      try {
+        // get github configuration
+        const githubConfig = await config.getConfig(providerName);
 
-      const userId = decodeURI(req.params.userId);
-      const activeSnapId = req.params.activeSnapId;
-      console.log(`POST /github/webhooks: userId ${userId}, activeSnapId ${activeSnapId}`);
+        const userId = decodeURI(req.params.userId);
+        const activeSnapId = req.params.activeSnapId;
+        console.log(`POST /github/webhooks: userId ${userId}, activeSnapId ${activeSnapId}`);
 
-      // verify the signature against the body and the secret
-      const secret = githubConfig.github_client_id;      
-      if (!verify(secret, req.body, req.headers['x-hub-signature'])) {
-        console.error('githubWebhook: signature does not match event payload & secret');
-        res.status(500).send();
-        return;
-      }
+        // verify the signature against the body and the secret
+        const secret = githubConfig.github_client_id;      
+        if (!verify(secret, req.body, req.headers['x-hub-signature'])) {
+          console.error('githubWebhook: signature does not match event payload & secret');
+          res.status(500).send();
+          return;
+        }
 
-      // don't propagate a 'ping' event
-      if (req.headers["x-github-event"] !== 'ping') {
-        // dispatch the webhook payload to the handler
-        handleWebhook(userId, activeSnapId, req.headers["x-github-event"], req.body);
-      }
+        // don't propagate a 'ping' event
+        if (req.headers["x-github-event"] !== 'ping') {
+          // dispatch the webhook payload to the handler
+          handleWebhook(userId, activeSnapId, req.headers["x-github-event"], req.body);
+        }
 
-      // return immediately to the caller
-      res.status(200).send();
-    } catch (error) {
-      console.error(`githubWebhook caught exception: ${error}`);
-      res.status(500).send(error);
+        // return immediately to the caller
+        res.status(200).send();
+      } catch (error) {
+        console.error(`githubWebhook caught exception: ${error}`);
+        res.status(500).send(error);
+      }            
     }
+
+    // call the processing function
+    process();
   });
 }
 
 exports.createTrigger = async (providerName, defaultConnectionInfo, userId, activeSnapId, param) => {
   try {
     // get github configuration
-    const githubConfig = config.getConfig(providerName);
+    const githubConfig = await config.getConfig(providerName);
 
     // validate params
     const repoName = param.repo;
@@ -341,9 +347,9 @@ const handleWebhook = (userId, activeSnapId, name, payload) => {
 }
 
 // create the webhook listener 
-const createWebhookListener = () => {
+const createWebhookListener = async () => {
   // get github configuration
-  const githubConfig = config.getConfig(providerName);
+  const githubConfig = await config.getConfig(providerName);
 
   // if in dev mode, install the eventsource proxy for the dev environment, to receive webhooks via smee.io
   if (environment.getDevMode()) {

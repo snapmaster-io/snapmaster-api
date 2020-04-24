@@ -87,7 +87,7 @@ exports.createHandlers = (app) => {
 
 exports.apis.getTweets.func = async ([userId]) => {
   try {
-    const twitterConfig = config.getConfig(config.twitter);
+    const twitterConfig = await config.getConfig(config.twitter);
 
     const user = await twitterauth.getTwitterAccessInfo(userId);
     if (!user) {

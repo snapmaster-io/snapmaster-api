@@ -89,7 +89,7 @@ const getLongLivedFacebookAccessToken = async(userId, accessToken) => {
   // and it appears that the FB token is long-lived anyway
   return null;
 
-  const facebookConfig = config.getConfig(config.facebook);
+  const facebookConfig = await config.getConfig(config.facebook);
   try {
     const url = `https://graph.facebook.com/oauth/access_token?             
 client_id=${facebookConfig.fb_client_id}&

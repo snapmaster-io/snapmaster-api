@@ -14,7 +14,7 @@ exports.toAdmin = 'toAdmin';
 
 exports.textNotification = async (to, message) => {
   try {
-    const twilioConfig = config.getConfig(config.twilio);
+    const twilioConfig = await config.getConfig(config.twilio);
     const from = twilioConfig.from;
     const mediaUrl = 'https://github.com/snapmaster-io/snapmaster/raw/master/public/SnapMaster-logo-220.png'
 
@@ -26,7 +26,7 @@ exports.textNotification = async (to, message) => {
 
 exports.textReviews = async (to, reviews) => {
   try {
-    const twilioConfig = config.getConfig(config.twilio);
+    const twilioConfig = await config.getConfig(config.twilio);
     const from = twilioConfig.from;
     const url = `${environment.getUrl()}/reputation/alerts`;
     const mediaUrl = 'https://github.com/snapmaster-io/snapmaster/raw/master/public/SnapMaster-logo-220.png'
@@ -43,7 +43,7 @@ exports.textReviews = async (to, reviews) => {
 exports.sendSms = async (to, from, mediaUrl, body) => {
   try {
     // get twilio API key from config
-    const twilioConfig = config.getConfig(config.twilio);
+    const twilioConfig = await config.getConfig(config.twilio);
     const client = new twilio(twilioConfig.account_sid, twilioConfig.auth_token);
 
     // replace a "toAdmin" SMS number with the admin number in the twilio config

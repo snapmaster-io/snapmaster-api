@@ -145,7 +145,7 @@ const getGoogleInfoFromAuth0Profile = async (userId, user) => {
 // access token for that userId
 const getAccessTokenForGoogleRefreshToken = async(userId, refreshToken) => {
   try {
-    const googleConfig = config.getConfig(config.google);
+    const googleConfig = await config.getConfig(config.google);
     const url = 'https://www.googleapis.com/oauth2/v4/token';
     const headers = { 
       'content-type': 'application/json',

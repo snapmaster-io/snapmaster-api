@@ -15,7 +15,7 @@ const config = require('../modules/config');
 // get a SnapMaster API access token
 exports.getAPIAccessToken = async () => {
   try {
-    const auth0Config = config.getConfig(config.auth0);
+    const auth0Config = await config.getConfig(config.auth0);
     const domain = environment.getOAuth2Domain();
     const audience = environment.getOAuth2Audience();
     const url = `https://${domain}/oauth/token`;
@@ -71,7 +71,7 @@ exports.getAuth0Profile = async (userId) => {
 // get a management API access token
 exports.getManagementAPIAccessToken = async () => {
   try {
-    const auth0Config = config.getConfig(config.auth0);
+    const auth0Config = await config.getConfig(config.auth0);
     const domain = environment.getOAuth2Domain();
     const url = `https://${domain}/oauth/token`;
     const headers = { 'content-type': 'application/json' };

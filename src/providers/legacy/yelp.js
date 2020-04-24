@@ -139,7 +139,7 @@ exports.createHandlers = (app) => {
 
 exports.apis.addBusiness.func = async ([phone]) => {
   try {
-    const yelpConfig = config.getConfig(config.yelp);
+    const yelpConfig = await config.getConfig(config.yelp);
 
     const normalizedPhoneNumber = normalize(phone);
     const url = `https://api.yelp.com/v3/businesses/search/phone?phone=${normalizedPhoneNumber}`;
@@ -175,7 +175,7 @@ exports.apis.getBusinesses.func = async () => {
 
 exports.apis.getReviews.func = async ([businessId]) => {
   try {
-    const yelpConfig = config.getConfig(config.yelp);
+    const yelpConfig = await config.getConfig(config.yelp);
 
     const url = `https://api.yelp.com/v3/businesses/${businessId}/reviews`;
     const headers = { 
