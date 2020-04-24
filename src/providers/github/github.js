@@ -32,9 +32,6 @@ const config = require('../../modules/config');
 
 const providerName = 'github';
 
-// get github configuration
-const githubConfig = config.getConfig(providerName);
-
 exports.provider = providerName;
 exports.image = `/${providerName}-logo.png`;
 exports.type = provider.linkProvider;
@@ -105,6 +102,9 @@ exports.createHandlers = (app) => {
   // Github webhooks endpoint - called by github
   app.post('/github/webhooks/:userId/:activeSnapId', function(req, res){
     try {
+      // get github configuration
+      const githubConfig = config.getConfig(providerName);
+
       const userId = decodeURI(req.params.userId);
       const activeSnapId = req.params.activeSnapId;
       console.log(`POST /github/webhooks: userId ${userId}, activeSnapId ${activeSnapId}`);
@@ -134,6 +134,9 @@ exports.createHandlers = (app) => {
 
 exports.createTrigger = async (providerName, defaultConnectionInfo, userId, activeSnapId, param) => {
   try {
+    // get github configuration
+    const githubConfig = config.getConfig(providerName);
+
     // validate params
     const repoName = param.repo;
     if (!repoName) {
@@ -233,8 +236,6 @@ exports.deleteTrigger = async (providerName, defaultConnectionInfo, triggerData,
     return null;
   }
 }
-
-
 
 exports.apis.createHook.func = async ([userId, repo]) => {
   try {
@@ -341,6 +342,9 @@ const handleWebhook = (userId, activeSnapId, name, payload) => {
 
 // create the webhook listener 
 const createWebhookListener = () => {
+  // get github configuration
+  const githubConfig = config.getConfig(providerName);
+
   // if in dev mode, install the eventsource proxy for the dev environment, to receive webhooks via smee.io
   if (environment.getDevMode()) {
     const webhookProxyUrl = "https://smee.io/aRW11TsA1USoXCWb"; 

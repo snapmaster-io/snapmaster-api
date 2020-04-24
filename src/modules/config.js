@@ -83,7 +83,8 @@ const loadConfigs = async (env) => {
   const projectId = environment.getProjectId();
   for (const key of Object.keys(configSecrets)) {
     const secretName = `projects/${projectId}/secrets/aes-${configSecrets[key][env]}`;
-    configs[key] = await credentials.get(dbconstants.snapMasterUserId, secretName);
+    const json = await credentials.get(dbconstants.snapMasterUserId, secretName);
+    configs[key] = JSON.parse(json);
   }
 }
 

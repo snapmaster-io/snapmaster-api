@@ -14,6 +14,7 @@ exports.toAdmin = 'toAdmin';
 
 exports.textNotification = async (to, message) => {
   try {
+    const twilioConfig = config.getConfig(config.twilio);
     const from = twilioConfig.from;
     const mediaUrl = 'https://github.com/snapmaster-io/snapmaster/raw/master/public/SnapMaster-logo-220.png'
 
@@ -25,6 +26,7 @@ exports.textNotification = async (to, message) => {
 
 exports.textReviews = async (to, reviews) => {
   try {
+    const twilioConfig = config.getConfig(config.twilio);
     const from = twilioConfig.from;
     const url = `${environment.getUrl()}/reputation/alerts`;
     const mediaUrl = 'https://github.com/snapmaster-io/snapmaster/raw/master/public/SnapMaster-logo-220.png'

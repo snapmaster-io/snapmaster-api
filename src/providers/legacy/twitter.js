@@ -17,7 +17,6 @@ const twitterauth = require('../../services/twitterauth.js');
 const provider = require('../provider');
 const requesthandler = require('../../modules/requesthandler');
 const config = require('../../modules/config');
-const twitterConfig = config.getConfig(config.twitter);
 
 // could never get the Twitter client to work :(
 // const Twitter = require('twitter');
@@ -88,6 +87,8 @@ exports.createHandlers = (app) => {
 
 exports.apis.getTweets.func = async ([userId]) => {
   try {
+    const twitterConfig = config.getConfig(config.twitter);
+
     const user = await twitterauth.getTwitterAccessInfo(userId);
     if (!user) {
       console.log('getTweets: getTwitterAccessInfo failed');

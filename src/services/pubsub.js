@@ -8,10 +8,13 @@ const environment = require('../modules/environment');
 const cloudConfigFile = environment.getCloudPlatformConfigFile();
 const projectId = environment.getProjectId();
 
+const pubsub = new PubSub({projectId});
+/*
 const pubsub = new PubSub({
   projectId: projectId,
   keyFilename: cloudConfigFile,
 });
+*/
 
 // set up some constants
 const ackDeadlineSeconds = 60;  // allow 60 seconds for message processing

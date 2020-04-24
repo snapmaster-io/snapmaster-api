@@ -6,7 +6,6 @@
 const database = require('../data/database');
 const auth0 = require('../services/auth0');
 const config = require('../modules/config');
-const facebookConfig = config.getConfig(config.facebook);
 
 exports.getFacebookAccessInfo = async (userId) => {
 
@@ -90,6 +89,7 @@ const getLongLivedFacebookAccessToken = async(userId, accessToken) => {
   // and it appears that the FB token is long-lived anyway
   return null;
 
+  const facebookConfig = config.getConfig(config.facebook);
   try {
     const url = `https://graph.facebook.com/oauth/access_token?             
 client_id=${facebookConfig.fb_client_id}&

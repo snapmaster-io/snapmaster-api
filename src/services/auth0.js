@@ -11,11 +11,11 @@ const axios = require('axios');
 const database = require('../data/database');
 const environment = require('../modules/environment');
 const config = require('../modules/config');
-const auth0Config = config.getConfig(config.auth0);
 
 // get a SnapMaster API access token
 exports.getAPIAccessToken = async () => {
   try {
+    const auth0Config = config.getConfig(config.auth0);
     const domain = environment.getOAuth2Domain();
     const audience = environment.getOAuth2Audience();
     const url = `https://${domain}/oauth/token`;
@@ -71,6 +71,7 @@ exports.getAuth0Profile = async (userId) => {
 // get a management API access token
 exports.getManagementAPIAccessToken = async () => {
   try {
+    const auth0Config = config.getConfig(config.auth0);
     const domain = environment.getOAuth2Domain();
     const url = `https://${domain}/oauth/token`;
     const headers = { 'content-type': 'application/json' };
@@ -156,7 +157,8 @@ exports.unlinkAccounts = async (primaryUserId, secondaryUserId) => {
     // get provider|userId out of compound userId passed in
     [provider, userId] = secondaryUserId.split('|');
 
-    const url = `https://${auth0Config.domain}/api/v2/users/${primaryUserId}/identities/${provider}/${userId}`;
+    const domain = environment.getOAuth2Domain();
+    const url = `https://${domain}/api/v2/users/${primaryUserId}/identities/${provider}/${userId}`;
     const headers = { 
       'content-type': 'application/json',
       'authorization': `Bearer ${managementToken}`      
@@ -184,7 +186,8 @@ exports.unlinkAccounts = async (primaryUserId, secondaryUserId) => {
 // get Auth0 profile information for a specific userId, using the mgmt API token
 const getAuth0ProfileInfo = async (userId, managementToken) => {
   try {
-    const url = encodeURI(`https://${auth0Config.domain}/api/v2/users/${userId}`);
+    const domain = environment.getOAuth2Domain();
+    const url = encodeURI(`https://${domain}/api/v2/users/${userId}`);
     const headers = { 
       'content-type': 'application/json',
       'authorization': `Bearer ${managementToken}`
