@@ -103,6 +103,7 @@ exports.getDefinition = (providerName) => {
   try {
     const definition = fs.readFileSync(`./src/providers/${providerName}/${providerName}.yml`, 'utf8');
     const provider = YAML.parse(definition);
+    provider.text = definition;
     // TODO: validation
     return provider;
   } catch (error) {
