@@ -7,17 +7,8 @@
 
 const secrets = require('@google-cloud/secret-manager');
 const environment = require('../modules/environment');
-const cloudConfigFile = environment.getCloudPlatformConfigFile();
 const projectId = environment.getProjectId();
-
-// import the Secret Manager client and instantiate it
 const client = new secrets.SecretManagerServiceClient();
-/*
-const client = new secrets.SecretManagerServiceClient({
-  projectId: projectId,
-  keyFilename: cloudConfigFile,
-});
-*/
 
 exports.get = async (key) => {
   try {

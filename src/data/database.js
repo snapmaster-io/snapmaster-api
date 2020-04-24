@@ -45,13 +45,6 @@ exports.setProvider = (prov = 'firestore') => {
 exports.setEnv = (env = 'prod') => {
   // ensure there is a setEnv method before calling it
   provider.setEnv && provider.setEnv(env);
-
-  /*
-  // for non-production environments, append env to metadata collection name
-  if (env !== 'prod') {
-    exports.metadata = `__metadata-${env}`;
-  }
-  */
 }
 
 // get a document from a collection

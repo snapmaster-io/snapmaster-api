@@ -8,16 +8,8 @@
 
 const language = require('@google-cloud/language');
 const environment = require('../modules/environment');
-const cloudConfigFile = environment.getCloudPlatformConfigFile();
 const projectId = environment.getProjectId();
-
 const client = new language.LanguageServiceClient();
-/*
-const client = new language.LanguageServiceClient({
-    projectId: projectId,
-  keyFilename: cloudConfigFile,
-});
-*/
 
 exports.analyze = async (text) => {
   const document = {

@@ -17,35 +17,6 @@ exports.twilio = 'twilio';
 exports.twitter = 'twitter';
 exports.yelp = 'yelp';
 
-/* 
- * pre-secret configs relied on json files in the config/ directory on 
- * the container image
- */
-/*
- const configs = {
-  auth0: {
-    dev: require(`../../config/auth0_config_dev.json`),
-    prod: require(`../../config/auth0_config_prod.json`)
-  },
-  github: {
-    dev: require(`../../config/github_auth_config_dev.json`),
-    prod: require(`../../config/github_auth_config_prod.json`)
-  },
-  google: {
-    dev: require(`../../config/google_auth_config_dev.json`),
-    prod: require(`../../config/google_auth_config_prod.json`)
-  },
-  sendgrid: {
-    dev: require(`../../config/sendgrid_auth_config_dev.json`),
-    prod: require(`../../config/sendgrid_auth_config_prod.json`)
-  },
-  twilio: {
-    dev: require(`../../config/twilio_auth_config_dev.json`),
-    prod: require(`../../config/twilio_auth_config_prod.json`)
-  },
-};
-*/
-
 const configSecrets = {
   auth0: {
     dev:  'auth0_config_dev',

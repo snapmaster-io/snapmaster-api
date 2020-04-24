@@ -194,15 +194,6 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
         headers: headers
       });
 
-    /*
-    const hook = await client.repos.createHook({
-      owner,
-      repo,
-      config,
-      events: [event]
-    });
-    */
-
     // construct trigger data from returned hook info
     const triggerData = {
       id: hook.data.id,

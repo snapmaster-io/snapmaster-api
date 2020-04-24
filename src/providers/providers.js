@@ -27,27 +27,6 @@ const providerList = providerNames.map(p => {
   return providerObject;
 });
 
-// current list of supported providers
-//const providerList = [aws, azure, circleci, gcp, github, gitlab, slack];
-
-// legacy providers
-/*
-const google = require('./legacy/google');
-const facebook = require('./legacy/facebook');
-const twitter = require('./legacy/twitter');
-const yelp = require('./legacy/yelp');
-*/
-
-/*
-exports.providers = {
-//  'github': github.apis,
-  'google-oauth2': google.apis,
-  'facebook': facebook.apis,
-  'twitter': twitter.apis,
-  'yelp': yelp.apis
-}
-*/
-
 exports.createHandlers = (app) => {
   for (const provider of providerList) {
     provider.createHandlers(app);

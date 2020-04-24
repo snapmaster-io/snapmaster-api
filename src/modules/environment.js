@@ -37,6 +37,8 @@ exports.setDevMode = (mode) => {
 }
 
 // note - keyFilename below assumes a path relative to the app root, NOT the current directory
+// this function is no longer used by the SnapMaster API main project.  It is only used by 
+// utils/invoke.js to send a pubsub message on the right subscription
 exports.getCloudPlatformConfigFile = () => {
   const cloudConfigFileName = `./config/cloud_platform_config_${environment}.json`;
   return cloudConfigFileName;

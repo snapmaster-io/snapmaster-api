@@ -4,16 +4,8 @@
 
 const scheduler = require('@google-cloud/scheduler');
 const environment = require('../modules/environment');
-const cloudConfigFile = environment.getCloudPlatformConfigFile();
 const projectId = environment.getProjectId();
-
 const client = new scheduler.CloudSchedulerClient();
-/*
-const client = new scheduler.CloudSchedulerClient({
-  projectId: projectId,
-  keyFilename: cloudConfigFile,
-});
-*/
 
 // create a pubsub job with the fully-qualified topicname and a default schedule
 // default cron schedule: every hour on the hour

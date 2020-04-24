@@ -2,28 +2,12 @@
 
 const Firestore = require('@google-cloud/firestore');
 const dbconstants = require('./database-constants');
-const environment = require('../modules/environment');
-const cloudConfigFile = environment.getCloudPlatformConfigFile();
-const projectId = environment.getProjectId();
-
 const db = new Firestore();
-/*
-const db = new Firestore({
-  projectId: projectId,
-  keyFilename: cloudConfigFile,
-});
-*/
 
 var users = db.collection('users');
 
 // set the environment
 exports.setEnv = (env) => {
-  // the only impact for dev environment is to use a different collection
-  /* DISABLE
-  if (env === 'dev') {
-    users = db.collection('users-dev');
-  }
-  */
 };
 
 // get a document from a collection
