@@ -6,10 +6,13 @@ const environment = require('../modules/environment');
 const cloudConfigFile = environment.getCloudPlatformConfigFile();
 const projectId = environment.getProjectId();
 
+const db = new Firestore();
+/*
 const db = new Firestore({
   projectId: projectId,
   keyFilename: cloudConfigFile,
 });
+*/
 
 var users = db.collection('users');
 

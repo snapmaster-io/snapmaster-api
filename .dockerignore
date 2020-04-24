@@ -2,3 +2,5 @@ Dockerfile
 README.md
 node_modules
 npm-debug.log
+# all config is now injected through secrets as opposed to config files on the filesystem
+config/

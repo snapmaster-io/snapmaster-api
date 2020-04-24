@@ -2,3 +2,5 @@
 .git
 .gitignore
 node_modules/
+# all config is now injected through secrets as opposed to config files on the filesystem
+config/
