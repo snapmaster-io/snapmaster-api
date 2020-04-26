@@ -8,6 +8,7 @@ connection:
   connectionInfo:
   - name: username
     description: user name
+    type: name
   - name: password
     description: triggers require password (not a personal access token)
     type: password

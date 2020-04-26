@@ -8,6 +8,7 @@ connection:
   connectionInfo:
   - name: webhook
     description: name of HTTP POST trigger
+    type: name
   - name: secret
     description: secret that the caller must use to trigger snap
     type: password

@@ -23,17 +23,35 @@ exports.createHandlers = (app) => {
 exports.entityHandler = (req, res) => {
   try {
     // get the entity name from the parameters
-    const entity = req.params.entityName || req.body.entityName;
+    let entity = req.params.entityName || req.body.entityName;
 
     // get the provider for the entity
-    const [providerName] = entity.split(':');
+    let [providerName, entityName] = entity.split(':');
+    if (!providerName) {
+      console.error(`getEntities: could not retrieve provider from entity ${entity}`);
+      res.status(200).send([]);
+      return;
+    }
 
     // get the provider 
     const provider = providers.getProvider(providerName);
     if (!provider) {
-      console.error(`getEntities: could not retrieve provider ${provider}`);
+      console.error(`getEntities: could not retrieve provider ${providerName}`);
       res.status(200).send([]);
       return;
+    }
+
+    // if an entity name wasn't specified, get the connection entity
+    if (!entityName) {
+      const name = provider.definition.connection && provider.definition.connection.entity;
+      if (!name) {
+        console.error(`getEntities: could not retrieve default entity for provider ${providerName}`);
+        res.status(200).send([]);  
+        return;
+      }
+
+      // since the entity name wasn't specificed, replace it with the connection entity name
+      entity = name;      
     }
     
     // validate entity

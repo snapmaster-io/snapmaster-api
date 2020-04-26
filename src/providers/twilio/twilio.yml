@@ -10,7 +10,7 @@ connection:
   connectionInfo:
   - name: account
     description: account name
-    type: key
+    type: name
   - name: sid
     description: account SID
     type: password

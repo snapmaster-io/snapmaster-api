@@ -10,7 +10,7 @@ connection:
   connectionInfo:
   - name: project
     description: project ID 
-    type: key
+    type: name
   - name: key
     description: paste the JSON from the service account key file
     type: password

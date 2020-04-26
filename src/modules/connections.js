@@ -29,15 +29,13 @@ exports.createHandlers = (app) => {
     const provider = req.body && req.body.provider;
   
     const add = async () => {
-      await addConnection(req.userId, provider, req.body.connectionInfo);
-      entities.entityHandler(req, res);
-
-      //res.status(200).send({ message: 'success'});
+      // addConnection will reeturn the status and message on the res object
+      await addConnection(req, res);
     }
   
     const remove = async () => {
-      await removeConnection(req.userId, provider, req.body.entityName);
-      res.status(200).send({ message: 'success'});
+      const message = await removeConnection(req.userId, provider, req.body.entityName);
+      res.status(200).send({ message: message });
     }
   
     if (action === 'add' && provider) {
@@ -116,12 +114,48 @@ exports.getConnectionInfo = async (userId, connection) => {
   return userData.connectionInfo;
 }
 
-const addConnection = async (userId, connection, connectionInfo) => {
-  const jsonValue = JSON.stringify(connectionInfo);
-  const name = await credentials.set(userId, `${userId}:${connection}`, jsonValue);
-  const userData = { connected: true };
-  userData[dbconstants.keyField] = name;
-  await database.setUserData(userId, connection, userData);
+const addConnection = async (req, res) => {
+  try {
+    // get all parameter values
+    const userId = req.userId;
+    const connection = req.body.provider; 
+    const connectionInfo = req.body.connectionInfo;
+    let entity = req.body.entityName;
+
+    // get the provider definition and the entity name
+    const provider = providers.getProvider(connection);
+    if (!provider) {
+      console.error(`addConnection: error getting provider ${connection}`);
+      res.status(200).send({ message: `error: could not find provider ${connection}` });
+      return;
+    }
+
+    // store the default credentials for the connection
+    const jsonValue = JSON.stringify(connectionInfo);
+    const name = await credentials.set(userId, `${userId}:${connection}`, jsonValue);
+
+    // store the connection in the user data document
+    const userData = { connected: true };
+    userData[dbconstants.keyField] = name;
+    await database.setUserData(userId, connection, userData);
+
+    if (!entity) {
+      entity = provider.definition.connection && provider.definition.connection.entity;
+    }
+
+    // check for no entity
+    if (!entity) {
+      res.status(200).send({ message: 'success' });
+      return;
+    }
+
+    // add the entity and allow the handler to return the HTTP response
+    req.body.entityName = entity;
+    entities.entityHandler(req, res);
+  } catch (error) {
+    console.error(`addConnection: caught exception: ${error}`);
+    res.status(200).send({ message: 'error' });
+  }
 }
 
 const getConnections = async (userId) => {
@@ -164,12 +198,31 @@ const removeConnection = async (userId, connection, entity) => {
   const userData = await database.getUserData(userId, connection);
   if (!userData) {
     console.error(`removeConnection: error getting connection ${connection} for user ${userId}`);
-    return null;
+    return 'error: existing connection not found';
   }
 
   // if a key for a secret was stored, remove the secret
   if (userData[dbconstants.keyField]) {
     await credentials.remove(userId, userData[dbconstants.keyField]);
+  }
+
+  // remove the connection 
+  await database.removeConnection(userId, connection);
+
+  // get the provider definition and the entity name
+  const provider = providers.getProvider(connection);
+  if (!provider) {
+    console.error(`removeConnection: error getting provider ${connection}`);
+    return 'error: could not find provider';
+  }
+
+  if (!entity) {
+    entity = provider.definition.connection && provider.definition.connection.entity;
+  }
+
+  // check for no entity
+  if (!entity) {
+    return 'success';
   }
 
   // get all entities in the entity collection for this connection
@@ -183,7 +236,8 @@ const removeConnection = async (userId, connection, entity) => {
     }
   }
 
-  // remove the connection and any entity information associated with it
-  await database.removeConnection(userId, connection);
+  // remove all connection entities
   await database.removeCollection(userId, entity);
+
+  return 'success';
 }
