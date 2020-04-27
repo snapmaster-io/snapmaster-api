@@ -1,0 +1,26 @@
+---
+version: provider-v1alpha1 
+name: netlify
+description: Netlify Provider Definition
+connection: 
+  type: oauth
+triggers: 
+  - name: submission_created
+    description: a new submission was created
+    parameters:
+    - name: site
+      description: site ID
+      required: true
+  - name: deploy_created
+    description: a new deployment was created
+    parameters:
+    - name: site
+      description: site ID
+      required: true
+  - name: deploy_failed
+    description: a submitted deployment failed
+    parameters:
+    - name: site
+      description: site ID
+      required: true
+actions:

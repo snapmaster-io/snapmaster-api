@@ -16,7 +16,7 @@ const environment = require('../modules/environment');
 
 exports.simpleProvider = 'simple';
 exports.linkProvider = 'link';
-exports.hybridProvider = 'hybrid';
+exports.oauthProvider = 'oauth';
 
 // create a provider trigger across service boundaries
 exports.createTrigger = async (providerName, connectionInfo, userId, activeSnapId, param) => {

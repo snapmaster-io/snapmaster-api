@@ -15,6 +15,7 @@ const providerNames = [
   'gcp', 
   'github', 
   'gitlab', 
+  'netlify', 
   'pagerduty', 
   'httppost',
   'slack', 

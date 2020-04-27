@@ -28,6 +28,7 @@ const datapipeline = require('./src/modules/datapipeline');
 const profile = require('./src/modules/profile');
 const connections = require('./src/modules/connections');
 const entities = require('./src/modules/entities');
+const oauth = require('./src/modules/oauth');
 const apidocs = require('./src/modules/apidocs');
 
 // import snap data access layer and engine
@@ -72,6 +73,7 @@ profile.createHandlers(app);
 entities.createHandlers(app);
 snapdal.createHandlers(app);
 beta.createHandlers(app);
+oauth.createHandlers(app);
 apidocs.createHandlers(app);
 
 // create route handlers for each of the providers

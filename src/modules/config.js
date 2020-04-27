@@ -12,6 +12,7 @@ exports.auth0 = 'auth0';
 exports.facebook = 'facebook';
 exports.github = 'github';
 exports.google = 'google';
+exports.netlify = 'netlify';
 exports.sendgrid = 'sendgrid';
 exports.twilio = 'twilio';
 exports.twitter = 'twitter';
@@ -29,6 +30,10 @@ const configSecrets = {
   google: {
     dev:  'google_auth_config_dev',
     prod: 'google_auth_config_prod'
+  },
+  netlify: {
+    dev:  'netlify_auth_config_dev',
+    prod: 'netlify_auth_config_prod'
   },
   sendgrid: {
     dev:  'sendgrid_auth_config_dev',
