@@ -7,6 +7,7 @@ const simpleOauth = require('simple-oauth2');
 const querystring = require('querystring')
 const environment = require('./environment');
 const config = require('./config');
+const database = require('../data/database');
 
 exports.createHandlers = (app) => {
   // Post oauthstart API will initiate an OAuth2 authorization flow
@@ -25,7 +26,8 @@ exports.createHandlers = (app) => {
         // get the required query parameters and bail if they aren't found
         const csrfToken = req.query.csrf;
         const redirectUrl = req.query.url;
-        if (!csrfToken || !redirectUrl) {
+        const userId = req.query.userId;
+        if (!csrfToken || !redirectUrl || !userId) {
           res.status(401).send({ error: 'Bad request' });
           return;
         }
@@ -39,7 +41,7 @@ exports.createHandlers = (app) => {
           /* Specify how your app needs to access the user’s account. */
           scope: '',
           /* State helps mitigate CSRF attacks & Restore the previous state of your app */
-          state: `url=${redirectUrl}&csrf=${csrfToken}&providerName=${providerName}`,
+          state: `url=${redirectUrl}&csrf=${csrfToken}&providerName=${providerName}&userId=${userId}`,
         })
       
         // redirect user to authorizationURI 
@@ -68,15 +70,26 @@ exports.createHandlers = (app) => {
   app.use('/oauth/callback/:provider', function(req, res){
     // define an async function to handle the call (since we use await in this codepath)
     const call = async () => {
+      // get the grant code and state
+      const code = req.query.code;
+      const state = querystring.parse(req.query.state);
+
       try {
-        // get the grant code and state
-        const code = req.query.code;
-        const state = querystring.parse(req.query.state);
+        // get the userId out of the state hash
+        const userId = state.userId;
 
         // get provider name and configuration data
         const providerName = req.params.provider;
+        if (!providerName) {
+          console.error('oauthcallback: could not obtain provider name');
+          const url = `${state.url}#message=error`;
+          res.redirect(url);
+          return;
+        }
+
         const configData = await config.getConfig(providerName);
         if (!configData) {
+          console.error('oauthcallback: could not obtain config data');
           const url = `${state.url}#message=error`;
           res.redirect(url);
           return;
@@ -96,8 +109,15 @@ exports.createHandlers = (app) => {
         const authResult = oauth.accessToken.create(authorizationToken);
 
         const token = authResult.token.access_token;
-        console.log(authResult);
 
+        if (userId) {
+          database.setUserData(userId, providerName, authResult);
+        } else {
+          console.error('oauthcallback: could not find userId in state parameter');
+          const url = `${state.url}#message=error`;
+          res.redirect(url);
+          return;          
+        }
 
         // return {
         //   statusCode: 200,
@@ -131,8 +151,7 @@ exports.createHandlers = (app) => {
         */
       } catch (error) {
         console.error(`oauthcallback: caught exception: ${error}`);
-        // TODO: construct a different URL to indicate error!
-        const url = `${state.url}#${encodedUserData}&csrf=${state.csrf}&token=${Buffer.from(token, 'binary').toString('base64')}`;
+        const url = `${state.url}#message=error`;
         res.redirect(url);
         /*
         return {
@@ -159,8 +178,8 @@ const getOAuthClient = (configData) => {
     },
     auth: {
       tokenHost: configData.token_host,
-      tokenPath: configData.token_path,
-      authorizePath: configData.authorize_path
+      tokenPath: configData.token_url,
+      authorizePath: configData.authorization_url
     }
   });
   return client;
