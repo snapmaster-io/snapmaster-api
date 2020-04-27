@@ -15,47 +15,37 @@ exports.createHandlers = (app) => {
     // define an async function to handle the call (since we use await in this codepath)
     const call = async () => {
       try {
-        // get provider name and configuration data
-        const providerName = req.params.provider;
-        const configData = await config.getConfig(providerName);
-        if (!configData) {
-          res.status(401).send({ error: 'Bad request' });
-          return;
-        }
-
         // get the required query parameters and bail if they aren't found
         const csrfToken = req.query.csrf;
         const redirectUrl = req.query.url;
         const userId = req.query.userId;
         if (!csrfToken || !redirectUrl || !userId) {
-          res.status(401).send({ error: 'Bad request' });
+          const url = `${redirectUrl}#message=error`;
+          res.redirect(url);
+          return;
+        }
+
+        // get provider name and configuration data
+        const providerName = req.params.provider;
+        const configData = await config.getConfig(providerName);
+        if (!configData) {
+          const url = `${redirectUrl}#message=error`;
+          res.redirect(url);
           return;
         }
 
         // get a fully configured oauth client
         const oauth = getOAuthClient(configData);
 
-        // generate authorizationURI 
+        // generate authorization URI 
         const authorizationURI = oauth.authorizationCode.authorizeURL({
           redirect_uri: `${environment.getUrl()}/oauth/callback/${providerName}`,
-          /* Specify how your app needs to access the user’s account. */
-          scope: '',
-          /* State helps mitigate CSRF attacks & Restore the previous state of your app */
+          scope: 'offline_access',
           state: `url=${redirectUrl}&csrf=${csrfToken}&providerName=${providerName}&userId=${userId}`,
         })
       
-        // redirect user to authorizationURI 
+        // redirect user to authorization URI 
         res.redirect(authorizationURI);
-        /*
-        return {
-          statusCode: 302,
-          headers: {
-            Location: authorizationURI,
-            'Cache-Control': 'no-cache' // Disable caching of this response
-          },
-          body: '' // return body for local dev
-        }
-        */
       } catch (error) {
         console.error(`oauthstart: caught exception: ${error}`);
         res.status(401).send({ error: 'Authorization failed' });
@@ -101,17 +91,18 @@ exports.createHandlers = (app) => {
         // exchange the grant code for an access token 
         const authorizationToken = await oauth.authorizationCode.getToken({
           code: code,
-          redirect_uri: `${environment.getUrl()}/oauth/callback`,
+          redirect_uri: `${environment.getUrl()}/oauth/callback/${providerName}`,
           client_id: configData.client_id,
           client_secret: configData.client_secret
         });
 
         const authResult = oauth.accessToken.create(authorizationToken);
+        console.log(`oauthcallback: authResult: ${JSON.stringify(authResult.token)}`);
 
         const token = authResult.token.access_token;
 
         if (userId) {
-          database.setUserData(userId, providerName, authResult);
+          database.setUserData(userId, providerName, authResult.token);
         } else {
           console.error('oauthcallback: could not find userId in state parameter');
           const url = `${state.url}#message=error`;
@@ -119,48 +110,14 @@ exports.createHandlers = (app) => {
           return;          
         }
 
-        // return {
-        //   statusCode: 200,
-        //   body: JSON.stringify({
-        //     user: user,
-        //     authResult: authResult,
-        //     state: state,
-        //     encode: Buffer.from(token, 'binary').toString('base64')
-        //   })
-        // }
-
-        const encodedUserData = querystring.stringify({
-          email: user.email || "NA",
-          full_name: user.full_name || "NA",
-          avatar: user.avatar_url || "NA"
-        })
-
-        /* Redirect user to authorizationURI */
-        const url = `${state.url}#${encodedUserData}&csrf=${state.csrf}&token=${Buffer.from(token, 'binary').toString('base64')}`;
+        // redirect back to SPA with a success message
+        //const url = `${state.url}#message=success&csrf=${state.csrf}&token=${Buffer.from(token, 'binary').toString('base64')}`;
+        const url = `${state.url}#message=success&csrf=${state.csrf}`;
         res.redirect(url);
-
-        /*
-        return {
-          statusCode: 302,
-          headers: {
-            Location: `${state.url}#${encodedUserData}&csrf=${state.csrf}&token=${Buffer.from(token, 'binary').toString('base64')}`,
-            'Cache-Control': 'no-cache' // Disable caching of this response
-          },
-          body: '' // return body for local dev
-        }
-        */
       } catch (error) {
         console.error(`oauthcallback: caught exception: ${error}`);
         const url = `${state.url}#message=error`;
         res.redirect(url);
-        /*
-        return {
-          statusCode: e.statusCode || 500,
-          body: JSON.stringify({
-            error: e.message,
-          })
-        }
-        */
       }
     }
     
