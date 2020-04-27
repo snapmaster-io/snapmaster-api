@@ -38,6 +38,11 @@ exports.createHandlers = (app) => {
       res.status(200).send({ message: message });
     }
   
+    const removeOauth = async () => {
+      await database.removeConnection(req.userId, provider);
+      res.status(200).send({ message: 'success' });
+    }
+
     if (action === 'add' && provider) {
       add();
       return;
@@ -48,6 +53,11 @@ exports.createHandlers = (app) => {
       return;
     }
   
+    if (action === 'removeoauth' && provider) {
+      removeOauth();
+      return;
+    }
+
     res.status(200).send({ message: 'Unknown action'});  
   });
 
