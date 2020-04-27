@@ -91,6 +91,7 @@ exports.createHandlers = (app) => {
         // exchange the grant code for an access token 
         const authorizationToken = await oauth.authorizationCode.getToken({
           code: code,
+          scope: 'offline_access',
           redirect_uri: `${environment.getUrl()}/oauth/callback/${providerName}`,
           client_id: configData.client_id,
           client_secret: configData.client_secret
