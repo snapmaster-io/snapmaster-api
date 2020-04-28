@@ -19,6 +19,7 @@ const provider = require('../provider');
 const snapengine = require('../../snap/snap-engine');
 const environment = require('../../modules/environment');
 const config = require('../../modules/config');
+const netlifyauth = require('../../services/netlifyauth');
 
 const providerName = 'netlify';
 
@@ -26,6 +27,7 @@ exports.provider = providerName;
 exports.image = `/${providerName}-logo.png`;
 exports.type = provider.oauthProvider;
 exports.definition = provider.getDefinition(providerName);
+exports.getAccessInfo = netlifyauth.getNetlifyAccessInfo;
 
 // api's defined by this provider
 exports.apis = {
@@ -35,36 +37,34 @@ exports.createHandlers = (app) => {
   // set up Webhook listener for dev mode
   createWebhookListener();
 
-  // Github webhooks endpoint - called by github
-  app.post('/github/webhooks/:userId/:activeSnapId', function(req, res){
+  // Netlify webhooks endpoint - called by netlify
+  app.post(`/${providerName}/webhooks/:userId/:activeSnapId`, function(req, res){
     // define an async function to await configuration
     const process = async () => {
       try {
-        // get github configuration
-        const githubConfig = await config.getConfig(providerName);
+        // get provider configuration
+        const providerConfig = await config.getConfig(providerName);
 
         const userId = decodeURI(req.params.userId);
         const activeSnapId = req.params.activeSnapId;
-        console.log(`POST /github/webhooks: userId ${userId}, activeSnapId ${activeSnapId}`);
+        console.log(`POST /${providerName}/webhooks: userId ${userId}, activeSnapId ${activeSnapId}`);
 
         // verify the signature against the body and the secret
-        const secret = githubConfig.github_client_id;      
+        const secret = providerConfig.client_id;
+        /*   
         if (!verify(secret, req.body, req.headers['x-hub-signature'])) {
           console.error('githubWebhook: signature does not match event payload & secret');
           res.status(500).send();
           return;
         }
-
-        // don't propagate a 'ping' event
-        if (req.headers["x-github-event"] !== 'ping') {
-          // dispatch the webhook payload to the handler
-          handleWebhook(userId, activeSnapId, req.headers["x-github-event"], req.body);
-        }
+        */
+        // dispatch the webhook payload to the handler
+        handleWebhook(userId, activeSnapId, req.headers["x-netlify-event"], req.body);
 
         // return immediately to the caller
         res.status(200).send();
       } catch (error) {
-        console.error(`githubWebhook caught exception: ${error}`);
+        console.error(`${providerName}/webhooks caught exception: ${error}`);
         res.status(500).send(error);
       }            
     }
@@ -76,13 +76,13 @@ exports.createHandlers = (app) => {
 
 exports.createTrigger = async (providerName, defaultConnectionInfo, userId, activeSnapId, param) => {
   try {
-    // get github configuration
-    const githubConfig = await config.getConfig(providerName);
+    // get provider configuration
+    const providerConfig = await config.getConfig(providerName);
 
     // validate params
-    const repoName = param.repo;
-    if (!repoName) {
-      console.error(`createTrigger: missing required parameter "repo"`);
+    const site = param.site;
+    if (!site) {
+      console.error(`createTrigger: missing required parameter "site"`);
       return null;
     }
 
@@ -94,12 +94,6 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
 
     const token = await getToken(defaultConnectionInfo);
 
-    const [owner, repo] = repoName.split('/');
-    if (!owner || !repo) {
-      console.error(`createTrigger: repo must be in owner/name format; received ${repoName}`);
-      return null;
-    }
-
     let url = encodeURI(`${environment.getUrl()}/${providerName}/webhooks/${userId}/${activeSnapId}`);
 
     // if in dev mode, create the hook through smee.io 
@@ -110,30 +104,36 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
 
     // create the hook, using the client ID as the secret
     const body = {
-      events: [event],
-      config: {
-        url: url,
-        secret: githubConfig.github_client_id,
-        content_type: 'json',
-      }
+      site_id: site,
+      type: "url",
+      event: event,
+      data: { url: url }
     };
+
+    const urlBase = `https://api.netlify.com/api/v1/hooks`;
 
     const headers = { 
       'content-type': 'application/json',
-      'authorization': `token ${token}`
+      'authorization': `Bearer ${token}`
      };
 
     const hook = await axios.post(
-      `https://api.github.com/repos/${repoName}/hooks`,
+      urlBase,
       body,
       {
         headers: headers
       });
 
+    // check for empty response 
+    if (!hook || !hook.data || !hook.data.id) {
+      return null;
+    }
+
     // construct trigger data from returned hook info
     const triggerData = {
       id: hook.data.id,
-      url: hook.data.url
+      url: `${urlBase}/${hook.data.id}?site_id=${site}`,
+      site_id: hook.data.site_id
     }
 
     return triggerData;
@@ -154,7 +154,7 @@ exports.deleteTrigger = async (providerName, defaultConnectionInfo, triggerData,
     const token = await getToken(defaultConnectionInfo);
     const headers = { 
       'content-type': 'application/json',
-      'authorization': `token ${token}`
+      'authorization': `Bearer ${token}`
      };
 
     const response = await axios.delete(
@@ -181,7 +181,7 @@ exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param)
 
 const getToken = async (connectionInfo) => {
   try {
-    const accessToken = connectionInfo && connectionInfo.accessToken;
+    const accessToken = connectionInfo && connectionInfo.access_token;
 
     if (!accessToken) {
       console.log('getToken: could not find access token in connection info');
@@ -210,7 +210,7 @@ const createWebhookListener = async () => {
         const webhookEvent = JSON.parse(event.data);
 
         // dispatch the webhook payload to the handler
-        handleWebhook(null, null, webhookEvent["x-github-event"], webhookEvent.body);
+        handleWebhook(null, null, webhookEvent["x-netlify-event"], webhookEvent.body);
       } catch (error) {
         console.error(`eventSource/netlifyWebhook: caught exception ${error}`);
       }

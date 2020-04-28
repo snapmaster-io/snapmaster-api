@@ -5,8 +5,20 @@ description: Netlify Provider Definition
 connection: 
   type: oauth
 triggers: 
-  - name: submission_created
-    description: a new submission was created
+  - name: deploy_request_accepted
+    description: a deploy request was accepted
+    parameters:
+    - name: site
+      description: site ID
+      required: true
+  - name: deploy_request_pending
+    description: a deploy request is pending
+    parameters:
+    - name: site
+      description: site ID
+      required: true
+  - name: deploy_request_rejected
+    description: a deploy request was rejected
     parameters:
     - name: site
       description: site ID
@@ -17,8 +29,26 @@ triggers:
     - name: site
       description: site ID
       required: true
+  - name: deploy_building
+    description: a new deployment is building
+    parameters:
+    - name: site
+      description: site ID
+      required: true
   - name: deploy_failed
     description: a submitted deployment failed
+    parameters:
+    - name: site
+      description: site ID
+      required: true
+  - name: deploy_locked
+    description: a submitted deployment was locked
+    parameters:
+    - name: site
+      description: site ID
+      required: true
+  - name: deploy_unlocked
+    description: a submitted deployment was unlocked
     parameters:
     - name: site
       description: site ID
