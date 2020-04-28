@@ -1,0 +1,33 @@
+---
+version: provider-v1alpha1 
+name: mattermost
+description: Mattermost Provider Definition
+connection: 
+  type: simple
+  infoUrl: https://docs.mattermost.com/developer/personal-access-tokens.html
+  infoText: Click here to learn how to create a personal access token
+  entity: mattermost:servers
+  connectionInfo:
+  - name: server
+    description: server domain name
+  - name: token
+    description: personal access token
+    type: password
+triggers: 
+actions:
+  - name: post
+    description: post a message to a channel 
+    parameters:
+    - name: server
+      description: server name
+      entity: mattermost:servers
+      required: true 
+    - name: team
+      description: team to send to
+      required: true
+    - name: channel
+      description: channel to send to
+      required: true
+    - name: message
+      description: message to send
+      required: true

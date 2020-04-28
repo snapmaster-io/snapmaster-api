@@ -73,13 +73,13 @@ exports.remove = async (userId, key) => {
 exports.set = async (userId, key, value) => {
   try {
     let userSecret;
-    const encodedKey = key.replace(/[\:\|]/g, '-');
+    const encodedKey = key.replace(/[\:\|\.]/g, '-');
     let userKey = await getUserKey(userId);
 
     // if there isn't a user key, create one now
     if (!userKey) {
       userSecret = createRandomKey();
-      const encodedUserId = userId.replace(/[\:\|]/g, '-');
+      const encodedUserId = userId.replace(/[\:\|\.]/g, '-');
       userKey = await secrets.set(encodedUserId, userSecret);
       if (userKey) {
         // store the key name in user profile
