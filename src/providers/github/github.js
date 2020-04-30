@@ -2,8 +2,6 @@
 
 // exports:
 //   apis.
-//        createHook(userId, repo): create a webhook
-//        deleteHook(userId, repo, hook): get page reviews
 //        getActiveRepos(userId): get active repos for this user
 //        getAllRepos(userId): get all repos for this user
 //
@@ -34,23 +32,13 @@ const providerName = 'github';
 
 exports.provider = providerName;
 exports.image = `/${providerName}-logo.png`;
-exports.type = provider.linkProvider;
+//exports.type = provider.linkProvider;
+exports.type = provider.oauthProvider;
 exports.definition = provider.getDefinition(providerName);
 exports.getAccessInfo = githubauth.getGithubAccessInfo;
 
 // api's defined by this provider
 exports.apis = {
-  createHook: {
-    name: 'createHook',
-    provider: providerName,
-    entity: 'github:hooks',
-    arrayKey: 'data',
-    itemKey: 'id'
-  },
-  deleteHook: {
-    name: 'deleteHook',
-    provider: providerName,
-  },
   getActiveRepos: {
     name: 'getActiveRepos',
     provider: providerName,
@@ -156,8 +144,8 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
       return null;
     }
 
+    // get the access token
     const token = await getToken(defaultConnectionInfo);
-    // const [client] = await getClient(userId);
 
     const [owner, repo] = repoName.split('/');
     if (!owner || !repo) {
@@ -234,28 +222,6 @@ exports.deleteTrigger = async (providerName, defaultConnectionInfo, triggerData,
   }
 }
 
-exports.apis.createHook.func = async ([userId, repo]) => {
-  try {
-    const [client, owner] = await getClient(userId);
-    const config = {
-      url: 'https://www.snapmaster.io/githubhook',
-      content_type: 'json',
-    };
-
-    const hook = await client.repos.createHook({
-      owner,
-      repo,
-      config
-    });
-
-    return [hook];
-  } catch (error) {
-    await error.response;
-    console.log(`createHook: caught exception: ${error}`);
-    return null;
-  }
-};
-
 exports.apis.getActiveRepos.func = async ([userId]) => {
   try {
     const repos = await dal.getData(userId, exports.apis.getAllRepos, [userId], false, false);
@@ -270,7 +236,7 @@ exports.apis.getActiveRepos.func = async ([userId]) => {
 
 exports.apis.getAllRepos.func = async ([userId]) => {
   try {
-    const [client] = await getClient(userId);
+    const client = await getClient(userId);
     const repos = await client.repos.list();
 
     // store / return only a subset of the fields in the repo payload
@@ -297,10 +263,9 @@ exports.apis.getAllRepos.func = async ([userId]) => {
 const getClient = async (userId) => {
   try {
     const user = await githubauth.getGithubAccessInfo(userId);
-    const owner = user && user.userId;
-    const accessToken = user && user.accessToken;
+    const accessToken = user && user.access_token;
 
-    if (!accessToken || !owner) {
+    if (!accessToken) {
       console.log('getClient: getGithubAccessToken failed');
       return null;
     }
@@ -309,7 +274,7 @@ const getClient = async (userId) => {
       auth: accessToken
     });
 
-    return [octokit, owner];
+    return octokit;
   } catch (error) {
     await error.response;
     console.log(`getClient: caught exception: ${error}`);
@@ -319,8 +284,7 @@ const getClient = async (userId) => {
 
 const getToken = async (connectionInfo) => {
   try {
-    const accessToken = connectionInfo && connectionInfo.accessToken;
-
+    const accessToken = connectionInfo && connectionInfo.access_token;
     if (!accessToken) {
       console.log('getToken: could not find access token in connection info');
       return null;

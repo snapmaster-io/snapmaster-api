@@ -3,9 +3,14 @@
 // exports:
 //   getGithubAccessInfo(userId): abstracts all logic to retrieve a FB access token / userid
 
-const database = require('../data/database');
-const auth0 = require('../services/auth0');
+//const database = require('../data/database');
+//const auth0 = require('../services/auth0');
+const connections = require('../modules/connections');
 
+exports.getGithubAccessInfo = async (userId) => {
+  return connections.getConnectionInfo(userId, 'github');
+}
+/*
 exports.getGithubAccessInfo = async (userId) => {
 
   const user = await database.getUserData(userId, 'github');
@@ -75,3 +80,4 @@ const getGithubInfoFromAuth0Profile = async (userId, user) => {
   }
 };
 
+*/

@@ -3,11 +3,13 @@
 // exports:
 //   createHandlers(app): create handlers for initiating OAuth2 flow and callback processing
 
-const simpleOauth = require('simple-oauth2');
+const simpleoauth = require('simple-oauth2');
 const querystring = require('querystring')
 const environment = require('./environment');
 const config = require('./config');
 const database = require('../data/database');
+const dbconstants = require('../data/database-constants');
+const credentials = require('./credentials');
 
 exports.createHandlers = (app) => {
   // Post oauthstart API will initiate an OAuth2 authorization flow
@@ -40,7 +42,7 @@ exports.createHandlers = (app) => {
         // generate authorization URI 
         const authorizationURI = oauth.authorizationCode.authorizeURL({
           redirect_uri: `${environment.getUrl()}/oauth/callback/${providerName}`,
-          scope: 'offline_access',
+          scope: configData.scopes,
           state: `url=${redirectUrl}&csrf=${csrfToken}&providerName=${providerName}&userId=${userId}`,
         })
       
@@ -91,19 +93,24 @@ exports.createHandlers = (app) => {
         // exchange the grant code for an access token 
         const authorizationToken = await oauth.authorizationCode.getToken({
           code: code,
-          scope: 'offline_access',
+          scope: configData.scopes,
           redirect_uri: `${environment.getUrl()}/oauth/callback/${providerName}`,
           client_id: configData.client_id,
           client_secret: configData.client_secret
         });
 
+        // trade the authorization token for an access token
         const authResult = oauth.accessToken.create(authorizationToken);
-        console.log(`oauthcallback: authResult: ${JSON.stringify(authResult.token)}`);
-
-        const token = authResult.token.access_token;
 
         if (userId) {
-          database.setUserData(userId, providerName, authResult.token);
+          // store the default credentials for the connection
+          const jsonValue = JSON.stringify(authResult.token);
+          const name = await credentials.set(userId, `${userId}:${providerName}`, jsonValue);
+
+          // store the connection information in the user data document
+          const userData = { connected: true };
+          userData[dbconstants.keyField] = name;
+          await database.setUserData(userId, providerName, userData);
         } else {
           console.error('oauthcallback: could not find userId in state parameter');
           const url = `${state.url}#message=error`;
@@ -112,7 +119,6 @@ exports.createHandlers = (app) => {
         }
 
         // redirect back to SPA with a success message
-        //const url = `${state.url}#message=success&csrf=${state.csrf}&token=${Buffer.from(token, 'binary').toString('base64')}`;
         const url = `${state.url}#message=success&csrf=${state.csrf}`;
         res.redirect(url);
       } catch (error) {
@@ -129,7 +135,7 @@ exports.createHandlers = (app) => {
 
 // create a fully configured OAuth client based on the config data
 const getOAuthClient = (configData) => {
-  const client = simpleOauth.create({
+  const client = simpleoauth.create({
     client: {
       id: configData.client_id,
       secret: configData.client_secret

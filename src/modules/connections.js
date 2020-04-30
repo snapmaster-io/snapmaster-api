@@ -121,7 +121,7 @@ exports.getConnectionInfo = async (userId, connection) => {
   }
 
   // return the connection information stored directly in the userInfo structure
-  return userData.connectionInfo;
+  return userData.connectionInfo || userData;
 }
 
 const addConnection = async (req, res) => {
