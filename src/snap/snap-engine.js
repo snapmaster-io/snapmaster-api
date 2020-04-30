@@ -291,7 +291,9 @@ exports.executeSnap = async (userId, activeSnapId, params, payload) => {
 
       // log the action execution (with the parameter object that doesn't contain entity info)
       const actionLog = {
+        name: param.name,
         provider: param.provider,
+        action: param.action,
         state: dbconstants.executionStateExecuted,
         param: param,
         output: output
@@ -604,6 +606,11 @@ const logInvocation = async (userId, activeSnap, params, payload) => {
     const activeSnapId = activeSnap.activeSnapId;
     const timestamp = new Date().getTime();
     const documentName = "" + timestamp;
+
+    // get the trigger parameter
+    const triggerParam = activeSnap.boundParams.find(p => p.name === activeSnap.trigger);
+
+    // create the log object
     const logObject = {
       timestamp,
       state: dbconstants.executionStateTriggered,
@@ -611,6 +618,8 @@ const logInvocation = async (userId, activeSnap, params, payload) => {
       activeSnapId: activeSnap.activeSnapId,
       snapId: activeSnap.snapId,
       trigger: activeSnap.provider,
+      triggerName: activeSnap.trigger,
+      event: triggerParam && triggerParam.event,
       actions: [],
       params,
       payload
