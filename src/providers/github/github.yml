@@ -4,7 +4,6 @@ name: github
 description: GitHub Provider Definition
 connection: 
   type: oauth
-  entity: github:repos
 triggers: 
   - name: push
     description: push event into a repository

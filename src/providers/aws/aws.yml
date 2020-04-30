@@ -3,7 +3,7 @@ version: provider-v1alpha1
 name: aws
 description: AWS Provider Definition
 connection: 
-  type: simple
+  type: disabled
   connectionInfo:
   - name: access ID
   - name: secret key

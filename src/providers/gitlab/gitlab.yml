@@ -3,7 +3,7 @@ version: provider-v1alpha1
 name: gitlab
 description: GitLab Provider Definition
 connection: 
-  type: simple
+  type: disabled
   connectionInfo:
   - name: username
   - name: password

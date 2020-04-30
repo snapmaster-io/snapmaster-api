@@ -3,7 +3,7 @@ version: provider-v1alpha1
 name: circleci
 description: CircleCI Provider Definition
 connection: 
-  type: simple
+  type: disabled
   connectionInfo:
   - name: userid
   - name: access token

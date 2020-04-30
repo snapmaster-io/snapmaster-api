@@ -3,7 +3,7 @@ version: provider-v1alpha1
 name: pagerduty
 description: Pagerduty Provider Definition
 connection: 
-  type: simple
+  type: disabled
   connectionInfo:
   - name: token
     description: personal access token
