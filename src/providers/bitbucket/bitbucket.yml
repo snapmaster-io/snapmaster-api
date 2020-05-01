@@ -1,0 +1,16 @@
+---
+version: provider-v1alpha1 
+name: bitbucket
+description: Bitbucket Provider Definition
+connection: 
+  type: oauth
+triggers: 
+  - name: push
+    description: push event into a repository
+    parameters:
+    - name: repo
+      description: name of git repository
+      required: true
+    - name: branch
+      description: name of branch
+      required: false

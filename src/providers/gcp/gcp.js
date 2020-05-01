@@ -25,8 +25,8 @@ const entityName = 'gcp:projects';
 
 exports.provider = providerName;
 exports.image = `/${providerName}-logo.png`;
-exports.type = provider.simpleProvider;
 exports.definition = provider.getDefinition(providerName);
+exports.type = exports.definition.connection && exports.definition.connection.type;
 exports.getAccessInfo = googleauth.getGoogleAccessToken;
 
 // invokeAction is implemented by a separate service

@@ -577,7 +577,7 @@ const getConnectionInfo = async (userId, providerName) => {
     const provider = providers.getProvider(providerName);
 
     // if this is an OAuth or link provider, call the provider's getAccessInfo method to retrieve token info
-    if (provider.type === linkProvider) {
+    if (provider.type === simpleProvider) {
       const info = await provider.getAccessInfo(userId);
       return info;
     }

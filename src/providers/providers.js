@@ -10,6 +10,7 @@
 const providerNames = [
   'aws',
   'azure', 
+  'bitbucket', 
   'circleci', 
   'docker', 
   'gcp', 

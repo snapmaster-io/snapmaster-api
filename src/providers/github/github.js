@@ -32,9 +32,8 @@ const providerName = 'github';
 
 exports.provider = providerName;
 exports.image = `/${providerName}-logo.png`;
-//exports.type = provider.linkProvider;
-exports.type = provider.oauthProvider;
 exports.definition = provider.getDefinition(providerName);
+exports.type = exports.definition.connection && exports.definition.connection.type;
 exports.getAccessInfo = githubauth.getGithubAccessInfo;
 
 // api's defined by this provider

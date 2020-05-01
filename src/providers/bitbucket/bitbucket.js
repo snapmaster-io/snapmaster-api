@@ -1,13 +1,10 @@
-// Netlify provider
+// bitbucket provider
 
 // exports:
-//   apis.
-//
-//   createHandlers(app): create all route handlers
+//   createHandlers(app, [middlewaree]): create all route handlers
 //   createTrigger(providerName, connectionInfo, userId, activeSnapId, params): create a trigger (webhook)
 //   deleteTrigger(providerName, connectionInfo, triggerData): delete a trigger (webhook)
-//   invokeAction(providerName, connectionInfo, activeSnapId, param): invoke an action
-// 
+//
 //   provider: provider name
 //   image: provider image url (local to SPA)
 //   type: provider type (simple or link)
@@ -19,25 +16,19 @@ const provider = require('../provider');
 const snapengine = require('../../snap/snap-engine');
 const environment = require('../../modules/environment');
 const config = require('../../modules/config');
-const netlifyauth = require('../../services/netlifyauth');
 
-const providerName = 'netlify';
+const providerName = 'bitbucket';
 
 exports.provider = providerName;
 exports.image = `/${providerName}-logo.png`;
 exports.definition = provider.getDefinition(providerName);
 exports.type = exports.definition.connection && exports.definition.connection.type;
-exports.getAccessInfo = netlifyauth.getNetlifyAccessInfo;
-
-// api's defined by this provider
-exports.apis = {
-};
 
 exports.createHandlers = (app) => {
   // set up Webhook listener for dev mode
   createWebhookListener();
 
-  // Netlify webhooks endpoint - called by netlify
+  // webhooks endpoint - called by provider
   app.post(`/${providerName}/webhooks/:userId/:activeSnapId`, function(req, res){
     // define an async function to await configuration
     const process = async () => {
@@ -59,7 +50,7 @@ exports.createHandlers = (app) => {
         }
         */
         // dispatch the webhook payload to the handler
-        handleWebhook(userId, activeSnapId, req.headers["x-netlify-event"], req.body);
+        handleWebhook(userId, activeSnapId, req.headers[`x-${providerName}-event`], req.body);
 
         // return immediately to the caller
         res.status(200).send();
@@ -110,7 +101,7 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
       data: { url: url }
     };
 
-    const urlBase = `https://api.netlify.com/api/v1/hooks`;
+    const urlBase = `https://api.bitbucket.com/api/v1/hooks`;
 
     const headers = { 
       'content-type': 'application/json',
@@ -210,9 +201,9 @@ const createWebhookListener = async () => {
         const webhookEvent = JSON.parse(event.data);
 
         // dispatch the webhook payload to the handler
-        handleWebhook(null, null, webhookEvent["x-netlify-event"], webhookEvent.body);
+        handleWebhook(null, null, webhookEvent[`x-${providerName}-event`], webhookEvent.body);
       } catch (error) {
-        console.error(`eventSource/netlifyWebhook: caught exception ${error}`);
+        console.error(`eventSource/${providerName}Webhook: caught exception ${error}`);
       }
     };  
   }

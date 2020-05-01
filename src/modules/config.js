@@ -23,6 +23,10 @@ const configSecrets = {
     dev:  'auth0_config_dev',
     prod: 'auth0_config_prod'
   },
+  bitbucket: {
+    dev:  'bitbucket_auth_config_dev',
+    prod: 'bitbucket_auth_config_prod'
+  },
   github: {
     dev:  'github_auth_config_dev',
     prod: 'github_auth_config_prod'
