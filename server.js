@@ -67,6 +67,15 @@ app.use(bodyParser.urlencoded({
 // configure a static file server
 app.use(express.static(path.join(__dirname, 'build')));
 
+// handle all unauthorized errors by redirecting to base url
+app.use(function (err, req, res, next) {
+  if (err.name === 'UnauthorizedError') {
+    const url = req.protocol + '://' + req.get('host');
+    console.log(`401: redirecting to ${url}`);
+    res.redirect();
+  }
+});
+
 // create route handlers for modules that process incoming calls
 connections.createHandlers(app);
 profile.createHandlers(app);
