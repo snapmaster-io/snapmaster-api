@@ -67,15 +67,6 @@ app.use(bodyParser.urlencoded({
 // configure a static file server
 app.use(express.static(path.join(__dirname, 'build')));
 
-// handle all unauthorized errors by redirecting to base url
-app.use(function (err, req, res, next) {
-  if (err.name === 'UnauthorizedError') {
-    const url = req.protocol + '://' + req.get('host');
-    console.log(`401: redirecting to ${url}`);
-    res.redirect();
-  }
-});
-
 // create route handlers for modules that process incoming calls
 connections.createHandlers(app);
 profile.createHandlers(app);
@@ -140,6 +131,15 @@ app.get('/timesheets', requesthandler.checkJwt, jwtAuthz(['read:timesheets']), f
 // main endpoint serves react bundle from /build
 app.get('/*', function(req, res) {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
+});
+
+// handle all unauthorized errors by redirecting to base url
+app.use(function (err, req, res, next) {
+  if (err.name === 'UnauthorizedError') {
+    const url = req.protocol + '://' + req.get('host');
+    console.log(`401: redirecting to ${url}`);
+    res.redirect(url);
+  }
 });
 
 // Launch the API Server at PORT, or default port 8080
