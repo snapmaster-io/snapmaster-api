@@ -216,7 +216,7 @@ exports.editSnap = async (userId, activeSnapId, params) => {
             
       // delete the snap trigger
       const response = await provider.deleteTrigger(activeSnap.provider, connInfo, activeSnap.triggerData, triggerParam);
-      if (response == null) {
+      if (response === null) {
         return { message: 'could not remove trigger for this snap - try deactivating and reactivating it with new parameters' };
       }
     }
@@ -573,27 +573,20 @@ const bindPayloadToParameter = (param, payload) => {
 
 const getConnectionInfo = async (userId, providerName) => {
   try {
-    // retrieve the provider
-    const provider = providers.getProvider(providerName);
-
-    // if this is an OAuth or link provider, call the provider's getAccessInfo method to retrieve token info
-    if (provider.type === simpleProvider) {
-      const info = await provider.getAccessInfo(userId);
-      return info;
-    }
-
-    // retrieve connection info from the user's connection info in the profile
-    //const connection = await database.getUserData(userId, providerName);
-    //const connectionInfo = connection && connection.connectionInfo;
     const connectionInfo = await connections.getConnectionInfo(userId, providerName);
 
-    // normalize connection info into a single object
-    const connectionInfoObject = {};
-    for (const param of connectionInfo) {
-      connectionInfoObject[param.name] = param.value;
+    // back-compat: older formats stored connection info as an array of objects
+    if (connectionInfo.length) {
+      // normalize connection info into a single object
+      const connectionInfoObject = {};
+      for (const param of connectionInfo) {
+        connectionInfoObject[param.name] = param.value;
+      }
+      return connectionInfoObject;
     }
 
-    return connectionInfoObject;
+    // return the connectionInfo object
+    return connectionInfo;
   } catch (error) {
     console.error(`getConnectionInfo: caught exception: ${error}`);
     return null;

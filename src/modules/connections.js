@@ -132,6 +132,12 @@ const addConnection = async (req, res) => {
     const connectionInfo = req.body.connectionInfo;
     let entity = req.body.entityName;
 
+    // normalize connection info into a single object
+    const connectionInfoObject = {};
+    for (const param of connectionInfo) {
+      connectionInfoObject[param.name] = param.value;
+    }
+
     // get the provider definition and the entity name
     const provider = providers.getProvider(connection);
     if (!provider) {
@@ -141,7 +147,7 @@ const addConnection = async (req, res) => {
     }
 
     // store the default credentials for the connection
-    const jsonValue = JSON.stringify(connectionInfo);
+    const jsonValue = JSON.stringify(connectionInfoObject);
     const name = await credentials.set(userId, `${userId}:${connection}`, jsonValue);
 
     // store the connection in the user data document

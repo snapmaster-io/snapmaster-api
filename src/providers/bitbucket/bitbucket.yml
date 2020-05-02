@@ -5,12 +5,30 @@ description: Bitbucket Provider Definition
 connection: 
   type: oauth
 triggers: 
-  - name: push
+  - name: repo:push
     description: push event into a repository
     parameters:
+    - name: workspace
+      description: workspace of the repository
+      required: true
     - name: repo
       description: name of git repository
       required: true
-    - name: branch
-      description: name of branch
-      required: false
+  - name: issue:created
+    description: issue created on the repository
+    parameters:
+    - name: workspace
+      description: workspace of the repository
+      required: true
+    - name: repo
+      description: name of git repository
+      required: true
+  - name: issue:updated
+    description: issue created on the repository
+    parameters:
+    - name: workspace
+      description: workspace of the repository
+      required: true
+    - name: repo
+      description: name of git repository
+      required: true

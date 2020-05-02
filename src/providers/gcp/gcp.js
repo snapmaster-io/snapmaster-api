@@ -10,7 +10,6 @@
 //   image: provider image url (local to SPA)
 //   type: provider type (simple or link)
 //   definition: provider definition
-//   getAccessInfo: get access info function
 //   invokeAction: use the cross-service generic implementation (not in-tree)
 
 const axios = require('axios');
@@ -27,7 +26,6 @@ exports.provider = providerName;
 exports.image = `/${providerName}-logo.png`;
 exports.definition = provider.getDefinition(providerName);
 exports.type = exports.definition.connection && exports.definition.connection.type;
-exports.getAccessInfo = googleauth.getGoogleAccessToken;
 
 // invokeAction is implemented by a separate service
 exports.invokeAction = provider.invokeAction;  

@@ -106,7 +106,7 @@ exports.entities[entityName].func = async ([connectionInfo]) => {
       return null;
     }
 
-    const url = entity.workspace.substring('.slack.com') ? 
+    const url = entity.workspace.includes('.slack.com') ? 
       entity.workspace : 
       `${entity.workspace}.slack.com`;
 

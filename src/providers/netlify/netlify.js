@@ -27,7 +27,6 @@ exports.provider = providerName;
 exports.image = `/${providerName}-logo.png`;
 exports.definition = provider.getDefinition(providerName);
 exports.type = exports.definition.connection && exports.definition.connection.type;
-exports.getAccessInfo = netlifyauth.getNetlifyAccessInfo;
 
 // api's defined by this provider
 exports.apis = {

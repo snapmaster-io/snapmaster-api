@@ -2,6 +2,7 @@
 // 
 // exports:
 //   createHandlers(app): create handlers for initiating OAuth2 flow and callback processing
+//   getOAuthClient(configData): return a configured OAuth2 client for this config data
 
 const simpleoauth = require('simple-oauth2');
 const querystring = require('querystring')
@@ -37,7 +38,7 @@ exports.createHandlers = (app) => {
         }
 
         // get a fully configured oauth client
-        const oauth = getOAuthClient(configData);
+        const oauth = exports.getOAuthClient(configData);
 
         // generate authorization URI 
         const authorizationURI = oauth.authorizationCode.authorizeURL({
@@ -88,7 +89,7 @@ exports.createHandlers = (app) => {
         }
 
         // get a fully configured oauth client
-        const oauth = getOAuthClient(configData);
+        const oauth = exports.getOAuthClient(configData);
 
         // exchange the grant code for an access token 
         const authorizationToken = await oauth.authorizationCode.getToken({
@@ -134,7 +135,7 @@ exports.createHandlers = (app) => {
 }
 
 // create a fully configured OAuth client based on the config data
-const getOAuthClient = (configData) => {
+exports.getOAuthClient = (configData) => {
   const client = simpleoauth.create({
     client: {
       id: configData.client_id,

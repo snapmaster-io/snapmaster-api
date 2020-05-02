@@ -16,6 +16,7 @@ const provider = require('../provider');
 const snapengine = require('../../snap/snap-engine');
 const environment = require('../../modules/environment');
 const config = require('../../modules/config');
+const oauth = require('../../modules/oauth');
 
 const providerName = 'bitbucket';
 
@@ -71,12 +72,16 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
     const providerConfig = await config.getConfig(providerName);
 
     // validate params
-    const site = param.site;
-    if (!site) {
-      console.error(`createTrigger: missing required parameter "site"`);
+    const workspace = param.workspace;
+    if (!workspace) {
+      console.error(`createTrigger: missing required parameter "workspace"`);
       return null;
     }
-
+    const repo = param.repo;
+    if (!repo) {
+      console.error(`createTrigger: missing required parameter "repo"`);
+      return null;
+    }
     const event = param.event;
     if (!event) {
       console.error(`createTrigger: missing required parameter "event"`);
@@ -95,13 +100,15 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
 
     // create the hook, using the client ID as the secret
     const body = {
-      site_id: site,
-      type: "url",
-      event: event,
-      data: { url: url }
+      description: "SnapMaster webhook",
+      url: url,
+      active: true,
+      events: [
+        event,
+      ]
     };
 
-    const urlBase = `https://api.bitbucket.com/api/v1/hooks`;
+    const urlBase = `https://api.bitbucket.org/2.0/repositories/${workspace}/${repo}/hooks`;
 
     const headers = { 
       'content-type': 'application/json',
@@ -116,15 +123,14 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
       });
 
     // check for empty response 
-    if (!hook || !hook.data || !hook.data.id) {
+    if (!hook || !hook.data || !hook.data.links || !hook.data.links.self || !hook.data.links.self.href) {
       return null;
     }
 
     // construct trigger data from returned hook info
     const triggerData = {
-      id: hook.data.id,
-      url: `${urlBase}/${hook.data.id}?site_id=${site}`,
-      site_id: hook.data.site_id
+      id: hook.data.uuid,
+      url: hook.data.links.self.href
     }
 
     return triggerData;
@@ -172,13 +178,32 @@ exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param)
 
 const getToken = async (connectionInfo) => {
   try {
-    const accessToken = connectionInfo && connectionInfo.access_token;
-
-    if (!accessToken) {
-      console.log('getToken: could not find access token in connection info');
+    if (!connectionInfo) {
+      console.log('getToken: no connection info passed in');
       return null;
     }
-    return accessToken;
+
+    // get configuration data
+    const configData = await config.getConfig(providerName);
+    const oauthClient = oauth.getOAuthClient(configData);
+
+    // create an access token object
+    let accessToken = oauthClient.accessToken.create(connectionInfo);
+
+    // refresh the token if it's 300 seconds or less from expiration
+    if (accessToken.expired(300)) {
+      if (configData.scopes) {
+        const params = {
+          scope: configData.scopes
+        }
+        accessToken = await accessToken.refresh(params);  
+      } else {
+        accessToken = await accessToken.refresh(); 
+      }
+    }
+
+    // return the access token
+    return accessToken.token.access_token;
   } catch (error) {
     console.log(`getToken: caught exception: ${error}`);
     return null;
@@ -201,7 +226,7 @@ const createWebhookListener = async () => {
         const webhookEvent = JSON.parse(event.data);
 
         // dispatch the webhook payload to the handler
-        handleWebhook(null, null, webhookEvent[`x-${providerName}-event`], webhookEvent.body);
+        handleWebhook(null, null, webhookEvent[`x-event-key`], webhookEvent.body);
       } catch (error) {
         console.error(`eventSource/${providerName}Webhook: caught exception ${error}`);
       }
