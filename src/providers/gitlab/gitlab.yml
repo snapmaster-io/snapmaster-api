@@ -3,12 +3,18 @@ version: provider-v1alpha1
 name: gitlab
 description: GitLab Provider Definition
 connection: 
-  type: disabled
-  connectionInfo:
-  - name: username
-  - name: password
-parameters: 
-  - name: region
-    description: region to operate in
+  type: oauth
 triggers: 
+  - name: push
+    description: push event into a project
+    parameters:
+    - name: project
+      description: name of git project
+      required: true
+  - name: issues
+    description: issue change event in a project
+    parameters:
+    - name: project
+      description: name of git project
+      required: true
 actions:
