@@ -3,7 +3,7 @@ version: provider-v1alpha1
 name: slack
 description: Slack Provider Definition
 connection: 
-  type: simple
+  type: oauth
   infoUrl: https://api.slack.com/legacy/custom-integrations/legacy-tokens
   infoText: Click here to create a legacy access token
   entity: slack:workspaces

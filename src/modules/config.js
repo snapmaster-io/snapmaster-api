@@ -62,7 +62,8 @@ exports.getConfig = async (type) => {
 const loadConfig = async (env, type) => {
   try {
     const projectId = environment.getProjectId();
-    const secretName = `projects/${projectId}/secrets/aes-${configSecrets[type][env]}`;
+    //const secretName = `projects/${projectId}/secrets/aes-${configSecrets[type][env]}`;
+    const secretName = `projects/${projectId}/secrets/aes-${type}_${env}`;
     const json = await credentials.get(dbconstants.snapMasterUserId, secretName);
     const config = JSON.parse(json);  
     return config;

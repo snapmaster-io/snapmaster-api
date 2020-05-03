@@ -88,6 +88,8 @@ exports.createHandlers = (app) => {
           return;
         }
 
+        console.log(`token url: ${configData.token_url}`);
+
         // get a fully configured oauth client
         const oauth = exports.getOAuthClient(configData);
 

@@ -133,7 +133,7 @@ exports.entities[entityName].func = async ([connectionInfo]) => {
 
 const getToken = async (connectionInfo) => {
   try {
-    const token = connectionInfo.token;
+    const token = connectionInfo.token || connectionInfo.access_token;
     if (!token) {
       console.error('getToken: token not found');
       return null;

@@ -2,7 +2,10 @@ const express = require('express');
 const path = require('path');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const jwtAuthz = require('express-jwt-authz');
+
+// disable authorization middleware
+//const jwtAuthz = require('express-jwt-authz');
+// use authorization middleware like this: jwtAuthz(['read:timesheets'])
 
 // get environment (dev or prod) based on environment variable
 const env = process.env.ENV || 'prod';
@@ -20,7 +23,7 @@ environment.setDevMode(configuration === environment.dev);
 // import middleware
 const requesthandler = require('./src/modules/requesthandler');
 
-// import providers, database, storage, data access, datapipeline, profile, connections, entities, apidocs layers
+// import providers, database, storage, data access, datapipeline, profile, connections, entities, apidocs, snap DAL layers
 const providers = require('./src/providers/providers');
 const database = require('./src/data/database');
 const dal = require('./src/data/dal');
@@ -30,15 +33,12 @@ const connections = require('./src/modules/connections');
 const entities = require('./src/modules/entities');
 const oauth = require('./src/modules/oauth');
 const apidocs = require('./src/modules/apidocs');
-
-// import snap data access layer and engine
 const snapdal = require('./src/snap/snap-dal');
-
 
 // beta processing
 const beta = require('./src/modules/beta');
 
-// import google provider for checking JWT
+// import google auth for checking JWT
 const google = require('./src/services/googleauth');
 
 // get persistence provider based on environment variable
@@ -55,10 +55,10 @@ datapipeline.createDataPipeline(configuration);
 // create a new express app
 const app = express();
 
-// Enable CORS
+// enable CORS
 app.use(cors());
 
-// Enable the use of request body parsing middleware
+// enable request body parsing middleware
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({
   extended: true
@@ -82,7 +82,6 @@ providers.createHandlers(app);
 // create a set of route handlers for the non-provider API calls
 // these should trend towards zero as they get refactored out
 
-
 // Get metadata API endpoint
 app.get('/metadata', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
   const returnMetadata = async () => {
@@ -100,8 +99,6 @@ app.get('/history', requesthandler.checkJwt, requesthandler.processUser, functio
   }
   returnHistory();
 });
-
-
 
 // invoke endpoint: this is only called from the pubsub push subscription
 app.post('/invoke', function(req, res){
@@ -122,12 +119,6 @@ app.post('/invoke', function(req, res){
   res.status(204).send();
 });
 
-
-// Get timesheets API endpoint (OLD - ONLY HERE TO SHOW jwtAuthz)
-app.get('/timesheets', requesthandler.checkJwt, jwtAuthz(['read:timesheets']), function(req, res){
-  res.status(200).send({});
-});
-
 // main endpoint serves react bundle from /build
 app.get('/*', function(req, res) {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
@@ -137,7 +128,6 @@ app.get('/*', function(req, res) {
 app.use(function (err, req, res, next) {
   if (err.name === 'UnauthorizedError') {
     const url = req.protocol + '://' + req.get('host');
-    console.log(`401: redirecting to ${url}`);
     res.redirect(url);
   }
 });
