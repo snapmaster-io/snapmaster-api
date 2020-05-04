@@ -17,7 +17,6 @@ const snapengine = require('../../snap/snap-engine');
 const environment = require('../../modules/environment');
 const config = require('../../modules/config');
 const oauth = require('../../modules/oauth');
-const verify = require('@octokit/webhooks/verify');
 
 const providerName = 'gitlab';
 
@@ -45,7 +44,7 @@ exports.createHandlers = (app) => {
         // verify the signature against the body and the secret
         const secret = providerConfig.client_id;
 
-        if (!verify(secret, req.body, req.headers['x-gitlab-secret'])) {
+        if (secret !== req.headers[`x-${providerName}-token`]) {
           console.error(`${providerName}/webhooks: signature does not match event payload & secret`);
           res.status(500).send();
           return;
@@ -221,7 +220,7 @@ const createWebhookListener = async () => {
         const webhookEvent = JSON.parse(event.data);
 
         // dispatch the webhook payload to the handler
-        handleWebhook(null, null, webhookEvent[`x-gitlab-event`], webhookEvent.body);
+        handleWebhook(null, null, webhookEvent[`x-${providerName}-event`], webhookEvent.body);
       } catch (error) {
         console.error(`eventSource/${providerName}Webhook: caught exception ${error}`);
       }
