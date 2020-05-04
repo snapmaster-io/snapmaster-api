@@ -14,6 +14,7 @@ const dbconstants = require('../data/database-constants')
 const providers = require('../providers/providers');
 const requesthandler = require('./requesthandler');
 const credentials = require('./credentials');
+const connections = require('./connections');
 
 exports.createHandlers = (app) => {
   // entities API endpoint
@@ -165,9 +166,12 @@ const addHandler = async ([userId, entity, connectionInfo]) => {
   try {
     // 
     const entityName = entity.entity;
+    const connection = entity.provider;
     const func = entity.func;
 
-    const response = await func([connectionInfo]);
+    const defaultConnInfo = await connections.getConnectionInfo(userId, connection);
+
+    const response = await func([connectionInfo, defaultConnInfo]);
     if (!response) {
       return { message: 'could not add the new entity'};
     }
