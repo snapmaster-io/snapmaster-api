@@ -546,7 +546,7 @@ const bindParameters = (config, params) => {
 
 // bind payload by finding all JSONPath expressions and evaluating against the payload value
 const bindPayloadToParameter = (param, payload) => {
-  const regex = /\$\.[a-zA-Z][a-zA-Z0-9._]*/g;
+  const regex = /\$\.[a-zA-Z][a-zA-Z0-9._\[\]]*/g;
 
   // construct a new config entry
   const newParam = { ...param };
