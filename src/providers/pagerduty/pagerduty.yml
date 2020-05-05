@@ -9,43 +9,8 @@ connection:
   - name: service
     description: service name
 triggers: 
-  - name: incident.trigger
-    description: new incident triggered
-    parameters:
-    - name: service
-      description: name of pagerduty service
-      entity: pagerduty:services
-      required: true
-  - name: incident.acknowledge
-    description: incident acknowledged
-    parameters:
-    - name: service
-      description: name of pagerduty service
-      entity: pagerduty:services
-      required: true
-  - name: incident.resolve
-    description: incident resolved
-    parameters:
-    - name: service
-      description: name of pagerduty service
-      entity: pagerduty:services
-      required: true
-  - name: incident.assign
-    description: incident assigned
-    parameters:
-    - name: service
-      description: name of pagerduty service
-      entity: pagerduty:services
-      required: true
-  - name: incident.escalate
-    description: incident escalated
-    parameters:
-    - name: service
-      description: name of pagerduty service
-      entity: pagerduty:services
-      required: true
-  - name: incident.delegate
-    description: incident delegated
+  - name: incident
+    description: incident state changed
     parameters:
     - name: service
       description: name of pagerduty service
