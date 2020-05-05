@@ -190,13 +190,17 @@ const getConnections = async (userId) => {
       if (name === baseConnection) {
         connected = 'base';
       }
+      // set title to first element of name in the format like google-oauth2
+      const [title] = name.split('-');
 
       const uid = user[name] && user[name].userId;
 
       return ({ 
         provider: p.provider, 
         connected: connected,
+        title: title,
         image: p.image,
+        icon: `cloudfont-${title}`,
         type: p.type,
         definition: p.definition,
         userId: uid
