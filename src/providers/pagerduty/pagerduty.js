@@ -43,15 +43,14 @@ exports.createHandlers = (app) => {
     // define an async function to await configuration
     const process = async () => {
       try {
-        // get provider configuration
-        const providerConfig = await config.getConfig(providerName);
-
         const userId = decodeURI(req.params.userId);
         const activeSnapId = req.params.activeSnapId;
         console.log(`POST /${providerName}/webhooks: userId ${userId}, activeSnapId ${activeSnapId}`);
 
+        console.log(`body: ${req.body}`);
+
         // dispatch the webhook payload to the handler
-        handleWebhook(userId, activeSnapId, req.headers[`x-${providerName}-event`], req.body);
+        handleWebhook(userId, activeSnapId, req.headers[`x-webhook-id`], req.body);
 
         // return immediately to the caller
         res.status(200).send();
@@ -97,7 +96,7 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
       url = "https://smee.io/soJHHjA5rPvWnwlc";
     }
 
-    // create the hook, using the client ID as the secret
+    // define the request body
     const body = {
       extension: {
         endpoint_url: url,
@@ -180,8 +179,71 @@ exports.deleteTrigger = async (providerName, defaultConnectionInfo, triggerData,
 
 exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param) => {
   try {
-    return null;
-    //application/vnd.pagerduty+json;version=2
+    // validate params
+    const service = param[entityName];
+    if (!service) {
+      console.error(`invokeAction: missing required parameter "service"`);
+      return null;
+    }
+    const action = param.action;
+    if (!action) {
+      console.error(`invokeAction: missing required parameter "action"`);
+      return null;
+    }
+    const title = param.title;
+    if (!title) {
+      console.error(`invokeAction: missing required parameter "title"`);
+      return null;
+    }
+    const serviceID = service.id;
+    if (!serviceID) {
+      console.error(`createTrigger: could not find service ID`);
+      return null;
+    }
+
+    // get token for calling API 
+    const token = await getToken(service);
+
+    console.log(`${providerName}: service ${param.service}, action ${action}, title ${title}`);
+
+    // define the request body
+    const body = {
+      incident: {
+        type: "incident",
+        title: title,
+        service: {
+          id: serviceID,
+          type: "service_reference",
+        },
+      }
+    }
+    if (param.urgency) {
+      body.urgency = param.urgency;
+    }
+    if (param.details) {
+      body.body = {
+        type: "incident_body",
+        details: param.details
+      }
+    }
+
+    const urlBase = `https://api.pagerduty.com/incidents`;
+
+    const headers = { 
+      'content-type': 'application/json',
+      'accept': 'application/vnd.pagerduty+json;version=2',
+      'authorization': `Bearer ${token}`
+      };
+    
+    const response = await axios.post(
+      urlBase,
+      body,
+      {
+        headers: headers
+      });
+
+    // return response
+    return response.data;
   } catch (error) {
     console.log(`invokeAction: caught exception: ${error}`);
     return null;
@@ -240,7 +302,6 @@ exports.entities[entityName].func = async ([connectionInfo, defaultConnectionInf
 
 const getServiceInfo = async (connectionInfo, service) => {
   try {
-    // get a long-lived access token
     const token = await getToken(connectionInfo);
     if (!token) {
       console.error('getServiceInfo: could not obtain token');
@@ -325,7 +386,7 @@ const createWebhookListener = async () => {
         const webhookEvent = JSON.parse(event.data);
 
         // dispatch the webhook payload to the handler
-        handleWebhook(null, null, webhookEvent[`x-${providerName}-event`], webhookEvent.body);
+        handleWebhook(null, null, webhookEvent[`x-webhook-id`], webhookEvent.body);
       } catch (error) {
         console.error(`eventSource/${providerName}Webhook: caught exception ${error}`);
       }

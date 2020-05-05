@@ -52,3 +52,20 @@ triggers:
       entity: pagerduty:services
       required: true
 actions:
+  - name: create
+    description: create incident
+    parameters:
+    - name: service
+      description: name of pagerduty service
+      entity: pagerduty:services
+      required: true
+    - name: title
+      description: title of incident
+      required: true
+    - name: details
+      description: incident details
+      required: false
+    - name: urgency
+      description: urgency of incident
+      required: false
+      
