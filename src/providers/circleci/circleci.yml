@@ -3,12 +3,26 @@ version: provider-v1alpha1
 name: circleci
 description: CircleCI Provider Definition
 connection: 
-  type: disabled
+  type: simple
+  entity: circleci:accounts
+  infoUrl: https://circleci.com/account/api
+  infoText: Click here to create a personal API token
   connectionInfo:
-  - name: userid
-  - name: access token
-parameters: 
-  - name: region
-    description: region to operate in
+  - name: username
+    description: user name
+    type: name
+  - name: token
+    description: personal API token or password
+    type: password
 triggers: 
 actions:
+  - name: trigger-pipeline
+    description: trigger a CircleCI pipeline 
+    parameters:
+    - name: account
+      description: account name
+      entity: circleci:accounts
+      required: true 
+    - name: project
+      description: project name in {vcs}/{user}/{repo} form
+      required: true
