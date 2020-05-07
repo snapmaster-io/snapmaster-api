@@ -12,6 +12,7 @@ const providerNames = [
   'azure', 
   'bitbucket', 
   'circleci', 
+  'datadog', 
   'docker', 
   'gcp', 
   'github', 

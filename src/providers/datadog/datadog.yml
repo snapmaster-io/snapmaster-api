@@ -1,0 +1,22 @@
+---
+version: provider-v1alpha1 
+name: datadog
+description: Datadog Provider Definition
+connection: 
+  type: simple
+  entity: datadog:accounts
+  connectionInfo:
+  - name: name
+    description: account name
+    type: name
+  - name: apikey
+    description: datadog API key
+    type: password
+  - name: appkey
+    description: datadog application key
+    type: password
+triggers: 
+  - name: webhook
+    description: webhook integration
+    parameters:
+actions:

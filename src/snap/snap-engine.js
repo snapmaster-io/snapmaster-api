@@ -482,6 +482,11 @@ const bindEntitiesToParameter = async (userId, definitions, param, key) => {
       return;
     }
 
+    // if no parameters, no work to be done
+    if (!definition.parameters) {
+      return;
+    }
+    
     // retrieve the entity for each parameter annotated with an entity
     for (const p of definition.parameters) {
       if (p.entity) {
@@ -673,6 +678,11 @@ const validateConfigSection = (definitions, key, config) => {
       const message = `'${key}' not found in provider definition`;
       console.error(`validateConfigSection: ${message}`);
       return message;
+    }
+
+    // if no required parameters defined, pass the validation
+    if (!definition.parameters) {
+      return null;
     }
 
     // validate that we have each of the required parameters

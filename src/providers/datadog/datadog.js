@@ -1,4 +1,4 @@
-// GitLab provider
+// Datadog provider
 
 // exports:
 //   createHandlers(app): create all route handlers
@@ -15,15 +15,24 @@ const axios = require('axios');
 const provider = require('../provider');
 const snapengine = require('../../snap/snap-engine');
 const environment = require('../../modules/environment');
-const config = require('../../modules/config');
-const oauth = require('../../modules/oauth');
 
-const providerName = 'gitlab';
+const providerName = 'datadog';
+const entityName = `${providerName}:accounts`;
+const defaultEntityName = `${entityName}:default`;
 
 exports.provider = providerName;
 exports.image = `/${providerName}-logo.png`;
 exports.definition = provider.getDefinition(providerName);
 exports.type = exports.definition.connection && exports.definition.connection.type;
+
+// entities defined by this provider
+exports.entities = {};
+exports.entities[entityName] = {
+  entity: entityName,
+  provider: providerName,
+  itemKey: '__id',
+  keyFields: ['apikey', 'appkey'],
+};
 
 exports.createHandlers = (app) => {
   // set up Webhook listener for dev mode
@@ -41,17 +50,8 @@ exports.createHandlers = (app) => {
         const activeSnapId = req.params.activeSnapId;
         console.log(`POST /${providerName}/webhooks: userId ${userId}, activeSnapId ${activeSnapId}`);
 
-        // verify the signature against the body and the secret
-        const secret = providerConfig.client_id;
-
-        if (secret !== req.headers[`x-${providerName}-token`]) {
-          console.error(`${providerName}/webhooks: signature does not match event payload & secret`);
-          res.status(500).send();
-          return;
-        }
-
         // dispatch the webhook payload to the handler
-        handleWebhook(userId, activeSnapId, req.headers[`x-${providerName}-event`], req.body);
+        handleWebhook(userId, activeSnapId, req.headers[`x-request-id`], req.body);
 
         // return immediately to the caller
         res.status(200).send();
@@ -68,13 +68,10 @@ exports.createHandlers = (app) => {
 
 exports.createTrigger = async (providerName, defaultConnectionInfo, userId, activeSnapId, param) => {
   try {
-    // get provider configuration
-    const providerConfig = await config.getConfig(providerName);
-
     // validate params
-    const project = param.project;
-    if (!project) {
-      console.error(`createTrigger: missing required parameter "project"`);
+    const account = param.account;
+    if (!account) {
+      console.error(`createTrigger: missing required parameter "account"`);
       return null;
     }
     const event = param.event;
@@ -83,8 +80,18 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
       return null;
     }
 
-    const token = await getToken(defaultConnectionInfo);
+    if (event !== 'webhook') {
+      console.error(`invokeAction: unknown event "${event}"`);
+      return null;
+    }
 
+    // get entity for calling API (either from the default entity in connection info, or the entity passed in)
+    const tokenEntity = 
+      account === defaultEntityName ? 
+        defaultConnectionInfo :
+        param[entityName];
+    
+    // construct webhook URL  
     let url = encodeURI(`${environment.getUrl()}/${providerName}/webhooks/${userId}/${activeSnapId}`);
 
     // if in dev mode, create the hook through smee.io 
@@ -95,19 +102,17 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
 
     // create the hook, using the client ID as the secret
     const body = {
-      url: url,
-      token: providerConfig.client_id
+      encode_as: "json",
+      name: `SnapMaster-${activeSnapId}`,
+      url: url
     };
-    const eventKey = `${event}_events`;
-    body[eventKey] = true;
 
-    const encodedProject = project.replace('/', '%2F');
-    const urlBase = `https://gitlab.com/api/v4/projects/${encodedProject}/hooks`;
+    const urlBase = 'https://api.datadoghq.com/api/v1/integration/webhooks/configuration/webhooks';
 
     const headers = { 
-      'content-type': 'application/json',
-      'authorization': `Bearer ${token}`
-     };
+      'DD-API-KEY': tokenEntity.apikey,
+      'DD-APPLICATION-KEY': tokenEntity.appkey,
+    };
 
     const hook = await axios.post(
       urlBase,
@@ -117,14 +122,14 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
       });
 
     // check for empty response 
-    if (!hook || !hook.data || !hook.data.id) {
+    if (!hook || !hook.data || !hook.data.name) {
       return null;
     }
 
     // construct trigger data from returned hook info
     const triggerData = {
-      id: hook.data.id,
-      url: `${urlBase}/${hook.data.id}`
+      name: hook.data.name,
+      url: `${urlBase}/${hook.data.name}`
     }
 
     return triggerData;
@@ -142,11 +147,16 @@ exports.deleteTrigger = async (providerName, defaultConnectionInfo, triggerData,
       return null;
     }
 
-    const token = await getToken(defaultConnectionInfo);
+    // get entity for calling API (either from the default entity in connection info, or the entity passed in)
+    const tokenEntity = 
+      account === defaultEntityName ? 
+        defaultConnectionInfo :
+        param[entityName];
+
     const headers = { 
-      'content-type': 'application/json',
-      'authorization': `Bearer ${token}`
-     };
+      'DD-API-KEY': tokenEntity.apikey,
+      'DD-APPLICATION-KEY': tokenEntity.appkey,
+    };
 
     const response = await axios.delete(
       triggerData.url,
@@ -170,36 +180,39 @@ exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param)
   }
 }
 
-const getToken = async (connectionInfo) => {
+// this function is called when a new entity (e.g. account) is added
+// it validates the provider-specific account info, and constructs 
+// the entity that will be stored by the caller
+exports.entities[entityName].func = async ([connectionInfo]) => {
   try {
-    if (!connectionInfo) {
-      console.log('getToken: no connection info passed in');
+    // construct an object with all entity info
+    const entity = {};
+    for (const param of connectionInfo) {
+      entity[param.name] = param.value;
+    }
+
+    // verify we have everything we need to authenticate
+    if (!entity.name || !entity.apikey || !entity.appkey) {
+      console.error('entityHandler: did not receive all authorization information');
       return null;
     }
 
-    // get configuration data
-    const configData = await config.getConfig(providerName);
-    const oauthClient = oauth.getOAuthClient(configData);
+    // add the entity attributes to the result
+    const result = { 
+      secret: {
+        ...entity, 
+      },
+      __id: entity.name,
+      __name: entity.name,
+      __url: `https://app.datadoghq.com`,
+      __triggers: exports.definition.triggers,
+      __actions: exports.definition.actions,
+    };
 
-    // create an access token object
-    let accessToken = oauthClient.accessToken.create(connectionInfo);
-
-    // refresh the token if it's 300 seconds or less from expiration
-    if (accessToken.expired(300)) {
-      if (configData.scopes) {
-        const params = {
-          scope: configData.scopes
-        }
-        accessToken = await accessToken.refresh(params);  
-      } else {
-        accessToken = await accessToken.refresh(); 
-      }
-    }
-
-    // return the access token
-    return accessToken.token.access_token;
+    return result;
   } catch (error) {
-    console.log(`getToken: caught exception: ${error}`);
+    await error.response;
+    console.log(`entityHandler: caught exception: ${error}`);
     return null;
   }
 }
@@ -213,14 +226,14 @@ const handleWebhook = (userId, activeSnapId, name, payload) => {
 const createWebhookListener = async () => {
   // if in dev mode, install the eventsource proxy for the dev environment, to receive webhooks via smee.io
   if (environment.getDevMode()) {
-    const webhookProxyUrl = "https://smee.io/soJHHjA5rPvWnwlc"; 
+    const webhookProxyUrl = "https://smee.io/trD1kVl727c1Zguw"; 
     const source = new EventSource(webhookProxyUrl);
     source.onmessage = event => {
       try {
         const webhookEvent = JSON.parse(event.data);
 
         // dispatch the webhook payload to the handler
-        handleWebhook(null, null, webhookEvent[`x-${providerName}-event`], webhookEvent.body);
+        handleWebhook(null, null, webhookEvent[`x-request-id`], webhookEvent.body);
       } catch (error) {
         console.error(`eventSource/${providerName}Webhook: caught exception ${error}`);
       }
