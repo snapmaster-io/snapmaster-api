@@ -43,9 +43,6 @@ exports.createHandlers = (app) => {
     // define an async function to await configuration
     const process = async () => {
       try {
-        // get provider configuration
-        const providerConfig = await config.getConfig(providerName);
-
         const userId = decodeURI(req.params.userId);
         const activeSnapId = req.params.activeSnapId;
         console.log(`POST /${providerName}/webhooks: userId ${userId}, activeSnapId ${activeSnapId}`);
@@ -142,6 +139,11 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
 exports.deleteTrigger = async (providerName, defaultConnectionInfo, triggerData, param) => {
   try {
     // validate params
+    const account = param.account;
+    if (!account) {
+      console.error(`deleteTrigger: missing required parameter "account"`);
+      return null;
+    }
     if (!triggerData || !triggerData.url) {
       console.log(`deleteTrigger: invalid trigger data`);
       return null;
@@ -164,7 +166,7 @@ exports.deleteTrigger = async (providerName, defaultConnectionInfo, triggerData,
         headers: headers
       });
 
-    return response.data;
+    return response.data || "";
   } catch (error) {
     console.log(`deleteTrigger: caught exception: ${error}`);
     return null;
