@@ -1,0 +1,41 @@
+
+---
+version: provider-v1alpha1 
+name: sendgrid
+description: Sengrid Provider Definition
+connection: 
+  type: simple
+  infoUrl: https://app.sendgrid.com/settings/api_keys
+  infoText: Click here to view or create API keys
+  entity: sendgrid:accounts
+  connectionInfo:
+  - name: account
+    description: account name
+    type: name
+  - name: apikey
+    description: API key
+    type: password
+triggers: 
+actions:
+  - name: send
+    description: send an email 
+    parameters:
+    - name: account
+      description: account name
+      entity: sendgrid:accounts
+      required: true 
+    - name: to
+      description: email to send to
+      required: true
+    - name: from
+      description: email address to send from
+      required: true
+    - name: subject
+      description: URL of image to send with SMS
+      required: false
+    - name: message
+      description: message to send
+      required: true
+    - name: html
+      description: html message to send
+      required: false

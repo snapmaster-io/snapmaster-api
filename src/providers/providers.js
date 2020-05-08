@@ -21,6 +21,7 @@ const providerNames = [
   'netlify', 
   'pagerduty', 
   'httppost',
+  'sendgrid', 
   'slack', 
   'twilio'
 ];
