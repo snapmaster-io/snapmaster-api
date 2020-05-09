@@ -14,6 +14,7 @@
     "start:prod": "ENV=prod node server.js",
     "build-spa:dev": "cd ../snapmaster && npm run build:dev",
     "build-spa:prod": "cd ../snapmaster && npm run build:prod",
+    "rm": "rm -r build/*",
     "copy": "cp -r ../snapmaster/build/* build",
     "build:dev": "PROJ=snapmaster-dev SVC=snapmaster-dev scripts/build.sh",
     "build:prod": "cp Dockerfile-prod Dockerfile; PROJ=snapmaster SVC=snapmaster scripts/build.sh; cp Dockerfile-dev Dockerfile",
@@ -21,8 +22,8 @@
     "deploy:prod": "PROJ=snapmaster SVC=snapmaster scripts/deploy.sh",
     "activate:dev": "CONFIGURATION=snapmaster-dev scripts/activate.sh",
     "activate:prod": "CONFIGURATION=snapmaster-prod scripts/activate.sh",
-    "push:dev": "npm run activate:dev && npm run build-spa:dev && npm run copy && npm run build:dev && npm run deploy:dev",
-    "push:prod": "npm run activate:prod && npm run build-spa:prod && npm run copy && npm run build:prod && npm run deploy:prod",
+    "push:dev": "npm run activate:dev && npm run build-spa:dev && npm run rm && npm run copy && npm run build:dev && npm run deploy:dev",
+    "push:prod": "npm run activate:prod && npm run build-spa:prod && npm run rm && npm run copy && npm run build:prod && npm run deploy:prod",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Omri Gazitt",
