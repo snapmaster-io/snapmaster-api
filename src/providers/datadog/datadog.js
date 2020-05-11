@@ -68,18 +68,21 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
     // validate params
     const account = param.account;
     if (!account) {
-      console.error(`createTrigger: missing required parameter "account"`);
-      return null;
+      const message = 'missing required parameter "account"';
+      console.error(`createTrigger: ${message}`);
+      return message;
     }
     const event = param.event;
     if (!event) {
-      console.error(`createTrigger: missing required parameter "event"`);
-      return null;
+      const message = 'missing required parameter "event"';
+      console.error(`createTrigger: ${message}`);
+      return message;
     }
 
     if (event !== 'webhook') {
-      console.error(`invokeAction: unknown event "${event}"`);
-      return null;
+      const message = `unknown event "${event}"`;
+      console.error(`createTrigger: ${message}`);
+      return message;
     }
 
     // get entity for calling API (either from the default entity in connection info, or the entity passed in)
@@ -120,7 +123,9 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
 
     // check for empty response 
     if (!hook || !hook.data || !hook.data.name) {
-      return null;
+      const message = 'did not receive proper webhook information';
+      console.error(`createTrigger: ${message}`);
+      return message;
     }
 
     // construct trigger data from returned hook info
@@ -132,6 +137,9 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
     return triggerData;
   } catch (error) {
     console.log(`createTrigger: caught exception: ${error}`);
+    if (error.response.status === 404) {
+      return `${error.message}: unknown account or insufficient privileges to create webhook`
+    }
     return null;
   }
 }

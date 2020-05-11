@@ -113,6 +113,11 @@ exports.activateSnap = async (userId, snapId, params, activeSnapId = null) => {
       return { message: 'could not activate snap' };
     }
 
+    // a lack of a url indicates an error, and the return value is the error message
+    if (!triggerData.url) {
+      return { message: triggerData };
+    }
+
     // add the trigger data to the activesnap record
     activeSnap.triggerData = triggerData;
 

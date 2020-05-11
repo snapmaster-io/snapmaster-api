@@ -55,32 +55,36 @@ exports.createHandlers = (app) => {
 }
 
 exports.createTrigger = async (providerName, defaultConnectionInfo, userId, activeSnapId, param) => {
+  let repoName;
   try {
     // validate params
     const account = param.account;
     if (!account) {
-      console.error(`createTrigger: missing required parameter "account"`);
-      return null;
+      const message = 'missing required parameter "account"';
+      console.error(`createTrigger: ${message}`);
+      return message;
     }
-    const repoName = param.repo;
+    repoName = param.repo;
     if (!repoName) {
-      console.error(`createTrigger: missing required parameter "repo"`);
-      return null;
+      const message = 'missing required parameter "repo"';
+      console.error(`createTrigger: ${message}`);
+      return message;
     }
 
     const [owner, repo] = repoName.split('/');
     if (!owner || !repo) {
-      console.error(`createTrigger: repo must be in owner/name format; received ${repoName}`);
-      return null;
+      const message = `repo must be in owner/name format; received ${repoName}`;
+      console.error(`createTrigger: ${message}`);
+      return message;
     }
 
-    const hook = encodeURI(`${environment.getUrl()}/docker/webhooks/${userId}/${activeSnapId}`);
+    const hookUrl = encodeURI(`${environment.getUrl()}/docker/webhooks/${userId}/${activeSnapId}`);
     const body = {
       name: `SnapMaster-${activeSnapId}`,
       expect_final_callback: false,
       webhooks: [{
         name: `SnapMaster-${activeSnapId}`,
-        hook_url: hook,  
+        hook_url: hookUrl,  
       }],
       registry: "registry-1.docker.io"
     };
@@ -102,25 +106,33 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
     };
 
     const url = `https://hub.docker.com/v2/repositories/${owner}/${repo}/webhook_pipeline/`;
-    const response = await axios.post(
+    const hook = await axios.post(
       url,
       body,
       {
         headers: headers
       });
 
-    const data = response.data;
+    // check for empty response
+    if (!hook || !hook.data || !hook.data.slug) {
+      const message = 'did not receive proper webhook information';
+      console.error(`createTrigger: ${message}`);
+      return message;
+    }
 
     // construct trigger data from returned hook info
     const triggerData = {
-      id: data.slug,
-      name: data.name,
-      url: `${url}${data.slug}/`,
+      id: hook.data.slug,
+      name: hook.data.name,
+      url: `${url}${hook.data.slug}/`,
     }
 
     return triggerData;
   } catch (error) {
     console.log(`createTrigger: caught exception: ${error}`);
+    if (error.response.status === 404) {
+      return `${error.message}: unknown repo or insufficient privileges to create webhook on repo ${repoName}`
+    }
     return null;
   }
 }

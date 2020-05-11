@@ -81,14 +81,15 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
     // validate params
     const site = param.site;
     if (!site) {
-      console.error(`createTrigger: missing required parameter "site"`);
-      return null;
+      const message = 'missing required parameter "site"';
+      console.error(`createTrigger: ${message}`);
+      return message;
     }
-
     const event = param.event;
     if (!event) {
-      console.error(`createTrigger: missing required parameter "event"`);
-      return null;
+      const message = 'missing required parameter "event"';
+      console.error(`createTrigger: ${message}`);
+      return message;
     }
 
     const token = await getToken(defaultConnectionInfo);
@@ -125,7 +126,9 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
 
     // check for empty response 
     if (!hook || !hook.data || !hook.data.id) {
-      return null;
+      const message = 'did not receive proper webhook information';
+      console.error(`createTrigger: ${message}`);
+      return message;
     }
 
     // construct trigger data from returned hook info
@@ -138,6 +141,9 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
     return triggerData;
   } catch (error) {
     console.log(`createTrigger: caught exception: ${error}`);
+    if (error.response.status === 404) {
+      return `${error.message}: unknown site or insufficient privileges to create webhook`
+    }
     return null;
   }
 }

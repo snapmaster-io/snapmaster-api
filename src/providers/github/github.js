@@ -126,21 +126,24 @@ exports.createHandlers = (app) => {
 }
 
 exports.createTrigger = async (providerName, defaultConnectionInfo, userId, activeSnapId, param) => {
+  let repoName;
   try {
     // get github configuration
     const githubConfig = await config.getConfig(providerName);
 
     // validate params
-    const repoName = param.repo;
+    repoName = param.repo;
     if (!repoName) {
-      console.error(`createTrigger: missing required parameter "repo"`);
-      return null;
+      const message = 'missing required parameter "repo"';
+      console.error(`createTrigger: ${message}`);
+      return message;
     }
 
     const event = param.event;
     if (!event) {
-      console.error(`createTrigger: missing required parameter "event"`);
-      return null;
+      const message = 'missing required parameter "event"';
+      console.error(`createTrigger: ${message}`);
+      return message;
     }
 
     // get the access token
@@ -148,8 +151,9 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
 
     const [owner, repo] = repoName.split('/');
     if (!owner || !repo) {
-      console.error(`createTrigger: repo must be in owner/name format; received ${repoName}`);
-      return null;
+      const message = `repo must be in owner/name format; received ${repoName}`;
+      console.error(`createTrigger: ${message}`);
+      return message;
     }
 
     let url = encodeURI(`${environment.getUrl()}/github/webhooks/${userId}/${activeSnapId}`);
@@ -181,6 +185,13 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
         headers: headers
       });
 
+    // check for empty response
+    if (!hook || !hook.data || !hook.data.id) {
+      const message = 'did not receive proper webhook information';
+      console.error(`createTrigger: ${message}`);
+      return message;
+    }
+  
     // construct trigger data from returned hook info
     const triggerData = {
       id: hook.data.id,
@@ -190,6 +201,9 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
     return triggerData;
   } catch (error) {
     console.log(`createTrigger: caught exception: ${error}`);
+    if (error.response.status === 404) {
+      return `${error.message}: unknown repo or insufficient privileges to create webhook on repo ${repoName}`
+    }
     return null;
   }
 }

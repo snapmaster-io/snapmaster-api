@@ -67,6 +67,7 @@ exports.createHandlers = (app) => {
 }
 
 exports.createTrigger = async (providerName, defaultConnectionInfo, userId, activeSnapId, param) => {
+  let repo;
   try {
     // get provider configuration
     const providerConfig = await config.getConfig(providerName);
@@ -74,18 +75,21 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
     // validate params
     const workspace = param.workspace;
     if (!workspace) {
-      console.error(`createTrigger: missing required parameter "workspace"`);
-      return null;
+      const message = 'missing required parameter "workspace"';
+      console.error(`createTrigger: ${message}`);
+      return message;
     }
-    const repo = param.repo;
+    repo = param.repo;
     if (!repo) {
-      console.error(`createTrigger: missing required parameter "repo"`);
-      return null;
+      const message = 'missing required parameter "repo"';
+      console.error(`createTrigger: ${message}`);
+      return message;
     }
     const event = param.event;
     if (!event) {
-      console.error(`createTrigger: missing required parameter "event"`);
-      return null;
+      const message = 'missing required parameter "event"';
+      console.error(`createTrigger: ${message}`);
+      return message;
     }
 
     const token = await getToken(defaultConnectionInfo);
@@ -124,7 +128,9 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
 
     // check for empty response 
     if (!hook || !hook.data || !hook.data.links || !hook.data.links.self || !hook.data.links.self.href) {
-      return null;
+      const message = 'did not receive proper webhook information';
+      console.error(`createTrigger: ${message}`);
+      return message;
     }
 
     // construct trigger data from returned hook info
@@ -136,6 +142,9 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
     return triggerData;
   } catch (error) {
     console.log(`createTrigger: caught exception: ${error}`);
+    if (error.response.status === 404) {
+      return `${error.message}: unknown repo or insufficient privileges to create webhook on repo ${repo}`
+    }
     return null;
   }
 }

@@ -66,22 +66,26 @@ exports.createHandlers = (app) => {
 }
 
 exports.createTrigger = async (providerName, defaultConnectionInfo, userId, activeSnapId, param) => {
+  let service;
   try {
     // validate params
-    const service = param[entityName];
+    service = param[entityName];
     if (!service) {
-      console.error(`createTrigger: missing required parameter "service"`);
-      return null;
+      const message = 'missing required parameter "service"';
+      console.error(`createTrigger: ${message}`);
+      return message;
     }
     const event = param.event;
     if (!event) {
-      console.error(`createTrigger: missing required parameter "event"`);
-      return null;
+      const message = 'missing required parameter "event"';
+      console.error(`createTrigger: ${message}`);
+      return message;
     }
     const serviceID = service.id;
     if (!serviceID) {
-      console.error(`createTrigger: could not find service ID`);
-      return null;
+      const message = 'could not find service ID';
+      console.error(`createTrigger: ${message}`);
+      return message;
     }
 
     // get token for calling API 
@@ -133,7 +137,9 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
 
     // check for empty response 
     if (!hook || !hook.data || !hook.data.extension || !hook.data.extension.self) {
-      return null;
+      const message = 'did not receive proper webhook information';
+      console.error(`createTrigger: ${message}`);
+      return message;
     }
 
     // construct trigger data from returned hook info
@@ -145,6 +151,9 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
     return triggerData;
   } catch (error) {
     console.log(`createTrigger: caught exception: ${error}`);
+    if (error.response.status === 404) {
+      return `${error.message}: unknown service or insufficient privileges to create webhook on service ${service}`
+    }
     return null;
   }
 }

@@ -67,20 +67,23 @@ exports.createHandlers = (app) => {
 }
 
 exports.createTrigger = async (providerName, defaultConnectionInfo, userId, activeSnapId, param) => {
+  let project;
   try {
     // get provider configuration
     const providerConfig = await config.getConfig(providerName);
 
     // validate params
-    const project = param.project;
+    project = param.project;
     if (!project) {
-      console.error(`createTrigger: missing required parameter "project"`);
-      return null;
+      const message = 'missing required parameter "project"';
+      console.error(`createTrigger: ${message}`);
+      return message;
     }
     const event = param.event;
     if (!event) {
-      console.error(`createTrigger: missing required parameter "event"`);
-      return null;
+      const message = 'missing required parameter "event"';
+      console.error(`createTrigger: ${message}`);
+      return message;
     }
 
     const token = await getToken(defaultConnectionInfo);
@@ -118,7 +121,9 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
 
     // check for empty response 
     if (!hook || !hook.data || !hook.data.id) {
-      return null;
+      const message = 'did not receive proper webhook information';
+      console.error(`createTrigger: ${message}`);
+      return message;
     }
 
     // construct trigger data from returned hook info
@@ -130,6 +135,9 @@ exports.createTrigger = async (providerName, defaultConnectionInfo, userId, acti
     return triggerData;
   } catch (error) {
     console.log(`createTrigger: caught exception: ${error}`);
+    if (error.response.status === 404) {
+      return `${error.message}: unknown project or insufficient privileges to create webhook on project ${project}`
+    }
     return null;
   }
 }
