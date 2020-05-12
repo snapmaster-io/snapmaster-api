@@ -120,7 +120,7 @@ exports.createHandlers = (app) => {
         }
 
         // redirect back to SPA with a success message
-        const url = `${state.url}#message=success&csrf=${state.csrf}`;
+        const url = `${state.url}#message=success&csrf=${state.csrf}&providerName=${providerName}`;
         res.redirect(url);
       } catch (error) {
         console.error(`oauthcallback: caught exception: ${error}`);
