@@ -39,7 +39,7 @@ exports.createHandlers = (app) => {
 exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param) => {
   try {
     const action = param.action;
-    const server = param.server;
+    let server = param.server;
     const team = param.team;
     const channel = param.channel;
     const message = param.message;
@@ -53,10 +53,15 @@ exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param)
 
     // get token for calling API (either from the default server in connection info, or the server passed in)
     const token = await getToken(
-      team === defaultEntityName ? 
+      server === defaultEntityName ? 
         connectionInfo :
         param[entityName]
     );
+
+    // use the server in the connection info for the default entity
+    if (server === defaultEntityName) {
+      server = connectionInfo.server.replace('https://', '');
+    }
 
     const baseUrl = `https://${server}/api/v4`
     const channelPath = encodeURI(`${baseUrl}/teams/name/${team}/channels/name/${channel}`);

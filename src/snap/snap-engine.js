@@ -529,18 +529,22 @@ const bindParameters = (config, params) => {
     const boundConfig = config.map(c => {
       // construct a new config entry
       const configEntry = { ...c };
-      for (const key of Object.keys(c)) {
-        for (const param of params) {
-          //const paramNameRegex = new RegExp(`\$${param.name}`, 'g');
 
-          // grab the current value as a string
-          const currentValue = '' + configEntry[key];
+      // iterate over the config keys and bind parameters
+      if (params) {
+        for (const key of Object.keys(c)) {
+          for (const param of params) {
+            //const paramNameRegex = new RegExp(`\$${param.name}`, 'g');
 
-          // grab the value of the parameter
-          const paramValue = param.value;
+            // grab the current value as a string
+            const currentValue = '' + configEntry[key];
 
-          // set the config entry value, replacing the ${param} with its value
-          configEntry[key] = currentValue.replace(`$${param.name}`, paramValue);
+            // grab the value of the parameter
+            const paramValue = param.value;
+
+            // set the config entry value, replacing the ${param} with its value
+            configEntry[key] = currentValue.replace(`$${param.name}`, paramValue);
+          }
         }
       }
       // return the newly constructed entry
