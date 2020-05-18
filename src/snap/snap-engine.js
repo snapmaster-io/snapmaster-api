@@ -352,15 +352,42 @@ exports.parseDefinition = (account, definition, privateFlag) => {
     };
 
     // validate required fields
-    if (!snap.account || !snap.name || !snap.trigger || !snap.actions || !snap.config) {
-      console.error('parseDefinition: definition did not contain required fields');
-      return null;
+    for (const field of ['account', 'name', 'trigger', 'actions', 'config']) {
+      if (!snap[field]) {
+        const message = `snap definition did not contain required field "${field}"`;
+        console.error(`parseDefinition: ${message}`);
+        return message;
+      }
+    }
+
+    if (!snap.actions || snap.actions.length === 0) {
+      const message = `snap definition did not contain any actions`;
+      console.error(`parseDefinition: ${message}`);
+      return message;
+    }
+
+    if (snap.name.indexOf(' ') >= 0) {
+      const message = `snap name cannot contain spaces`;
+      console.error(`parseDefinition: ${message}`);
+      return message;
+    }
+
+    if (snap.trigger.indexOf(' ') >= 0) {
+      const message = `trigger name cannot contain spaces`;
+      console.error(`parseDefinition: ${message}`);
+      return message;
+    }
+
+    if (snap.actions.find(a => a.indexOf(' ') >= 0)) {
+      const message = `action names cannot contain spaces`;
+      console.error(`parseDefinition: ${message}`);
+      return message;
     }
 
     return snap;
   } catch (error) {
     console.log(`parseDefinition: caught exception: ${error}`);
-    return null;
+    return `unknown error: ${error}`;
   }
 }
 

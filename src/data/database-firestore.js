@@ -30,6 +30,7 @@ exports.storeDocument = async (userId, collection, name, data) => {
   try {
     const doc = users.doc(userId).collection(collection).doc(name);
     await doc.set(data);
+    return data;
   } catch (error) {
     console.log(`storeDocument: caught exception: ${error}`);
     return null;

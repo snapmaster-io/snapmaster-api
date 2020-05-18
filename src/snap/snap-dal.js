@@ -81,10 +81,11 @@ exports.createHandlers = (app) => {
     const create = async () => {
       const definition = req.body.definition;
       const snap = await exports.createSnap(req.userId, definition, true);
-      if (snap) {
+      if (snap && snap.snapId) {
         res.status(200).send({ message: 'success', snap: snap });
       } else {
-        res.status(200).send({ message: 'error' });
+        // snap (return value) is an error message
+        res.status(200).send({ message: snap ? `error: ${snap}` : 'error: unknown error' });
       }
     }
 
@@ -247,22 +248,24 @@ exports.createSnap = async (userId, definition, private = false) => {
     // get the account name associated with the user
     const account = await getAccount(userId);
     if (!account) {
-      console.error(`createSnap: cannot find account for userId ${userId}`);
-      return null;
+      const message = `cannot find account for userId ${userId}`;
+      console.error(`createSnap: ${message}`);
+      return message;
     }
 
     // parse the snap definition
     const snap = snapengine.parseDefinition(account, definition, private);
-    if (!snap) {
-      return null;
+    if (!snap || !snap.snapId) {
+      // if no snapId field, then this is an error message
+      return snap;
     }
 
     // store the snap's userId
     snap.userId = userId;
     
     // store the snap object and return it
-    await database.storeDocument(account, dbconstants.snapsCollection, snap.name, snap);
-    return snap;
+    const storedSnap = await database.storeDocument(account, dbconstants.snapsCollection, snap.name, snap);
+    return storedSnap;
   } catch (error) {
     console.log(`createSnap: caught exception: ${error}`);
     return null;
