@@ -283,7 +283,7 @@ exports.entities[entityName].func = async ([connectionInfo, defaultConnectionInf
     // get the service ID associated with the service name
     const serviceInfo = await getServiceInfo(defaultConnectionInfo, entity.service);
     if (!serviceInfo) {
-      console.error(`entityHandler: could not find service ${service}`);
+      console.error(`entityHandler: could not find service ${entity.service}`);
       return null;
     }
 

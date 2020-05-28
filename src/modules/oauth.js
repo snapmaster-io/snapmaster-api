@@ -40,12 +40,18 @@ exports.createHandlers = (app) => {
         // get a fully configured oauth client
         const oauth = exports.getOAuthClient(configData);
 
-        // generate authorization URI 
-        const authorizationURI = oauth.authorizationCode.authorizeURL({
+        // construct the authorize URL options
+        const authorizeURIOptions = {
           redirect_uri: `${environment.getUrl()}/oauth/callback/${providerName}`,
           scope: configData.scopes,
           state: `url=${redirectUrl}&csrf=${csrfToken}&providerName=${providerName}&userId=${userId}`,
-        })
+        };
+        if (configData.audience) {
+          authorizeURIOptions.audience = configData.audience;
+        }
+
+        // generate authorization URI 
+        const authorizationURI = oauth.authorizationCode.authorizeURL(authorizeURIOptions);
       
         // redirect user to authorization URI 
         res.redirect(authorizationURI);

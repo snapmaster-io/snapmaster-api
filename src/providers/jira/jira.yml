@@ -1,0 +1,25 @@
+---
+version: provider-v1alpha1 
+name: jira
+description: JIRA Provider Definition
+connection: 
+  type: oauth
+  entity: jira:accounts
+  connectionInfo:
+  - name: account
+    description: account name
+triggers: 
+actions:
+  - name: create-issue
+    description: create issue 
+    parameters:
+    - name: account
+      description: account name
+      entity: jira:accounts
+      required: true
+    - name: project
+      description: project key (e.g. SNAP)
+      required: true
+    - name: summary
+      description: issue summary
+      required: true
