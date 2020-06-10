@@ -5,45 +5,31 @@ const swaggerDocument = require('./openapi.json');
 exports.createHandlers = (app) => {
   const options = {
     swaggerDefinition: {
-      //swagger: '2.0',
-      openapi: '3.0.1',
-      // Like the one described here: https://swagger.io/specification/#infoObject
+      openapi: '3.0.2',
       info: {
         title: 'SnapMaster API',
         version: '1.0.0',
         description: 'SnapMaster REST API',
       },
-    },
-
-    components: {
-      securitySchemes: {
-        auth0: {
-          type: 'oauth2',
-          flows: {
-            implicit: {
-              authorizationUrl: 'https://snapmaster-dev.auth0.com/authorize',
-              scopes: { openid: 'grants access to user_id' }
+      components: {
+        securitySchemes: {
+          auth0: {
+            type: 'oauth2',
+            flows: {
+              implicit: {
+                authorizationUrl: 'https://snapmaster-dev.auth0.com/authorize',
+                scopes: { 'https://api.snapmaster.io': 'grants access to api' }
+              }
             }
           }
         }
-      }
+      },
+      security: [{
+        auth0: [
+          "https://api.snapmaster.io"
+        ]
+      }],
     },
-
-    security: [ { auth0: ['openid'] } ],
-
-/*
-    securityDefinitions: {
-      auth0: {
-        type: 'oauth2',
-        flows: {
-          authorizationCode: {
-            authorizationUrl: 'https://snapmaster-dev.auth0.com/authorize',
-            tokenUrl: 'https://snapmaster-dev.auth0.com/oauth/token',
-            scopes: { openid: 'grants access to user_id' }
-          }
-        }
-      }
-    },*/
 
     // List of files to be processed. You can also set globs './routes/*.js'
     apis: ['./src/snap/snap-dal.js'],
@@ -51,8 +37,21 @@ exports.createHandlers = (app) => {
 
   const specs = swaggerJsdoc(options);
 
-  //app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, { explorer: true }));
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+  var swaggerOptions = {
+    swaggerOptions: {
+      //explorer: true,
+      validatorUrl: null,
+      oauth: {
+        clientId: "f9BSuAhmF8dmUtJWZyjAVJbGJWQMKsMW",
+        scopeSeparator: " ",
+        additionalQueryStringParams: { audience: "https://api.snapmaster.io" },
+        usePkceWithAuthorizationCodeGrant: true
+      }
+    }
+  };
+
+  //app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, swaggerOptions));
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, swaggerOptions));
 
   app.use('/oauth2-redirect.html', function(req, res) {
     res.status(200).send(
@@ -129,13 +128,3 @@ exports.createHandlers = (app) => {
     )
   });
 }
-
-/*
-securityDefinitions:
-  auth0:
-    type: oauth2
-    flow: authorizationCode
-    authorizationUrl: https://XXX.auth0.com/authorize
-    tokenUrl: https://XXX.auth0.com/oauth/token
-    scopes: {}
-*/

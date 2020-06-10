@@ -127,8 +127,12 @@ app.get('/*', function(req, res) {
 // handle all unauthorized errors by redirecting to base url
 app.use(function (err, req, res, next) {
   if (err.name === 'UnauthorizedError') {
+    /*
     const url = req.protocol + '://' + req.get('host');
     res.redirect(url);
+    */
+    // return a 401 status with no other payload
+    res.status(401).send();
   }
 });
 

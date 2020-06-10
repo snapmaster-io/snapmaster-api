@@ -54,6 +54,7 @@
     "shelljs": "^0.8.3",
     "simple-oauth2": "^3.4.0",
     "swagger-jsdoc": "^4.0.0",
+    "swagger-ui-dist": "^3.26.0",
     "swagger-ui-express": "^4.1.4",
     "twilio": "^3.39.2",
     "twitter": "^1.7.1",

@@ -19,6 +19,9 @@ exports.createHandlers = (app) => {
    * /gallery:
    *    get:
    *      description: return all public snaps in this deployment
+   *      responses: 
+   *        200:
+   *          description: success
    */  
   app.get('/gallery', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
     const returnGallery = async () => {
@@ -29,6 +32,15 @@ exports.createHandlers = (app) => {
   });
 
   // Get logs API endpoint
+  /**
+   * @swagger
+   * /logs:
+   *    get:
+   *      description: return all logs for all active snaps that have been executed
+   *      responses: 
+   *        200:
+   *          description: success
+   */  
   app.get('/logs', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
     const returnLogs = async () => {
       const logs = await exports.getLogs(req.userId) || {};
@@ -38,6 +50,23 @@ exports.createHandlers = (app) => {
   });
 
   // Get active snap logs API endpoint
+  /**
+   * @swagger
+   * /logs/{activeSnapId}:
+   *    get:
+   *      description: return all logs this active snap ID
+   *      produces:
+   *        - application/json
+   *      parameters:
+   *        - name: activeSnapId
+   *          description: active snap ID
+   *          in: path
+   *          required: true
+   *          type: string
+   *      responses: 
+   *        200:
+   *          description: success
+   */  
   app.get('/logs/:activeSnapId', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
     const activeSnapId = req.params.activeSnapId;
     const returnLogs = async () => {
