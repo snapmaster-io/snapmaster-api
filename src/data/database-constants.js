@@ -9,6 +9,7 @@ exports.emailsCollection = 'emails';
 
 // define snaps collection
 exports.snapsCollection = 'snaps';
+exports.actionsCollection = 'actions';
 exports.activeSnapsCollection = 'activesnaps';
 exports.logsCollection = 'logs';
 

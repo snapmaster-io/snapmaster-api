@@ -12,7 +12,7 @@ const database = require('../src/data/database');
 database.setEnv(env);
 
 const dbconstants = require('../src/data/database-constants');
-const snapdal = require('../src/snap/snap-dal');
+const snapdal = require('../src/snap/snapdal');
 const fs = require('fs');
 
 const userId = 'snapmaster';

@@ -24,7 +24,7 @@ const dbconstants = require('../../data/database-constants');
 const dal = require('../../data/dal');
 const provider = require('../provider');
 const requesthandler = require('../../modules/requesthandler');
-const snapengine = require('../../snap/snap-engine');
+const snapengine = require('../../snap/snapengine');
 const environment = require('../../modules/environment');
 const config = require('../../modules/config');
 

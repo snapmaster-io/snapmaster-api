@@ -4,18 +4,16 @@
 //   activateSnap(userId, snapId, params): activate a snap into the user's environment
 //   deactivateSnap(userId, activeSnapId): deactivate an active snap in the user's environment
 //   executeSnap(userId, activeSnapId, params): execute snap actions
-//   parseDefinition(userId, definition, privateFlag): parse a yaml definition into a snap object
 //   pauseSnap(userId, activeSnapId): pause an active snap in the user's environment
 //   resumeSnap(userId, activeSnapId): resume a paused snap in the user's environment
 
 const database = require('../data/database');
 const dbconstants = require('../data/database-constants');
-const snapdal = require('./snap-dal');
+const snapdal = require('./snapdal');
 const { simpleProvider, linkProvider } = require('../providers/provider');
 const providers = require('../providers/providers');
 const connections = require('../modules/connections');
 const credentials = require('../modules/credentials');
-const YAML = require('yaml');
 const {JSONPath} = require('jsonpath-plus');
 
 // provider definition keys
@@ -323,71 +321,6 @@ exports.executeSnap = async (userId, activeSnapId, params, payload) => {
     await database.storeDocument(userId, dbconstants.activeSnapsCollection, activeSnapId, activeSnap);
 
     return null;
-  }
-}
-
-exports.parseDefinition = (account, definition, privateFlag) => {
-  try {
-    const snapDefinition = YAML.parse(definition);
-
-    const snapId = `${account}/${snapDefinition.name}`;
-    const name = snapDefinition.name;
-    const triggerName = snapDefinition.trigger;
-    const config = snapDefinition.config;
-    const triggerConfigSection = triggerName && config && config.find && config.find(c => c.name === triggerName);
-    const provider = triggerConfigSection && triggerConfigSection.provider;
-
-    const snap = { 
-      snapId: snapId,
-      account: account,
-      name: name,
-      description: snapDefinition.description, 
-      provider: provider,
-      trigger: snapDefinition.trigger,
-      actions: snapDefinition.actions,
-      parameters: snapDefinition.parameters,
-      config: snapDefinition.config,
-      private: privateFlag,
-      text: definition
-    };
-
-    // validate required fields
-    for (const field of ['account', 'name', 'trigger', 'actions', 'config']) {
-      if (!snap[field]) {
-        const message = `snap definition did not contain required field "${field}"`;
-        console.error(`parseDefinition: ${message}`);
-        return message;
-      }
-    }
-
-    if (!snap.actions || snap.actions.length === 0) {
-      const message = `snap definition did not contain any actions`;
-      console.error(`parseDefinition: ${message}`);
-      return message;
-    }
-
-    if (snap.name.indexOf(' ') >= 0) {
-      const message = `snap name cannot contain spaces`;
-      console.error(`parseDefinition: ${message}`);
-      return message;
-    }
-
-    if (snap.trigger.indexOf(' ') >= 0) {
-      const message = `trigger name cannot contain spaces`;
-      console.error(`parseDefinition: ${message}`);
-      return message;
-    }
-
-    if (snap.actions.find(a => a.indexOf(' ') >= 0)) {
-      const message = `action names cannot contain spaces`;
-      console.error(`parseDefinition: ${message}`);
-      return message;
-    }
-
-    return snap;
-  } catch (error) {
-    console.log(`parseDefinition: caught exception: ${error}`);
-    return `unknown error: ${error}`;
   }
 }
 

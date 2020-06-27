@@ -11,7 +11,7 @@ environment.setEnv(env);
 const database = require('../src/data/database');
 database.setEnv(env);
 
-const snapengine = require('../src/snap/snap-engine');
+const snapengine = require('../src/snap/snapengine');
 
 // check command line
 if (process.argv.length < 6) {

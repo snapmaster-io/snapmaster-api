@@ -15,7 +15,7 @@
 
 const axios = require('axios');
 const provider = require('../provider');
-const snapengine = require('../../snap/snap-engine');
+const snapengine = require('../../snap/snapengine');
 const environment = require('../../modules/environment');
 
 const providerName = 'docker';

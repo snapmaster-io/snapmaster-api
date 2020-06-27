@@ -23,7 +23,7 @@ environment.setDevMode(configuration === environment.dev);
 // import middleware
 const requesthandler = require('./src/modules/requesthandler');
 
-// import providers, database, storage, data access, datapipeline, profile, connections, entities, apidocs, snap DAL layers
+// import providers, database, storage, data access, datapipeline, profile, connections, entities, apidocs
 const providers = require('./src/providers/providers');
 const database = require('./src/data/database');
 const dal = require('./src/data/dal');
@@ -33,7 +33,12 @@ const connections = require('./src/modules/connections');
 const entities = require('./src/modules/entities');
 const oauth = require('./src/modules/oauth');
 const apidocs = require('./src/modules/apidocs');
-const snapdal = require('./src/snap/snap-dal');
+
+// import API handlers
+const snaphandlers = require('./src/snap/snaphandlers');
+const activesnaphandlers = require('./src/snap/activesnaphandlers');
+const actionhandlers = require('./src/snap/actionhandlers');
+const loghandlers = require('./src/snap/loghandlers');
 
 // beta processing
 const beta = require('./src/modules/beta');
@@ -71,7 +76,10 @@ app.use(express.static(path.join(__dirname, 'build')));
 connections.createHandlers(app);
 profile.createHandlers(app);
 entities.createHandlers(app);
-snapdal.createHandlers(app);
+snaphandlers.createHandlers(app);
+activesnaphandlers.createHandlers(app);
+actionhandlers.createHandlers(app);
+loghandlers.createHandlers(app);
 beta.createHandlers(app);
 oauth.createHandlers(app);
 apidocs.createHandlers(app);
