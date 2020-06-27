@@ -18,10 +18,62 @@ exports.createHandlers = (app) => {
    * @swagger
    * /gallery:
    *    get:
-   *      description: return all public snaps in this deployment
+   *      summary: Return all public snaps in this deployment
+   *      description: Return all public snaps in this deployment as an array
    *      responses: 
    *        200:
-   *          description: success
+   *          description: Success
+   *          content: 
+   *            application/json: 
+   *              schema: 
+   *                title: snaps
+   *                type: array
+   *                items: 
+   *                  title: snap
+   *                  type: object
+   *                  properties: 
+   *                    name: 
+   *                      type: string
+   *                    description: 
+   *                      type: string
+   *                    trigger: 
+   *                      type: string
+   *                    actions: 
+   *                      type: array
+   *                      items: 
+   *                        type: string
+   *                    parameters: 
+   *                      type: array
+   *                      items: 
+   *                        title: parameter
+   *                        type: object
+   *                        properties: 
+   *                          name: 
+   *                            type: string
+   *                          description: 
+   *                            type: string
+   *                    config: 
+   *                      type: array
+   *                      items: 
+   *                        title: configentry
+   *                        type: object
+   *                        properties: 
+   *                          name: 
+   *                            type: string
+   *                          provider: 
+   *                            type: string
+   *                    snapId: 
+   *                      type: string
+   *                    text: 
+   *                      type: string
+   *                    userId: 
+   *                      type: string
+   *                    account: 
+   *                      type: string
+   *                    private: 
+   *                      type: boolean
+   *        401:
+   *          description: Unauthorized
    */  
   app.get('/gallery', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
     const returnGallery = async () => {

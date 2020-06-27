@@ -1,10 +1,20 @@
 {
   "openapi": "3.0.2",
   "info": {
-    "title": "Sample Pet Store App",
-    "description": "This is a sample server for a pet store.",
-    "version": "1.0.1"
+    "title": "SnapMaster API",
+    "description": "REST API for the SnapMaster framework.",
+    "version": "0.1.0"
   },
+  "servers": [
+    {
+      "url": "https://www.snapmaster.io",
+      "description": "SnapMaster production service"
+    },
+    {
+      "url": "https://dev.snapmaster.io",
+      "description": "SnapMaster development service"
+    }
+  ],
   "components": {
     "securitySchemes": {
       "auth0": {
@@ -30,10 +40,88 @@
   "paths": {
     "/gallery": {
       "get": {
-        "description": "get stuff",
+        "summary": "Return all public snaps in this deployment",
+        "description": "Return all public snaps in this deployment as an array",
         "responses": {
           "200": {
-            "description": "get more stuff"
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "snaps",
+                  "type": "array",
+                  "items": {
+                    "title": "snap",
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "description": {
+                        "type": "string"
+                      },
+                      "trigger": {
+                        "type": "string"
+                      },
+                      "actions": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "parameters": {
+                        "type": "array",
+                        "items": {
+                          "title": "parameter",
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "description": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "config": {
+                        "type": "array",
+                        "items": { 
+                          "title": "configentry",
+                          "type": "object",
+                          "properties": {
+                            "name": { 
+                              "type": "string"
+                            },
+                            "provider": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "snapId": {
+                        "type": "string"
+                      },
+                      "text": {
+                        "type": "string"
+                      },
+                      "userId": {
+                        "type": "string"
+                      },
+                      "account": {
+                        "type": "string"
+                      },
+                      "private": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "401": {
+              "description": "Unauthorized"
+            }
           }
         }
       }
