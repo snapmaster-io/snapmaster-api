@@ -64,8 +64,6 @@ exports.entities[entityName].func = async ([connectionInfo]) => {
       },
       __id: entity.webhook,
       __name: entity.webhook,
-      __triggers: exports.definition.triggers,
-      __actions: exports.definition.actions,
     };
 
     return result;

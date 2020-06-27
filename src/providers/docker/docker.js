@@ -214,8 +214,6 @@ exports.entities[entityName].func = async ([connectionInfo]) => {
       __id: entity.username,
       __name: entity.username,
       __url: `https://hub.docker.com/u/${entity.username}`,
-      __triggers: exports.definition.triggers,
-      __actions: exports.definition.actions,
     };
 
     return result;

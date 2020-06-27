@@ -72,8 +72,6 @@ exports.entities[entityName].func = async ([connectionInfo]) => {
       __id: project.project,
       __name: project.project,
       __url: `https://console.cloud.google.com/home/dashboard?project=${project.project}`,
-      __triggers: exports.definition.triggers,
-      __actions: exports.definition.actions,    
     };
 
     /*

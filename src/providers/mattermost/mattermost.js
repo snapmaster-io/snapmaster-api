@@ -133,8 +133,6 @@ exports.entities[entityName].func = async ([connectionInfo]) => {
       __id: entity.server,
       __name: entity.server,
       __url: `https://${server}`,
-      __triggers: exports.definition.triggers,
-      __actions: exports.definition.actions,
     };
 
     return result;

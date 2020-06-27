@@ -141,8 +141,6 @@ exports.entities[entityName].func = async ([connectionInfo, defaultConnectionInf
       __id: entity.account,
       __name: entity.account,
       __url: `${accountInfo.url}`,
-      __triggers: exports.definition.triggers,
-      __actions: exports.definition.actions,
     };
 
     return result;

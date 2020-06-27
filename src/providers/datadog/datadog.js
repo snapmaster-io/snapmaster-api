@@ -215,8 +215,6 @@ exports.entities[entityName].func = async ([connectionInfo]) => {
       __id: entity.name,
       __name: entity.name,
       __url: `https://app.datadoghq.com`,
-      __triggers: exports.definition.triggers,
-      __actions: exports.definition.actions,
     };
 
     return result;

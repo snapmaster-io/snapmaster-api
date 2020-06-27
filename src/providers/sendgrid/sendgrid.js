@@ -122,8 +122,6 @@ exports.entities[entityName].func = async ([connectionInfo]) => {
       __id: entity.account,
       __name: entity.account,
       __url: `https://app.sendgrid.com`,
-      __triggers: exports.definition.triggers,
-      __actions: exports.definition.actions,
     };
 
     return result;

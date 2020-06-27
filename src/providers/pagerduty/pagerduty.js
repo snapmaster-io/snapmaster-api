@@ -297,8 +297,6 @@ exports.entities[entityName].func = async ([connectionInfo, defaultConnectionInf
       __id: entity.service,
       __name: entity.service,
       __url: `${serviceInfo.html_url}`,
-      __triggers: exports.definition.triggers,
-      __actions: exports.definition.actions,
     };
 
     return result;
