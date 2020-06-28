@@ -79,7 +79,7 @@ exports.getProviderUrl = (providerName) => {
   if (exports.getDevMode()) {
     return 'http://localhost:8081';
   } else {
-    const endpoint = `https://provider-${providerName}${environment === 'dev' && '-dev'}.snapmaster.io`;
+    const endpoint = `https://provider-${providerName}${environment === 'dev' ? '-dev' : ''}.snapmaster.io`;
     return endpoint;  
   }
 }

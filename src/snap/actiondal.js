@@ -14,7 +14,7 @@ const dbconstants = require('../data/database-constants');
 /* 
  * An action definition is specified as follows:
  * { 
- *   actionId: string,      // [account/name]
+ *   actionId: string,    // [account/name]
  *   description: string, 
  *   private: boolean,
  *   actions: [string],   // array of tool names
