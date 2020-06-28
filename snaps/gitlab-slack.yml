@@ -1,0 +1,24 @@
+---
+version: snap-v1alpha1 
+name: gitlab-slack
+description: GitLab push -> Slack notification
+trigger: gitlab-issue
+actions:
+  - slack-message
+parameters: 
+  - name: project
+    description: name of git project
+  - name: channel
+    description: name of slack channel
+config:
+  - name: gitlab-issue
+    provider: gitlab
+    project: $project
+    event: push
+  - name: slack-message
+    provider: slack
+    workspace: slack:workspaces:default
+    action: send
+    channel: $channel
+    message: received push event on project $project
+

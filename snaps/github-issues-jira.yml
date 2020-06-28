@@ -1,0 +1,27 @@
+---
+version: snap-v1alpha1
+name: github-issues-jira
+description: new github issue creates a new JIRA issue
+trigger: github-issue
+actions:
+  - jira-create-issue
+parameters:
+  - name: repo
+    description: name of github repository
+  - name: account
+    description: JIRA account name
+    entity: jira:accounts
+  - name: project
+    description: JIRA project key
+config:
+  - name: github-issue
+    provider: github
+    event: issues
+    repo: $repo
+  - name: jira-create-issue
+    provider: jira
+    action: create-issue
+    account: $account
+    project: $project
+    summary: $.issue.title
+

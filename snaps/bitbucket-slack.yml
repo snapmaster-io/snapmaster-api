@@ -1,0 +1,27 @@
+---
+version: snap-v1alpha1
+name: bitbucket-slack
+description: Bitbucket push -> Slack notification
+trigger: bitbucket-push
+actions:
+  - slack-message
+parameters:
+  - name: bb-workspace
+    description: name of bitbucket workspace
+  - name: repo
+    description: name of git repository
+  - name: channel
+    description: name of slack channel
+config:
+  - name: bitbucket-push
+    provider: bitbucket
+    workspace: $bb-workspace
+    repo: $repo
+    event: repo:push
+  - name: slack-message
+    provider: slack
+    action: send
+    workspace: slack:workspaces:default
+    channel: $channel
+    message: received push event on repo $repo
+

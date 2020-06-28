@@ -1,0 +1,24 @@
+---
+version: snap-v1alpha1 
+name: netlify-slack
+description: Netlify deploy submission -> Slack notification
+trigger: netlify-deploy
+actions:
+  - slack-message
+parameters: 
+  - name: site
+    description: netlify site domain name
+  - name: channel
+    description: slack channel
+config:
+  - name: netlify-deploy
+    provider: netlify
+    site: $site
+    event: deploy_created
+  - name: slack-message
+    provider: slack
+    workspace: slack:workspaces:default
+    action: send
+    channel: general
+    message: site $site was successfully deployed!
+

@@ -1,0 +1,21 @@
+---
+version: snap-v1alpha1 
+name: datadog-slack
+description: Datadog webhook -> Slack notification
+trigger: datadog-webhook
+actions:
+  - slack-message
+parameters: 
+  - name: channel
+    description: name of slack channel
+config:
+  - name: datadog-webhook
+    provider: datadog
+    account: datadog:accounts:default
+    event: webhook
+  - name: slack-message
+    provider: slack
+    workspace: slack:workspaces:default
+    action: send
+    channel: $channel
+    message: datadog webhook triggered

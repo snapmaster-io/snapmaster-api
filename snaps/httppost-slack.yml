@@ -1,0 +1,27 @@
+---
+version: snap-v1alpha1 
+name: httppost-slack
+description: HTTP POST -> Slack notification for James and Allen
+trigger: http-post
+actions:
+  - slack-message
+parameters: 
+  - name: webhook
+    description: http webhook name
+    entity: httppost:webhooks
+  - name: workspace
+    description: workspace
+    entity: slack:workspaces
+  - name: channel
+    description: slack channel
+config:
+  - name: http-post
+    provider: httppost
+    webhook: $webhook
+    event: post
+  - name: slack-message
+    provider: slack
+    workspace: $workspace
+    action: send
+    channel: general
+    message: new image pushed into $repo in dockerhub

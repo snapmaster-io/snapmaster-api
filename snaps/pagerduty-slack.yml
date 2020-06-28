@@ -1,0 +1,25 @@
+---
+version: snap-v1alpha1 
+name: pagerduty-slack
+description: Pagerduty -> Slack notification
+trigger: pagerduty-incident
+actions:
+  - slack-message
+parameters: 
+  - name: service
+    description: pagerduty service
+    entity: pagerduty:services
+  - name: channel
+    description: slack channel
+config:
+  - name: pagerduty-incident
+    provider: pagerduty
+    service: $service
+    event: incident
+  - name: slack-message
+    provider: slack
+    workspace: slack:workspaces:default
+    action: send
+    channel: $channel
+    message: received event "$.messages[0].event" for pagerduty service $service
+

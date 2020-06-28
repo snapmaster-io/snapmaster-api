@@ -1,0 +1,26 @@
+---
+version: snap-v1alpha1 
+name: netlify-mattermost
+description: Netlify deploy submission -> Mattermost notification
+trigger: netlify-deploy
+actions:
+  - mattermost-message
+parameters: 
+  - name: site
+    description: netlify site domain name
+  - name: server
+    description: mattermost server
+    entity: mattermost:servers
+config:
+  - name: netlify-deploy
+    provider: netlify
+    site: $site
+    event: deploy_created
+  - name: mattermost-message
+    provider: mattermost
+    server: $server
+    team: snapmaster
+    action: post
+    channel: deploys
+    message: site $site was successfully deployed!
+

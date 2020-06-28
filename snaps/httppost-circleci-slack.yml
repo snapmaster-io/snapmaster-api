@@ -1,0 +1,35 @@
+---
+version: snap-v1alpha1 
+name: httppost-circleci-slack
+description: HTTP POST -> CircleCI trigger pipeline -> Slack message
+trigger: http-post
+actions:
+  - circleci-trigger
+  - slack-message
+parameters: 
+  - name: webhook
+    description: http webhook name
+    entity: httppost:webhooks
+  - name: account
+    description: circleci account
+    entity: circleci:accounts
+  - name: project
+    description: circleci project in {vcs}/{user}/{repo} format
+  - name: channel
+    description: slack channel
+config:
+  - name: http-post
+    provider: httppost
+    webhook: $webhook
+    event: post
+  - name: circleci-trigger
+    provider: circleci
+    account: $account
+    action: trigger-pipeline
+    project: $project
+  - name: slack-message
+    provider: slack
+    workspace: slack:workspaces:default
+    action: send
+    channel: general
+    message: circleCI pipeline triggered for $project
