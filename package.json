@@ -42,7 +42,7 @@
     "cors": "^2.8.5",
     "eventsource": "^1.0.7",
     "express": "^4.17.1",
-    "express-jwt": "^5.3.1",
+    "express-jwt": "^6.0.0",
     "express-jwt-authz": "^2.3.1",
     "facebook-nodejs-business-sdk": "^5.0.1",
     "google-auth-library": "^5.10.1",
