@@ -173,7 +173,12 @@ const addHandler = async ([userId, entity, connectionInfo]) => {
 
     const response = await func([connectionInfo, defaultConnInfo]);
     if (!response) {
-      return { message: 'could not add the new entity'};
+      return { message: 'could not add the new entity' };
+    }
+
+    // if this is an error, return it now
+    if (response.message) {
+      return response;
     }
 
     // store any secrets in the secret store

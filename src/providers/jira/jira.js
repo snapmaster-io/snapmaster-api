@@ -77,6 +77,19 @@ exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param)
       'authorization': `Bearer ${token}`
     };
 
+    // find the right issue type from the issue metadata in the account information
+    const proj = account.issueMetadata && account.issueMetadata.projects && account.issueMetadata.projects.find(p => p.key === project);
+    if (!proj) {
+      console.error(`invokeAction: count not find project ${project}`);
+      return null;
+    }
+    const issueType = proj.issuetypes && proj.issuetypes.find(i => i.name === "Bug");
+    if (!issueType) {
+      console.error(`invokeAction: count not find the Bug issue type`);
+      return null;
+    }
+    const bugIssueType = issueType.id;
+
     const body = JSON.stringify({
       fields: {
         summary,
@@ -84,7 +97,7 @@ exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param)
           key: project,
         },
         issuetype: {
-          id: "10003",
+          id: bugIssueType,
         }
       },
     });
@@ -99,6 +112,10 @@ exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param)
     return response.data;  
   } catch (error) {
     console.log(`invokeAction: caught exception: ${error}`);
+    const errorData = error.response && error.response.data && error.response.data.errors;
+    for (const msg of Object.keys(errorData)) {
+      console.error(`jira API error: ${msg}: ${errorData[msg]}`);
+    }
     return null;
   }
 }
@@ -178,15 +195,67 @@ const getAccountInfo = async (connectionInfo, account) => {
       return null;
     }
 
-    // return the first object in the response array
-    const accountInfo = accountArray.find(a => a.name === account);
-    if (accountInfo) {
-      return accountInfo;
-    } else {
-      return accountArray[0];
+    // get the account info
+    const accountInfo = accountArray.find(a => a.name === account) || accountArray[0];
+    if (!accountInfo) {
+      console.error(`getAccountInfo: could not retrieve account information`);
+      return null;
     }
+
+    // get the issue metadata for the account
+    const issueMetadata = await getIssueMetadata(connectionInfo, accountInfo);
+    if (!issueMetadata) {
+      console.error(`getAccountInfo: could not retrieve issue metadata`);
+      return null;
+    }
+
+    // store the issue metadata
+    accountInfo.issueMetadata = issueMetadata;
+
+    // return the account information
+    return accountInfo;
   } catch (error) {
     console.error(`getAccountInfo: caught exception: ${error}`);
+    return null;
+  }
+}
+
+const getIssueMetadata = async (connectionInfo, account) => {
+  try {
+    const accountID = account.id;
+    if (!accountID) {
+      console.error(`getIssueMetadata: could not find account ID`);
+      return null;
+    }
+
+    // get token for calling API from the default creds
+    const token = await getToken(connectionInfo);
+    if (!token) {
+      console.error('getIssueMetadata: no authorization token');
+      return null;
+    }
+
+    const url = `https://api.atlassian.com/ex/jira/${accountID}/rest/api/3/issue/createmeta`;
+    const headers = { 
+      'content-type': 'application/json',
+      'authorization': `Bearer ${token}`
+    };
+
+    const response = await axios.get(
+      url,
+      {
+        headers: headers
+      });
+
+    return response.data;  
+  } catch (error) {
+    console.error(`getIssueMetadata: caught exception: ${error}`);
+    const msgs = error.response && error.response.data && error.response.data.errorMessages;
+    if (msgs) {
+      for (const msg of msgs) {
+        console.error(`jira API error: ${msg}`);
+      }  
+    }
     return null;
   }
 }
