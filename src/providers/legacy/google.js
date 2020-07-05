@@ -7,9 +7,7 @@
 //
 //   createHandlers(app, [middlewaree]): create all route handlers
 //
-//   provider: provider name
-//   image: provider image url (local to SPA)
-//   type: provider type (simple or link)
+//   name: provider name
 //   definition: provider definition
 
 const axios = require('axios');
@@ -19,9 +17,8 @@ const requesthandler = require('../../modules/requesthandler');
 
 const providerName = 'google';
 
-exports.provider = providerName;
-exports.image = `/${providerName}-logo.jpg`;
-exports.type = provider.linkProvider;
+exports.name = providerName;
+exports.type = 'link';
 //exports.definition = provider.getDefinition(providerName);
 
 // api's defined by this provider

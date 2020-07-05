@@ -4,9 +4,7 @@
 //   createHandlers(app): create all route handlers
 //   invokeAction(providerName, connectionInfo, activeSnapId, param): invoke an action
 //
-//   provider: provider name
-//   image: provider image url (local to SPA)
-//   type: provider type (simple or link)
+//   name: provider name
 //   definition: provider definition
 
 const axios = require('axios');
@@ -17,10 +15,8 @@ const oauth = require('../../modules/oauth');
 const providerName = 'jira';
 const entityName = `${providerName}:accounts`;
 
-exports.provider = providerName;
-exports.image = `/${providerName}-logo.png`;
+exports.name = providerName;
 exports.definition = provider.getDefinition(providerName);
-exports.type = exports.definition.connection && exports.definition.connection.type;
 
 // entities defined by this provider
 exports.entities = {};

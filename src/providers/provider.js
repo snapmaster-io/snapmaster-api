@@ -3,20 +3,12 @@
 // exported methods:
 //   getDefinition: load and parse the yml definition of a provider
 //   invokeAction: invoke an action for an "out of tree" provider (one that is running in a separate service)
-//   
-// exported constants:
-//   simpleProvider: simple provider
-//   linkProvider: link provider (OAuth via Auth0)
 
 const axios = require('axios');
 const fs = require('fs');
 const YAML = require('yaml');
 const auth0 = require('../services/auth0');
 const environment = require('../modules/environment');
-
-exports.simpleProvider = 'simple';
-exports.linkProvider = 'link';
-exports.oauthProvider = 'oauth';
 
 // create a provider trigger across service boundaries
 exports.createTrigger = async (providerName, connectionInfo, userId, activeSnapId, param) => {

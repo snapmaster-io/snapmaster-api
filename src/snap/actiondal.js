@@ -18,8 +18,8 @@ const dbconstants = require('../data/database-constants');
  *   description: string, 
  *   private: boolean,
  *   actions: [string],   // array of tool names
- *   url: string,         // typically points to a git repo file
- *   text: string         // inline definition of action, in case URL doesn't exist
+ *   url: string,         // base URL for the action
+ *   text: string         // inline definition of action
  * }
  */
 

@@ -40,16 +40,14 @@ exports.createHandlers = (app) => {
 }
 
 exports.getProvider = (providerName) => {
-  const provider = providerList.find(p => p.provider === providerName);
+  const provider = providerList.find(p => p.name === providerName);
   return provider;
 }
 
 exports.providerDefinitions = () => {
   return providerList.map(provider => {
     return {
-      provider: provider.provider,
-      image: provider.image,
-      type: provider.type,
+      name: provider.name,
       definition: provider.definition
     }
   });

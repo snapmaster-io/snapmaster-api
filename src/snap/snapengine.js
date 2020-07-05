@@ -10,7 +10,6 @@
 const database = require('../data/database');
 const dbconstants = require('../data/database-constants');
 const snapdal = require('./snapdal');
-const { simpleProvider, linkProvider } = require('../providers/provider');
 const providers = require('../providers/providers');
 const connections = require('../modules/connections');
 const credentials = require('../modules/credentials');
@@ -90,7 +89,7 @@ exports.activateSnap = async (userId, snapId, params, activeSnapId = null) => {
       userId: userId,
       snapId: snapId,
       snap: snap,
-      provider: provider.provider,
+      provider: provider.name,
       state: dbconstants.snapStateActive,
       activated: timestamp,
       trigger: snap.trigger,
@@ -106,7 +105,7 @@ exports.activateSnap = async (userId, snapId, params, activeSnapId = null) => {
     }
 
     // create the snap trigger
-    const triggerData = await provider.createTrigger(provider.provider, connInfo, userId, activeSnapId, triggerParam);
+    const triggerData = await provider.createTrigger(provider.name, connInfo, userId, activeSnapId, triggerParam);
     if (!triggerData) {
       return { message: 'could not activate snap' };
     }
@@ -418,7 +417,7 @@ exports.resumeSnap = async (userId, activeSnapId) => {
     await bindEntitiesToParameter(userId, provider.definition.triggers, triggerParam, keys.triggers);
     
     // re-create the snap trigger
-    const triggerData = await provider.createTrigger(provider.provider, connInfo, userId, activeSnapId, triggerParam);
+    const triggerData = await provider.createTrigger(provider.name, connInfo, userId, activeSnapId, triggerParam);
     if (!triggerData) {
       return { message: 'could not re-create trigger for this snap - try deactivating it' };
     }
@@ -686,7 +685,7 @@ const validateSnap = async (snap) => {
     // validate parameters against the trigger definitions
     const invalid = validateConfigSection(provider.definition.triggers, keys.triggers, config);
     if (invalid) {
-      const message = `${provider.provider} provider failed to validate config in snap ${snap.snapId}`;
+      const message = `${provider.name} provider failed to validate config in snap ${snap.snapId}`;
       console.error(`validateSnap: ${message}`);
       return { message: `${message}: ${invalid}` };
     }
@@ -702,7 +701,7 @@ const validateSnap = async (snap) => {
       // validate parameters against the action definitions
       const invalid = validateConfigSection(provider.definition.actions, keys.actions, config);
       if (invalid) {
-        const message = `${provider.provider} provider failed to validate config in snap ${snap.snapId}`;
+        const message = `${provider.name} provider failed to validate config in snap ${snap.snapId}`;
         console.error(`validateSnap: ${message}`);
         return { message: `${message}: ${invalid}` };
       }

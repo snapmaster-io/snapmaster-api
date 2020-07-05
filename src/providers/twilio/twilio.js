@@ -7,9 +7,7 @@
 //   entities.
 //        accounts - the accounts entity
 // 
-//   provider: provider name
-//   image: provider image url (local to SPA)
-//   type: provider type (simple or link)
+//   name: provider name
 //   definition: provider definition
 
 const Twilio = require('twilio'); 
@@ -19,10 +17,8 @@ const providerName = 'twilio';
 const entityName = `${providerName}:accounts`;
 const defaultEntityName = `${entityName}:default`;
 
-exports.provider = providerName;
-exports.image = `/${providerName}-logo.png`;
+exports.name = providerName;
 exports.definition = provider.getDefinition(providerName);
-exports.type = exports.definition.connection && exports.definition.connection.type;
 
 // entities defined by this provider
 exports.entities = {};

@@ -184,7 +184,7 @@ const getConnections = async (userId) => {
 
     // generate an array of connections which includes conneted state
     const connections = providerDefinitions.map(p => {
-      const name = p.provider;
+      const name = p.name;
       let connected = user[name] && user[name].connected !== false ? 'linked' : null;
       // if the connection is the same as the provider of the base userId, note it that way
       if (name === baseConnection) {
@@ -194,14 +194,16 @@ const getConnections = async (userId) => {
       const [title] = name.split('-');
 
       const uid = user[name] && user[name].userId;
+      const image = p.definition && p.definition.imageUrl;
+      const type = p.definition.connection && p.definition.connection.type;
 
       return ({ 
-        provider: p.provider, 
+        provider: name, 
         connected: connected,
         title: title,
-        image: p.image,
+        image: image || `/${name}-logo.png`,
         icon: `cloudfont-${title}`,
-        type: p.type,
+        type: type,
         definition: p.definition,
         userId: uid
       })

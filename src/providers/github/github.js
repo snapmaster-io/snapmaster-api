@@ -9,9 +9,7 @@
 //   createTrigger(providerName, connectionInfo, userId, activeSnapId, params): create a trigger (webhook)
 //   deleteTrigger(providerName, connectionInfo, triggerData): delete a trigger (webhook)
 //
-//   provider: provider name
-//   image: provider image url (local to SPA)
-//   type: provider type (simple or link)
+//   name: provider name
 //   definition: provider definition
 
 const { Octokit } = require('@octokit/rest');
@@ -30,10 +28,8 @@ const config = require('../../modules/config');
 
 const providerName = 'github';
 
-exports.provider = providerName;
-exports.image = `/${providerName}-logo.png`;
+exports.name = providerName;
 exports.definition = provider.getDefinition(providerName);
-exports.type = exports.definition.connection && exports.definition.connection.type;
 exports.getAccessInfo = githubauth.getGithubAccessInfo;
 
 // api's defined by this provider

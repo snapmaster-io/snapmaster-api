@@ -5,9 +5,7 @@
 //   createTrigger(providerName, connectionInfo, userId, activeSnapId, params): create a trigger (webhook)
 //   deleteTrigger(providerName, connectionInfo, triggerData): delete a trigger (webhook)
 //
-//   provider: provider name
-//   image: provider image url (local to SPA)
-//   type: provider type (simple or link)
+//   name: provider name
 //   definition: provider definition
 
 const EventSource = require('eventsource');
@@ -21,10 +19,8 @@ const oauth = require('../../modules/oauth');
 const providerName = 'pagerduty';
 const entityName = `${providerName}:services`;
 
-exports.provider = providerName;
-exports.image = `/${providerName}-logo.png`;
+exports.name = providerName;
 exports.definition = provider.getDefinition(providerName);
-exports.type = exports.definition.connection && exports.definition.connection.type;
 
 // entities defined by this provider
 exports.entities = {};

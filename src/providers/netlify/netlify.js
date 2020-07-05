@@ -8,9 +8,7 @@
 //   deleteTrigger(providerName, connectionInfo, triggerData): delete a trigger (webhook)
 //   invokeAction(providerName, connectionInfo, activeSnapId, param): invoke an action
 // 
-//   provider: provider name
-//   image: provider image url (local to SPA)
-//   type: provider type (simple or link)
+//   name: provider name
 //   definition: provider definition
 
 const EventSource = require('eventsource');
@@ -23,10 +21,8 @@ const netlifyauth = require('../../services/netlifyauth');
 
 const providerName = 'netlify';
 
-exports.provider = providerName;
-exports.image = `/${providerName}-logo.png`;
+exports.name = providerName;
 exports.definition = provider.getDefinition(providerName);
-exports.type = exports.definition.connection && exports.definition.connection.type;
 
 // api's defined by this provider
 exports.apis = {

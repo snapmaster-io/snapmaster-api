@@ -13,7 +13,6 @@ database.setEnv(env);
 
 const connections = require('../src/modules/connections');
 const providers = require('../src/providers/providers');
-const { linkProvider } = require('../src/providers/provider');
 
 // check command line
 if (process.argv.length < 5) {
@@ -40,9 +39,11 @@ const invokeAction = async (userId, providerName, params) => {
 const getConnectionInfo = async (userId, providerName) => {
   // retrieve the provider
   const provider = providers.getProvider(providerName);
+  const type = provider.type || 
+    (provider.definition && provider.definition.connection && provider.definition.connection.type);
 
   // if this is an OAuth link provider, call the provider's getAccessInfo method to retrieve token info
-  if (provider.type === linkProvider) {
+  if (type === 'link') {
     const info = provider.getAccessInfo(userId);
     return info;
   }

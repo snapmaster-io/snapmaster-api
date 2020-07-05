@@ -6,9 +6,7 @@
 //
 //   createHandlers(app): create all route handlers
 // 
-//   provider: provider name
-//   image: provider image url (local to SPA)
-//   type: provider type (simple or link)
+//   name: provider name
 //   definition: provider definition
 //   invokeAction: use the cross-service generic implementation (not in-tree)
 
@@ -22,10 +20,8 @@ const provider = require('../provider');
 const providerName = 'gcp';
 const entityName = 'gcp:projects';
 
-exports.provider = providerName;
-exports.image = `/${providerName}-logo.png`;
+exports.name = providerName;
 exports.definition = provider.getDefinition(providerName);
-exports.type = exports.definition.connection && exports.definition.connection.type;
 
 // invokeAction is implemented by a separate service
 exports.invokeAction = provider.invokeAction;  
