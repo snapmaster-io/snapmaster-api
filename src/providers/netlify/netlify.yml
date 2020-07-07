@@ -54,3 +54,9 @@ triggers:
       description: site ID
       required: true
 actions:
+  - name: trigger-build
+    description: trigger a build and deploy
+    parameters:
+    - name: site
+      description: site ID
+      required: true

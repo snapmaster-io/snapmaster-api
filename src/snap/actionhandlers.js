@@ -5,6 +5,7 @@
 
 const requesthandler = require('../modules/requesthandler');
 const actiondal = require('./actiondal');
+const snapengine = require('./snapengine');
 
 exports.createHandlers = (app) => {
   // Get actions API endpoint
@@ -86,7 +87,14 @@ exports.createHandlers = (app) => {
     
     const create = async () => {
       const definition = req.body.definition;
-      const action = await actiondal.createAction(req.userId, definition, true);
+      const url = req.body.url;
+      if (!url) {
+        const message = 'action must have a URL';
+        console.error(`actions: ${message}`);
+        res.status(200).send({ message: message });
+        return;
+      }
+      const action = await actiondal.createAction(req.userId, url, definition);
       if (action && action.actionId) {
         res.status(200).send({ message: 'success', action: action });
       } else {
@@ -108,6 +116,20 @@ exports.createHandlers = (app) => {
       res.status(200).send(action ? { message: 'success', action: action } : { message: 'error' });
     }
 
+    const execute = async () => {
+      const result = await snapengine.executeAction(req.userId, actionId, req.body.operation, req.body.params);
+      // check for error
+      if (result) { 
+        if (result.error && result.message) {
+          res.status(200).send(result);
+        } else {
+          res.status(200).send({ message: 'success', result: result });
+        }
+      } else {
+        res.status(200).send({ message: 'unknown error' });
+      }
+    }
+
     const fork = async () => {
       const action = await actiondal.forkAction(req.userId, actionId);
       res.status(200).send({ message: 'success', action: action });
@@ -127,11 +149,14 @@ exports.createHandlers = (app) => {
           edit();
         }
         return;
+      case 'execute':
+        execute();
+        return;
       case 'fork':
         fork();
         return;
       default:
-        res.status(200).send({ message: 'Unknown action'});
+        res.status(200).send({ message: 'Unknown action' });
         return;
     }
   });

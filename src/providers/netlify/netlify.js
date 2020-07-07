@@ -171,9 +171,68 @@ exports.deleteTrigger = async (providerName, defaultConnectionInfo, triggerData,
   }
 }
 
-exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param) => {
+exports.invokeAction = async (providerName, defaultConnectionInfo, activeSnapId, param) => {
   try {
-    return null;
+    // get provider configuration
+    const providerConfig = await config.getConfig(providerName);
+
+    // validate params
+    const site = param.site;
+    if (!site) {
+      const message = 'missing required parameter "site"';
+      console.error(`invokeAction: ${message}`);
+      return message;
+    }
+    const action = param.action;
+    if (!action) {
+      const message = 'missing required parameter "action"';
+      console.error(`invokeAction: ${message}`);
+      return message;
+    }
+
+    const token = await getToken(defaultConnectionInfo);
+
+    // create a build hook
+    const body = {
+      id: `snapmaster-${activeSnapId}`,
+      //site_id: site,
+      title: `snapmaster-${activeSnapId}`,
+    };
+
+    const urlBase = `https://api.netlify.com/api/v1/sites/${site}/build_hooks`;
+
+    const headers = { 
+      'content-type': 'application/json',
+      'authorization': `Bearer ${token}`
+     };
+
+    // create a build hook
+    const hook = await axios.post(urlBase, body, { headers });
+    if (!hook || !hook.data || !hook.data.url) {
+      const message = `could not create build hook for site ${site}`;
+      console.error(`invokeAction: ${message}`);
+      return message;
+    }
+
+    // invoke the build hook
+    const hookUrl = `${hook.data.url}?trigger_title=Triggered+by+SnapMaster`;
+    const response = await axios.post(hookUrl, {}, { headers });
+    if (!response) {
+      const message = `could not invoke build and deploy site ${site}`;
+      console.error(`invokeAction: ${message}`);
+      return message;
+    }
+
+    // invoke the build hook
+    const deleteUrl = `${urlBase}/${hook.data.id}`;
+    const delResponse = await axios.delete(deleteUrl, { headers });
+    if (!delResponse) {
+      const message = `could not delete build hook for site ${site}`;
+      console.error(`invokeAction: ${message}`);
+      return message;
+    }
+
+    return `${providerName}: built and deployed ${site}`;
   } catch (error) {
     console.log(`invokeAction: caught exception: ${error}`);
     return null;

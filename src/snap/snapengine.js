@@ -14,6 +14,7 @@ const providers = require('../providers/providers');
 const connections = require('../modules/connections');
 const credentials = require('../modules/credentials');
 const {JSONPath} = require('jsonpath-plus');
+const axios = require('axios');
 
 // provider definition keys
 const keys = {
@@ -112,7 +113,7 @@ exports.activateSnap = async (userId, snapId, params, activeSnapId = null) => {
 
     // a lack of a url indicates an error, and the return value is the error message
     if (!triggerData.url) {
-      return { message: triggerData };
+      return { message: `trigger data ${triggerData} does not contain a 'url' property` };
     }
 
     // add the trigger data to the activesnap record
@@ -165,7 +166,9 @@ exports.deactivateSnap = async (userId, activeSnapId) => {
       // delete the snap trigger
       const response = await provider.deleteTrigger(activeSnap.provider, connInfo, activeSnap.triggerData, triggerParam);
       if (response == null) {
-        return { message: 'could not remove trigger for this snap - use the trigger info action to remove it manually from the provider' };
+        // TODO: fix this code path. currently we need a way to delete all snap artifacts when it gets deactivated, but 
+        // also return the message below 
+        // return { message: 'could not remove trigger for this snap - use the trigger info action to remove it manually from the provider' };
       }
     }
     
@@ -228,6 +231,45 @@ exports.editSnap = async (userId, activeSnapId, params) => {
   } catch (error) {
     console.log(`editSnap: caught exception: ${error}`);
     return { message: `editSnap error: ${error.message}`};
+  }
+}
+
+// execute an action
+exports.executeAction = async (userId, actionId, operation, params) => {
+  try {
+    // validate incoming userId and actionId, operation
+    if (!userId || !actionId || !operation) {
+      const message = 'missing action or operation';
+      console.error(`executeAction: ${message}`);
+      return { error: true, message: message };
+    }
+
+    // get the account name associated with the user
+    const account = await getAccount(userId);
+    if (!account) {
+      const message = `cannot find account for userId ${userId}`;
+      console.error(`executeAction: ${message}`);
+      return { error: true, message: message };
+    }
+
+    // re-construct action name to ensure it's in the user's account
+    const nameArray = actionId.split('/');
+    const actionName = nameArray.length > 1 ? nameArray[1] : actionId;
+
+    // get action object
+    const action = await database.getDocument(account, dbconstants.actionsCollection, actionName);
+    if (!action) {
+      const message = `cannot find action ID ${actionId}`;
+      console.error(`executeAction: ${message}`);
+      return { error: true, message: message };
+    }
+
+    // execute the action
+    const output = await executeAction(userId, action, operation, params);
+    return output;
+  } catch (error) {
+    console.log(`executeAction: caught exception: ${error}`);
+    return null;
   }
 }
 
@@ -542,6 +584,51 @@ const bindPayloadToParameter = (param, payload) => {
   }
 
   return newParam;
+}
+
+const executeAction = async (userId, action, operation, params) => {
+  try {
+    // get the connection information
+    const connectionInfo = await getConnectionInfo(userId, action.provider);
+
+    const url = `${action.url}/${operation}`;
+    const body = {
+      connectionInfo,
+      action: operation,
+    };
+
+    // add parameter values to the body
+    for (const param of params) {
+      body[param.name] = param.value;
+    }
+
+    const headers = { 
+      'content-type': 'application/json',
+      //'authorization': `Bearer ${token}`
+    };
+
+    const response = await axios.post(
+      url,
+      body,
+      {
+        headers: headers
+      });
+
+    // construct output message
+    const output = response.data;
+    return output;
+  } catch (error) {
+    console.error(`executeAction: caught exception: ${error}`);
+    return null;
+  }
+} 
+
+// get account for a userId
+const getAccount = async (userId) => {
+  // retrieve the account associated with the user
+  const user = await database.getUserData(userId, dbconstants.profile);
+  const account = user.account;
+  return account;
 }
 
 const getConnectionInfo = async (userId, providerName) => {
