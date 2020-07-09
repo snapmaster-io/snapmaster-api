@@ -120,7 +120,7 @@ exports.createHandlers = (app) => {
       const result = await snapengine.executeAction(req.userId, actionId, req.body.operation, req.body.params);
       // check for error
       if (result) { 
-        if (result.error && result.message) {
+        if ((result.error || result.status === 'error') && result.message) {
           res.status(200).send(result);
         } else {
           res.status(200).send({ message: 'success', result: result });
