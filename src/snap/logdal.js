@@ -6,16 +6,17 @@
 
 const database = require('../data/database');
 const dbconstants = require('../data/database-constants');
+const { successvalue, errorvalue } = require('../modules/returnvalue');
 
 // get logs for an active snap in the user's environment
 exports.getActiveSnapLogs = async (userId, activeSnapId) => {
   try {
     const logsCollection = `${dbconstants.activeSnapsCollection}/${activeSnapId}/${dbconstants.logsCollection}`;
     const logs = await database.query(userId, logsCollection);
-    return logs;
+    return successvalue(logs);
   } catch (error) {
-    console.log(`getActiveSnapLogs: caught exception: ${error}`);
-    return null;
+    console.error(`getActiveSnapLogs: caught exception: ${error}`);
+    return errorvalue(error.message, error);
   }
 }
 
@@ -23,10 +24,10 @@ exports.getActiveSnapLogs = async (userId, activeSnapId) => {
 exports.getLogs = async (userId) => {
   try {
     const logs = await database.queryGroup(userId, dbconstants.logsCollection);
-    return logs;
+    return successvalue(logs);
   } catch (error) {
-    console.log(`getLogs: caught exception: ${error}`);
-    return null;
+    console.error(`getLogs: caught exception: ${error}`);
+    return errorvalue(error.message, error);
   }
 }
 

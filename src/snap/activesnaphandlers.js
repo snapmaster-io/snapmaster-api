@@ -6,6 +6,7 @@
 const activesnapdal = require('./activesnapdal');
 const snapengine = require('./snapengine');
 const requesthandler = require('../modules/requesthandler');
+const { errorvalue } = require('../modules/returnvalue');
 
 exports.createHandlers = (app) => {
   // Get active snaps API endpoint
@@ -71,31 +72,20 @@ exports.createHandlers = (app) => {
    *          description: Unauthorized
    */  
   app.get('/activesnaps', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
-    const returnActiveSnaps = async () => {
-      const activesnaps = await activesnapdal.getActiveSnaps(req.userId) || {};
-      res.status(200).send(activesnaps);
-    }
-    returnActiveSnaps();
+    (async () => res.status(200).send(await activesnapdal.getActiveSnaps(req.userId)))();
   });
 
   // Get active snap API endpoint
   app.get('/activesnaps/:activeSnapId', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
     const activeSnapId = req.params.activeSnapId;
-    const returnActiveSnap = async () => {
-      const activeSnap = await activesnapdal.getActiveSnap(req.userId, activeSnapId) || {};
-      res.status(200).send(activeSnap);
-    }
-    returnActiveSnap();
+    (async () => res.status(200).send(await activesnapdal.getActiveSnap(req.userId, activeSnapId)))();
   });  
       
   // Execute active snap API endpoint
   app.post('/activesnaps/:activeSnapId', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
     const activeSnapId = req.params.activeSnapId;
-    const executeSnap = async () => {
-      snapengine.executeSnap(req.userId, activeSnapId, null, null);
-      res.status(200).send();
-    }
-    executeSnap();
+    snapengine.executeSnap(req.userId, activeSnapId, null, null);
+    res.status(200).send();
   });  
       
   // Post active snaps API endpoint
@@ -103,54 +93,29 @@ exports.createHandlers = (app) => {
     const action = req.body.action;
     const snapId = req.body.snapId;
     
-    const activateSnap = async () => {
-      const status = await snapengine.activateSnap(req.userId, snapId, req.body.params);
-      res.status(200).send(status);
-    }
-
-    const deactivateSnap = async () => {
-      const status = await snapengine.deactivateSnap(req.userId, snapId);
-      res.status(200).send(status);
-    }
-
-    const editSnap = async () => {
-      const status = await snapengine.editSnap(req.userId, snapId, req.body.params);
-      res.status(200).send(status);
-    }
-    
-    const pauseSnap = async () => {
-      const status = await snapengine.pauseSnap(req.userId, snapId);
-      res.status(200).send(status);
-    }
-
-    const resumeSnap = async () => {
-      const status = await snapengine.resumeSnap(req.userId, snapId);
-      res.status(200).send(status);
-    }
-
     if (!snapId) {
-      res.status(200).send({ message: 'Unknown snapId'});  
+      res.status(200).send(errorvalue('snapId must be provided'));
       return;
     }
 
     switch (action) {
       case 'activate':
-        activateSnap();
+        (async () => res.status(200).send(await snapengine.activateSnap(req.userId, snapId, req.body.params)))();
         return;
       case 'deactivate':
-        deactivateSnap();
+        (async () => res.status(200).send(await snapengine.deactivateSnap(req.userId, snapId)))();
         return;
       case 'edit':
-        editSnap();
+        (async () => res.status(200).send(await snapengine.editSnap(req.userId, snapId, req.body.params)))();
         return;
       case 'pause':
-        pauseSnap();
+        (async () => res.status(200).send(await snapengine.pauseSnap(req.userId, snapId)))();
         return;
       case 'resume':
-        resumeSnap();
+        (async () => res.status(200).send(await snapengine.resumeSnap(req.userId, snapId)))();
         return;
       default:
-        res.status(200).send({ message: 'Unknown action'});
+        res.status(200).send(errorvalue(`${action}: unknown action`));
         return;
     }
   });
@@ -161,10 +126,7 @@ exports.createHandlers = (app) => {
   app.post('/executesnap/:userId/:activeSnapId', requesthandler.checkJwt, function(req, res){
     const userId = req.params.userId;
     const activeSnapId = req.params.activeSnapId;
-    const executeSnap = async () => {
-      snapengine.executeSnap(userId, activeSnapId, req.body.event, req.body);
-      res.status(200).send();
-    }
-    executeSnap();
+    snapengine.executeSnap(userId, activeSnapId, req.body.event, req.body);
+    res.status(200).send();
   });  
 }

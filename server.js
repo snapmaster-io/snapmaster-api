@@ -87,27 +87,6 @@ apidocs.createHandlers(app);
 // create route handlers for each of the providers
 providers.createHandlers(app);
 
-// create a set of route handlers for the non-provider API calls
-// these should trend towards zero as they get refactored out
-
-// Get metadata API endpoint
-app.get('/metadata', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
-  const returnMetadata = async () => {
-    const metadata = await dal.getMetadata(req.userId) || {};
-    res.status(200).send(metadata);
-  }
-  returnMetadata();
-});
-  
-// Get history API endpoint
-app.get('/history', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
-  const returnHistory = async () => {
-    const history = await dal.getHistory(req.userId) || {};
-    res.status(200).send(history);
-  }
-  returnHistory();
-});
-
 // invoke endpoint: this is only called from the pubsub push subscription
 app.post('/invoke', function(req, res){
   console.log('POST /invoke');
@@ -132,13 +111,9 @@ app.get('/*', function(req, res) {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 
-// handle all unauthorized errors by redirecting to base url
+// handle all unauthorized errors by returning a 401
 app.use(function (err, req, res, next) {
   if (err.name === 'UnauthorizedError') {
-    /*
-    const url = req.protocol + '://' + req.get('host');
-    res.redirect(url);
-    */
     // return a 401 status with no other payload
     res.status(401).send();
   }

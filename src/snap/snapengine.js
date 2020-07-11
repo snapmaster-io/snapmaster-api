@@ -13,6 +13,7 @@ const snapdal = require('./snapdal');
 const providers = require('../providers/providers');
 const connections = require('../modules/connections');
 const credentials = require('../modules/credentials');
+const { successvalue, errorvalue } = require('../modules/returnvalue');
 const {JSONPath} = require('jsonpath-plus');
 const axios = require('axios');
 
@@ -33,7 +34,7 @@ exports.activateSnap = async (userId, snapId, params, activeSnapId = null) => {
       if (!activeSnap) {
         const message = `could not find active snap ID ${activeSnapId}`;
         console.error(`activateSnap: ${message}`);
-        return { message: message };
+        return errorvalue(message);
       }
 
       // use the snap definition that is embedded in the activeSnap
@@ -43,18 +44,19 @@ exports.activateSnap = async (userId, snapId, params, activeSnapId = null) => {
     // if we don't have a snap yet, retrieve it.  older activeSnaps didn't embed the 
     // snap yet, and this code path helps with migration
     if (!snap) {
-      snap = await snapdal.getSnap(snapId);
-      if (!snap) {
+      const result = await snapdal.getSnap(snapId);
+      if (!result || result.error || !result.data) {
         const message = `could not find snap ${snapId}`;
         console.error(`activateSnap: ${message}`);
-        return { message: message };
+        return errorvalue(message);
       }
+      snap = result.data
     }
 
     if (!snap.provider) {
       const message = `could not find provider for ${snapId}`;
       console.error(`activateSnap: ${message}`);
-      return { message: message };
+      return errorvalue(message);
     }
 
     // get the provider for the trigger
@@ -101,19 +103,24 @@ exports.activateSnap = async (userId, snapId, params, activeSnapId = null) => {
     // get the provider's connection information
     const connInfo = await getConnectionInfo(userId, snap.provider);
     if (!connInfo) {
-      console.error('activateSnap: could not obtain connection info');
-      return { message: 'could not obtain connection info to activate snap' };
+      const message = 'could not obtain connection info to activate snap';
+      console.error(`activateSnap: ${message}`);
+      return errorvalue(message);
     }
 
     // create the snap trigger
     const triggerData = await provider.createTrigger(provider.name, connInfo, userId, activeSnapId, triggerParam);
     if (!triggerData) {
-      return { message: 'could not activate snap' };
+      const message = 'could not create trigger when activating snap';
+      console.error(`activateSnap: ${message}`);
+      return errorvalue(message);
     }
 
     // a lack of a url indicates an error, and the return value is the error message
     if (!triggerData.url) {
-      return { message: `trigger data ${triggerData} does not contain a 'url' property` };
+      const message = `error creating trigger: ${triggerData}`;
+      console.error(`activateSnap: ${message}`);
+      return errorvalue(message);
     }
 
     // add the trigger data to the activesnap record
@@ -122,10 +129,10 @@ exports.activateSnap = async (userId, snapId, params, activeSnapId = null) => {
     // store the activated snap information
     await database.storeDocument(userId, dbconstants.activeSnapsCollection, activeSnapId, activeSnap);
 
-    return { message: 'success', activeSnap: activeSnap };
+    return successvalue(activeSnap);
   } catch (error) {
-    console.log(`activateSnap: caught exception: ${error}`);
-    return { message: 'could not activate snap' };
+    console.error(`activateSnap: caught exception: ${error}`);
+    return errorvalue(`error encountered while activating snap: ${error.message}`, error);
   }
 }
 
@@ -135,7 +142,9 @@ exports.deactivateSnap = async (userId, activeSnapId) => {
     // get the active snap object
     const activeSnap = await database.getDocument(userId, dbconstants.activeSnapsCollection, activeSnapId);
     if (!activeSnap) {
-      return { message: `could not find active snap ID ${activeSnapId}`};
+      const message = `could not find active snap ID ${activeSnapId}`;
+      console.error(`deactivateSnap: ${message}`);
+      return errorvalue(message);
     }
 
     // if the snap is active (not paused), delete the trigger
@@ -149,8 +158,9 @@ exports.deactivateSnap = async (userId, activeSnapId) => {
       // get the provider's connection information
       const connInfo = await getConnectionInfo(userId, activeSnap.provider);
       if (!connInfo) {
-        console.error('deactivateSnap: could not obtain connection info');
-        return { message: 'could not obtain connection info to deactivate snap' };
+        const message = 'could not obtain connection info to deactivate snap';
+        console.error(`deactivateSnap: ${message}`);
+        return errorvalue(message);
       }
 
       // create a new object based on the trigger parameter
@@ -178,10 +188,10 @@ exports.deactivateSnap = async (userId, activeSnapId) => {
 
     // delete the active snap from the database
     await database.removeDocument(userId, dbconstants.activeSnapsCollection, activeSnapId);
-    return { message: 'success' };
+    return successvalue(null);
   } catch (error) {
-    console.log(`deactivateSnap: caught exception: ${error}`);
-    return { message: `deactivateSnap error: ${error.message}`};
+    console.error(`deactivateSnap: caught exception: ${error}`);
+    return errorvalue(`error encountered while deactivating snap: ${error.message}`, error);
   }
 }
 
@@ -191,7 +201,9 @@ exports.editSnap = async (userId, activeSnapId, params) => {
     // get the active snap object
     const activeSnap = await database.getDocument(userId, dbconstants.activeSnapsCollection, activeSnapId);
     if (!activeSnap) {
-      return { message: `could not find active snap ID ${activeSnapId}`};
+      const message = `could not find active snap ID ${activeSnapId}`;
+      console.error(`editSnap: ${message}`);
+      return errorvalue(message);
     }
 
     // if the snap is active (not paused), delete the trigger
@@ -205,8 +217,9 @@ exports.editSnap = async (userId, activeSnapId, params) => {
       // get the provider's connection information
       const connInfo = await getConnectionInfo(userId, activeSnap.provider);
       if (!connInfo) {
-        console.error('deactivateSnap: could not obtain connection info');
-        return { message: 'could not obtain connection info to deactivate snap' };
+        const message = 'could not obtain connection info to edit snap';
+        console.error(`editSnap: ${message}`);
+        return errorvalue(message);
       }
 
       // create a new object based on the trigger parameter
@@ -222,15 +235,17 @@ exports.editSnap = async (userId, activeSnapId, params) => {
       // delete the snap trigger
       const response = await provider.deleteTrigger(activeSnap.provider, connInfo, activeSnap.triggerData, triggerParam);
       if (response === null) {
-        return { message: 'could not remove trigger for this snap - try deactivating and reactivating it with new parameters' };
+        const message = 'could not remove trigger for this snap - try deactivating and reactivating it with new parameters';
+        console.error(`editSnap: ${message}`);
+        return errorvalue(message);
       }
     }
 
     // now, activate the snap using the new parameters
     return await exports.activateSnap(userId, activeSnap.snapId, params, activeSnapId);
   } catch (error) {
-    console.log(`editSnap: caught exception: ${error}`);
-    return { message: `editSnap error: ${error.message}`};
+    console.error(`editSnap: caught exception: ${error}`);
+    return errorvalue(`error editing snap: ${error.message}`, error);
   }
 }
 
@@ -268,7 +283,7 @@ exports.executeAction = async (userId, actionId, operation, params) => {
     const output = await executeAction(userId, action, operation, params);
     return output;
   } catch (error) {
-    console.log(`executeAction: caught exception: ${error}`);
+    console.error(`executeAction: caught exception: ${error}`);
     return null;
   }
 }
@@ -351,7 +366,7 @@ exports.executeSnap = async (userId, activeSnapId, params, payload) => {
     await updateLog(logObject);
 
   } catch (error) {
-    console.log(`executeSnap: caught exception: ${error}`);
+    console.error(`executeSnap: caught exception: ${error}`);
 
     // log the error state
     logObject.state = dbconstants.executionStateError;
@@ -371,12 +386,16 @@ exports.pauseSnap = async (userId, activeSnapId) => {
     // get the active snap object
     const activeSnap = await database.getDocument(userId, dbconstants.activeSnapsCollection, activeSnapId);
     if (!activeSnap) {
-      return { message: `could not find active snap ID ${activeSnapId}`};
+      const message = `could not find active snap ID ${activeSnapId}`;
+      console.error(`pauseSnap: ${message}`);
+      return errorvalue(message);
     }
 
     // if the snap is paused (not active), return a message to that effect
     if (activeSnap.state === "paused") {
-      return { message: `active snap ${activeSnapId} is already paused` };
+      const message = `active snap ${activeSnapId} is already paused`;
+      console.error(`resumeSnap: ${message}`);
+      return errorvalue(message);
     }
 
     // find the trigger parameter
@@ -388,9 +407,10 @@ exports.pauseSnap = async (userId, activeSnapId) => {
     // get the provider's connection information
     const connInfo = await getConnectionInfo(userId, activeSnap.provider);
     if (!connInfo) {
-      console.error('pauseSnap: could not obtain connection info');
-      return { message: 'could not obtain connection info to pause snap' };
-    }
+      const message = 'could not obtain connection info to pause snap';
+      console.error(`pauseSnap: ${message}`);
+      return errorvalue(message);
+  }
 
     // create a new object based on the trigger parameter
     const triggerParam = { ...param };
@@ -405,7 +425,9 @@ exports.pauseSnap = async (userId, activeSnapId) => {
     // delete the snap trigger
     const response = await provider.deleteTrigger(activeSnap.provider, connInfo, activeSnap.triggerData, triggerParam);
     if (response == null) {
-      return { message: 'could not remove trigger for this snap - try deactivating it' };
+      const message = 'could not remove trigger for this snap - try deactivating it';
+      console.error(`pauseSnap: ${message}`);
+      return errorvalue(message);
     }
 
     // set the snap state to "paused"
@@ -414,10 +436,10 @@ exports.pauseSnap = async (userId, activeSnapId) => {
     
     // store the new state of the active snap 
     await database.storeDocument(userId, dbconstants.activeSnapsCollection, activeSnapId, activeSnap);
-    return { message: 'success', activeSnap: activeSnap };
+    return successvalue(activeSnap);
   } catch (error) {
-    console.log(`pauseSnap: caught exception: ${error}`);
-    return { message: `pauseSnap error: ${error.message}`};
+    console.error(`pauseSnap: caught exception: ${error}`);
+    return errorvalue(`error encountered while pausing snap: ${error.message}`, error);
   }
 }
 
@@ -427,12 +449,16 @@ exports.resumeSnap = async (userId, activeSnapId) => {
     // get the active snap object
     const activeSnap = await database.getDocument(userId, dbconstants.activeSnapsCollection, activeSnapId);
     if (!activeSnap) {
-      return { message: `could not find active snap ID ${activeSnapId}`};
+      const message = `could not find active snap ID ${activeSnapId}`;
+      console.error(`resumeSnap: ${message}`);
+      return errorvalue(message);
     }
 
     // if the snap is active (not paused), return a message to that effect
     if (activeSnap.state !== "paused") {
-      return { message: `active snap ${activeSnapId} is already active` };
+      const message = `active snap ${activeSnapId} is already active`;
+      console.error(`resumeSnap: ${message}`);
+      return errorvalue(message);
     }
 
     // find the trigger parameter
@@ -444,9 +470,10 @@ exports.resumeSnap = async (userId, activeSnapId) => {
     // get the provider's connection information
     const connInfo = await getConnectionInfo(userId, activeSnap.provider);
     if (!connInfo) {
-      console.error('resumeSnap: could not obtain connection info');
-      return { message: 'could not obtain connection info to resume snap' };
-    }
+      const message = 'could not obtain connection info to resume snap';
+      console.error(`resumeSnap: ${message}`);
+      return errorvalue(message);
+  }
 
     // create a new object based on the trigger parameter
     const triggerParam = { ...param };
@@ -461,7 +488,9 @@ exports.resumeSnap = async (userId, activeSnapId) => {
     // re-create the snap trigger
     const triggerData = await provider.createTrigger(provider.name, connInfo, userId, activeSnapId, triggerParam);
     if (!triggerData) {
-      return { message: 'could not re-create trigger for this snap - try deactivating it' };
+      const message = 'could not re-create trigger for this snap - try deactivating it';
+      console.error(`resumeSnap: ${message}`);
+      return errorvalue(message);
     }
 
     // set the snap state to "active", and refresh timestamp and triggerData
@@ -471,10 +500,10 @@ exports.resumeSnap = async (userId, activeSnapId) => {
 
     // store the new state of the active snap 
     await database.storeDocument(userId, dbconstants.activeSnapsCollection, activeSnapId, activeSnap);
-    return { message: 'success', activeSnap: activeSnap };
+    return successvalue(activeSnap);
   } catch (error) {
-    console.log(`resumeSnap: caught exception: ${error}`);
-    return { message: `resumeSnap error: ${error.message}`};
+    console.error(`resumeSnap: caught exception: ${error}`);
+    return errorvalue(`error encountered while resuming snap: ${error.message}`, error);
   }
 }
 
@@ -755,7 +784,7 @@ const validateConfigSection = (definitions, key, config) => {
     return null;
   } catch (error) {
     console.error(`validateConfigSection: caught exception: ${error}`);
-    return 'unknown error validating config section';
+    return `error validating config section: ${error}`;
   }
 }
 
@@ -774,7 +803,7 @@ const validateSnap = async (snap) => {
     if (invalid) {
       const message = `${provider.name} provider failed to validate config in snap ${snap.snapId}`;
       console.error(`validateSnap: ${message}`);
-      return { message: `${message}: ${invalid}` };
+      return errorvalue(`${message}: ${invalid}`);
     }
 
     // validate parameters against the action definitions
@@ -790,7 +819,7 @@ const validateSnap = async (snap) => {
       if (invalid) {
         const message = `${provider.name} provider failed to validate config in snap ${snap.snapId}`;
         console.error(`validateSnap: ${message}`);
-        return { message: `${message}: ${invalid}` };
+        return errorvalue(`${message}: ${invalid}`);
       }
     }
 
@@ -798,6 +827,6 @@ const validateSnap = async (snap) => {
     return null;
   } catch (error) {
     console.error(`validateSnap: caught exception: ${error}`);
-    return { message: 'unknown error validating snap config' };
+    return errorvalue(`error validating snap config: ${error}`, error);
   }
 }

@@ -18,11 +18,7 @@ exports.createHandlers = (app) => {
    *          description: success
    */  
   app.get('/logs', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
-    const returnLogs = async () => {
-      const logs = await logdal.getLogs(req.userId) || {};
-      res.status(200).send(logs);
-    }
-    returnLogs();
+    (async () => res.status(200).send(await logdal.getLogs(req.userId)))();
   });
 
   // Get active snap logs API endpoint
@@ -45,10 +41,6 @@ exports.createHandlers = (app) => {
    */  
   app.get('/logs/:activeSnapId', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
     const activeSnapId = req.params.activeSnapId;
-    const returnLogs = async () => {
-      const logs = await logdal.getActiveSnapLogs(req.userId, activeSnapId) || {};
-      res.status(200).send(logs);
-    }
-    returnLogs();
+    (async () => res.status(200).send(await logdal.getActiveSnapLogs(req.userId, activeSnapId)))();
   });  
 }

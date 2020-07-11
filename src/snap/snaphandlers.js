@@ -5,6 +5,7 @@
 
 const snapdal = require('./snapdal');
 const requesthandler = require('../modules/requesthandler');
+const { errorvalue } = require('../modules/returnvalue');
 
 exports.createHandlers = (app) => {
   // Get gallery API endpoint
@@ -70,20 +71,12 @@ exports.createHandlers = (app) => {
    *          description: Unauthorized
    */  
   app.get('/gallery', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
-    const returnGallery = async () => {
-      const gallery = await snapdal.getAllSnaps() || {};
-      res.status(200).send(gallery);
-    }
-    returnGallery();
+    (async () => res.status(200).send(await snapdal.getAllSnaps()))();
   });
 
   // Get snaps API endpoint
   app.get('/snaps', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
-    const returnSnaps = async () => {
-      const snaps = await snapdal.getSnaps(req.userId) || {};
-      res.status(200).send(snaps);
-    }
-    returnSnaps();
+    (async () => res.status(200).send(await snapdal.getSnaps(req.userId)))();
   });
     
   // Get snap API endpoint
@@ -91,15 +84,10 @@ exports.createHandlers = (app) => {
     const account = req.params.account;
     const snapName = req.params.snapName;
     if (!account || !snapName) {
-      res.status(200).send({ message: 'error'});
-      return;
+      res.status(200).send(errorvalue('account or snap name not passed in'));
+    } else {
+      (async () => res.status(200).send(await snapdal.getSnap(`${account}/${snapName}`)))();
     }
-
-    const returnSnap = async () => {
-      const snap = await snapdal.getSnap(`${account}/${snapName}`);
-      res.status(200).send(snap);
-    }
-    returnSnap();
   });
     
   // Post snaps API endpoint
@@ -107,55 +95,26 @@ exports.createHandlers = (app) => {
   app.post('/snaps', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
     const action = req.body.action;
     const snapId = req.body.snapId;
-    
-    const create = async () => {
-      const definition = req.body.definition;
-      const snap = await snapdal.createSnap(req.userId, definition, true);
-      if (snap && snap.snapId) {
-        res.status(200).send({ message: 'success', snap: snap });
-      } else {
-        // snap (return value) is an error message
-        res.status(200).send({ message: snap ? `error: ${snap}` : 'error: unknown error' });
-      }
-    }
-
-    const del = async () => {
-      const snap = await snapdal.deleteSnap(req.userId, snapId);
-      res.status(200).send(
-        snap ? 
-        { message: 'success' } :
-        { message: `error: could not delete snap ${snapId}` });
-    }
-
-    const edit = async () => {
-      const snap = await snapdal.editSnap(req.userId, snapId, req.body.private);
-      res.status(200).send(snap ? { message: 'success', snap: snap } : { message: 'error' });
-    }
-
-    const fork = async () => {
-      const snap = await snapdal.forkSnap(req.userId, snapId);
-      res.status(200).send({ message: 'success', snap: snap });
-    }
 
     switch (action) {
       case 'create':
-        create();
+        (async () => res.status(200).send(await snapdal.createSnap(req.userId, req.body.definition, true)))();
         return;
       case 'delete':
-        del();
+        (async () => res.status(200).send(await snapdal.deleteSnap(req.userId, snapId)))();
         return;
       case 'edit':
         if (req.body.definition) {
-          create();
+          (async () => res.status(200).send(await snapdal.createSnap(req.userId, req.body.definition, true)))();
         } else {
-          edit();
+          (async () => res.status(200).send(await snapdal.editSnap(req.userId, snapId, req.body.private)))();
         }
         return;
       case 'fork':
-        fork();
+        (async () => res.status(200).send(await snapdal.forkSnap(req.userId, snapId)))();
         return;
       default:
-        res.status(200).send({ message: 'Unknown action'});
+        res.status(200).send(errorvalue('Unknown action'));
         return;
     }
   });

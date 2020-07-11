@@ -11,6 +11,7 @@
 
 const database = require('../data/database');
 const dbconstants = require('../data/database-constants');
+const { successvalue, errorvalue } = require('../modules/returnvalue');
 const YAML = require('yaml');
 
 /* 
@@ -33,25 +34,25 @@ exports.createSnap = async (userId, definition, private = false) => {
     if (!account) {
       const message = `cannot find account for userId ${userId}`;
       console.error(`createSnap: ${message}`);
-      return message;
+      return errorvalue(message);
     }
 
     // parse the snap definition
-    const snap = parseDefinition(account, definition, private);
-    if (!snap || !snap.snapId) {
-      // if no snapId field, then this is an error message
-      return snap;
+    const response = parseDefinition(account, definition, private);
+    if (response.error) {
+      return response;
     }
 
     // store the snap's userId
+    const snap = response.data;
     snap.userId = userId;
     
     // store the snap object and return it
     const storedSnap = await database.storeDocument(account, dbconstants.snapsCollection, snap.name, snap);
-    return storedSnap;
+    return successvalue(storedSnap);
   } catch (error) {
-    console.log(`createSnap: caught exception: ${error}`);
-    return null;
+    console.error(`createSnap: caught exception: ${error}`);
+    return errorvalue(error.message, error);
   }
 }
   
@@ -61,25 +62,27 @@ exports.deleteSnap = async (userId, snapId) => {
     // get the account name associated with the user
     const account = await getAccount(userId);
     if (!account) {
-      console.error(`deleteSnap: cannot find account for userId ${userId}`);
-      return null;
+      const message = `cannot find account for userId ${userId}`;
+      console.error(`deleteSnap: ${message}`);
+      return errorvalue(message);
     }
 
     const nameArray = snapId.split('/');
     const snapName = nameArray.length > 1 ? nameArray[1] : snapId;
+    const localSnapId = `${account}/${snapName}`;
 
     // get the snap definition 
-    const snap = await database.getDocument(account, dbconstants.snapsCollection, snapName);
-    if (snap) {
-      // if the snap was found, remove it
-      await database.removeDocument(account, dbconstants.snapsCollection, snapName);
-      return snap;
+    const response = await exports.getSnap(localSnapId);
+    if (!response.ok) {
+      return response;
     }
 
-    return null;
+    // if the snap was found, remove it
+    await database.removeDocument(account, dbconstants.snapsCollection, snapName);
+    return successvalue(response.snap);
   } catch (error) {
-    console.log(`deleteSnap: caught exception: ${error}`);
-    return null;
+    console.error(`deleteSnap: caught exception: ${error}`);
+    return errorvalue(error.message, error);
   }
 }
 
@@ -89,8 +92,9 @@ exports.editSnap = async (userId, snapId, privacy) => {
     // get the account name associated with the user
     const account = await getAccount(userId);
     if (!account) {
-      console.error(`editSnap: cannot find account for userId ${userId}`);
-      return null;
+      const message = `cannot find account for userId ${userId}`;
+      console.error(`editSnap: ${message}`);
+      return errorvalue(message);
     }
 
     // re-construct snap name to ensure it's in the user's account
@@ -99,13 +103,13 @@ exports.editSnap = async (userId, snapId, privacy) => {
     const localSnapId = `${account}/${snapName}`;
 
     // get the snap definition 
-    const snap = await exports.getSnap(localSnapId);
-    if (!snap) {
-      console.error(`editSnap: cannot find snap ${localSnapId}`);
-      return null;
+    const response = await exports.getSnap(localSnapId);
+    if (!response.ok) {
+      return response;
     }
 
     // set the privacy flag
+    const snap = response.data;
     snap.private = privacy;
 
     // save the updated snap and return it
@@ -114,8 +118,8 @@ exports.editSnap = async (userId, snapId, privacy) => {
     // return the updated snap
     return exports.getSnap(localSnapId);
   } catch (error) {
-    console.log(`deleteSnap: caught exception: ${error}`);
-    return null;
+    console.error(`editSnap: caught exception: ${error}`);
+    return errorvalue(error.message, error);
   }
 }
 
@@ -125,15 +129,23 @@ exports.forkSnap = async (userId, snapId) => {
     // get the account name associated with the user
     const account = await getAccount(userId);
     if (!account) {
-      console.error(`forkSnap: cannot find account for userId ${userId}`);
-      return null;
+      const message = `cannot find account for userId ${userId}`;
+      console.error(`forkSnap: ${message}`);
+      return errorvalue(message);
     }
 
     // get the snap definition 
-    const snap = await exports.getSnap(snapId);
+    const response = await exports.getSnap(snapId);
+    if (!response.ok) {
+      return response;
+    }
+
+    // set the privacy flag
+    const snap = response.data;
     if (!snap) {
-      console.error(`forkSnap: cannot find snap ${snapId}`);
-      return null;
+      const message = `cannot find snap ${snapId}`;
+      console.error(`forkSnap: ${message}`);
+      return errorvalue(message);
     }
 
     // construct new name
@@ -147,10 +159,10 @@ exports.forkSnap = async (userId, snapId) => {
     await database.storeDocument(account, dbconstants.snapsCollection, snap.name, snap);
 
     // return the new snapId
-    return snap;
+    return successvalue(snap);
   } catch (error) {
-    console.log(`forkSnap: caught exception: ${error}`);
-    return null;
+    console.error(`forkSnap: caught exception: ${error}`);
+    return errorvalue(error.message, error);
   }
 }
 
@@ -158,10 +170,10 @@ exports.forkSnap = async (userId, snapId) => {
 exports.getAllSnaps = async () => {
   try {
     const snaps = await database.queryGroup(null, dbconstants.snapsCollection, dbconstants.snapPrivateField, false);
-    return snaps;
+    return successvalue(snaps);
   } catch (error) {
-    console.log(`getAllSnaps: caught exception: ${error}`);
-    return null;
+    console.error(`getAllSnaps: caught exception: ${error}`);
+    return errorvalue(error.message, error);
   }
 }
 
@@ -171,16 +183,20 @@ exports.getSnap = async (snapId) => {
     // snapId must be given as "user/name"
     const [account, snapName] = snapId.split('/');
     if (!account || !snapName) {
-      console.error(`getSnap: invalid snapId ${snapId}`)
-      return null;
+      const message = `invalid snapId ${snapId}`;
+      console.error(`getSnap: ${message}`)
+      return errorvalue(message);
     }
 
     // get the snap definition 
     const snap = await database.getDocument(account, dbconstants.snapsCollection, snapName);
-    return snap;
+    if (!snap) {
+      return errorvalue(`snap ${snapId} not found`);
+    }
+    return successvalue(snap);
   } catch (error) {
-    console.log(`getSnap: caught exception: ${error}`);
-    return null;
+    console.error(`getSnap: caught exception: ${error}`);
+    return errorvalue(error.message, error);
   }
 }
 
@@ -190,16 +206,20 @@ exports.getSnaps = async (userId) => {
     // get the account name associated with the user
     const account = await getAccount(userId);
     if (!account) {
-      console.error(`getSnaps: cannot find account for userId ${userId}`);
-      return null;
+      const message = `cannot find account for userId ${userId}`;
+      console.error(`getSnap: ${message}`)
+      return errorvalue(message);
     }
 
     // get all the snaps in the user's account
     const snaps = await database.query(account, dbconstants.snapsCollection);
-    return snaps;
+    if (!snaps) {
+      return errorvalue('no snaps found');
+    }
+    return successvalue(snaps);
   } catch (error) {
-    console.log(`getSnaps: caught exception: ${error}`);
-    return null;
+    console.error(`getSnaps: caught exception: ${error}`);
+    return errorvalue(error.message, error);
   }
 }
 
@@ -207,7 +227,7 @@ exports.getSnaps = async (userId) => {
 const getAccount = async (userId) => {
   // retrieve the account associated with the user
   const user = await database.getUserData(userId, dbconstants.profile);
-  const account = user.account;
+  const account = user && user.account;
   return account;
 }
 
@@ -242,37 +262,37 @@ const parseDefinition = (account, definition, privateFlag) => {
       if (!snap[field]) {
         const message = `snap definition did not contain required field "${field}"`;
         console.error(`parseDefinition: ${message}`);
-        return message;
+        return errorvalue(message);
       }
     }
 
     if (!snap.actions || snap.actions.length === 0) {
       const message = `snap definition did not contain any actions`;
       console.error(`parseDefinition: ${message}`);
-      return message;
+      return errorvalue(message);
     }
 
     if (snap.name.indexOf(' ') >= 0) {
       const message = `snap name cannot contain spaces`;
       console.error(`parseDefinition: ${message}`);
-      return message;
+      return errorvalue(message);
     }
 
     if (snap.trigger.indexOf(' ') >= 0) {
       const message = `trigger name cannot contain spaces`;
       console.error(`parseDefinition: ${message}`);
-      return message;
+      return errorvalue(message);
     }
 
     if (snap.actions.find(a => a.indexOf(' ') >= 0)) {
       const message = `action names cannot contain spaces`;
       console.error(`parseDefinition: ${message}`);
-      return message;
+      return errorvalue(message);
     }
 
-    return snap;
+    return successvalue(snap);
   } catch (error) {
-    console.log(`parseDefinition: caught exception: ${error}`);
-    return `unknown error: ${error}`;
+    console.error(`parseDefinition: caught exception: ${error}`);
+    return errorvalue(error.message, error);
   }
 }

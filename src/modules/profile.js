@@ -40,7 +40,7 @@ exports.createHandlers = (app) => {
   app.post('/profile', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
     const store = async () => {
       await exports.storeProfile(req.userId, req.body);      
-      res.status(200).send({ message: 'success' });
+      res.status(200).send({ status: 'success' });
     }
     store();
   });
@@ -69,16 +69,16 @@ exports.createHandlers = (app) => {
     const validate = async () => {
       const account = await database.getUserData(accountName);
       if (account) {
-        res.status(200).send({ message: 'error' });
+        res.status(200).send({ status: 'error' });
       } else {
         // create a new user with the name ${accountName}, noting the userId in the profile
         await database.setUserData(accountName, dbconstants.profile, { userId: req.userId });
-        res.status(200).send({ message: 'success' });
+        res.status(200).send({ status: 'success' });
       }
     }
 
     if (!accountName || !validateAccountName(accountName)) {
-      res.status(200).send({ message: 'error' } );
+      res.status(200).send({ status: 'error' } );
       return;
     }
 

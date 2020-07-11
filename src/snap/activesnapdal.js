@@ -6,15 +6,19 @@
 
 const database = require('../data/database');
 const dbconstants = require('../data/database-constants');
+const { successvalue, errorvalue } = require('../modules/returnvalue');
 
 // get an active snap record from the user's environment
 exports.getActiveSnap = async (userId, activeSnapId) => {
   try {
     const activeSnap = await database.getDocument(userId, dbconstants.activeSnapsCollection, activeSnapId);
-    return activeSnap;
+    if (!activeSnap) {
+      return errorvalue(`active snap ${activeSnapId} not found`);
+    }
+    return successvalue(activeSnap);
   } catch (error) {
-    console.log(`getActiveSnap: caught exception: ${error}`);
-    return null;
+    console.error(`getActiveSnap: caught exception: ${error}`);
+    return errorvalue(error.message, error);
   }
 }
 
@@ -22,9 +26,12 @@ exports.getActiveSnap = async (userId, activeSnapId) => {
 exports.getActiveSnaps = async (userId) => {
   try {
     const activeSnaps = await database.query(userId, dbconstants.activeSnapsCollection);
-    return activeSnaps;
+    if (!activeSnaps) {
+      return errorvalue("could not retrieve active snaps");
+    }
+    return successvalue(activeSnaps);
   } catch (error) {
-    console.log(`getActiveSnaps: caught exception: ${error}`);
-    return null;
+    console.error(`getActiveSnaps: caught exception: ${error}`);
+    return errorvalue(error.message, error);
   }
 }
