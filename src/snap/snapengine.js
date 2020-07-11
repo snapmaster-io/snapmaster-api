@@ -256,7 +256,7 @@ exports.executeAction = async (userId, actionId, operation, params) => {
     if (!userId || !actionId || !operation) {
       const message = 'missing action or operation';
       console.error(`executeAction: ${message}`);
-      return { error: true, message: message };
+      return errorvalue(message);
     }
 
     // get the account name associated with the user
@@ -264,7 +264,7 @@ exports.executeAction = async (userId, actionId, operation, params) => {
     if (!account) {
       const message = `cannot find account for userId ${userId}`;
       console.error(`executeAction: ${message}`);
-      return { error: true, message: message };
+      return errorvalue(message);
     }
 
     // re-construct action name to ensure it's in the user's account
@@ -276,15 +276,21 @@ exports.executeAction = async (userId, actionId, operation, params) => {
     if (!action) {
       const message = `cannot find action ID ${actionId}`;
       console.error(`executeAction: ${message}`);
-      return { error: true, message: message };
+      return errorvalue(message);
     }
 
     // execute the action
     const output = await executeAction(userId, action, operation, params);
-    return output;
+    if (!output) {
+      const message = `action ${actionId} returned no output`;
+      console.error(`executeAction: ${message}`);
+      return errorvalue(message);
+    }
+
+    return successvalue(output);
   } catch (error) {
     console.error(`executeAction: caught exception: ${error}`);
-    return null;
+    return errorvalue(error.message, error);
   }
 }
 

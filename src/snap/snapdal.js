@@ -29,6 +29,13 @@ const YAML = require('yaml');
 
 exports.createSnap = async (userId, definition, private = false) => {
   try {
+    // validate definition
+    if (!definition) {
+      const message = 'snap must have a definition';
+      console.error(`createSnap: ${message}`);
+      return errorvalue(message);
+    }
+
     // get the account name associated with the user
     const account = await getAccount(userId);
     if (!account) {

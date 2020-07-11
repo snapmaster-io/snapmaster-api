@@ -56,11 +56,7 @@ exports.createHandlers = (app) => {
    *          description: Unauthorized
    */  
   app.get('/actions', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
-    const returnActions = async () => {
-      const actions = await actiondal.getActions(req.userId) || {};
-      res.status(200).send(actions);
-    }
-    returnActions();
+    (async () => res.status(200).send(await actiondal.getActions(req.userId)))();
   });
     
   // Get action API endpoint
@@ -68,15 +64,10 @@ exports.createHandlers = (app) => {
     const account = req.params.account;
     const actionName = req.params.actionName;
     if (!account || !actionName) {
-      res.status(200).send({ message: 'error'});
-      return;
+      res.status(200).send(errorvalue('account or action name not passed in'));
+    } else {
+      (async () => res.status(200).send(await actiondal.getAction(`${account}/${actionName}`)))();
     }
-
-    const returnAction = async () => {
-      const action = await actiondal.getAction(`${account}/${actionName}`);
-      res.status(200).send(action);
-    }
-    returnAction();
   });
     
   // Post actions API endpoint
@@ -84,79 +75,19 @@ exports.createHandlers = (app) => {
   app.post('/actions', requesthandler.checkJwt, requesthandler.processUser, function(req, res){
     const action = req.body.action;
     const actionId = req.body.actionId;
-    
-    const create = async () => {
-      const definition = req.body.definition;
-      const url = req.body.url;
-      if (!url) {
-        const message = 'action must have a URL';
-        console.error(`actions: ${message}`);
-        res.status(200).send({ message: message });
-        return;
-      }
-      const action = await actiondal.createAction(req.userId, url, definition);
-      if (action && action.actionId) {
-        res.status(200).send({ message: 'success', action: action });
-      } else {
-        // action (return value) is an error message
-        res.status(200).send({ message: action ? `error: ${action}` : 'error: unknown error' });
-      }
-    }
-
-    const del = async () => {
-      const action = await actiondal.deleteAction(req.userId, actionId);
-      res.status(200).send(
-        action ? 
-        { message: 'success' } :
-        { message: `error: could not delete action ${actionId}` });
-    }
-
-    const edit = async () => {
-      const action = await actiondal.editAction(req.userId, actionId, req.body.private);
-      res.status(200).send(action ? { message: 'success', action: action } : { message: 'error' });
-    }
-
-    const execute = async () => {
-      const result = await snapengine.executeAction(req.userId, actionId, req.body.operation, req.body.params);
-      // check for error
-      if (result) { 
-        if ((result.error || result.status === 'error') && result.message) {
-          res.status(200).send(result);
-        } else {
-          res.status(200).send({ message: 'success', result: result });
-        }
-      } else {
-        res.status(200).send({ message: 'unknown error' });
-      }
-    }
-
-    const fork = async () => {
-      const action = await actiondal.forkAction(req.userId, actionId);
-      res.status(200).send({ message: 'success', action: action });
-    }
 
     switch (action) {
       case 'create':
-        create();
+        (async () => res.status(200).send(await actiondal.createAction(req.userId, req.body.url, req.body.definition)))();
         return;
       case 'delete':
-        del();
-        return;
-      case 'edit':
-        if (req.body.definition) {
-          create();
-        } else {
-          edit();
-        }
+        (async () => res.status(200).send(await actiondal.deleteAction(req.userId, actionId)))();
         return;
       case 'execute':
-        execute();
-        return;
-      case 'fork':
-        fork();
+        (async () => res.status(200).send(await snapengine.executeAction(req.userId, actionId, req.body.operation, req.body.params)))();
         return;
       default:
-        res.status(200).send({ message: 'Unknown action' });
+        res.status(200).send(errorvalue('Unknown action'));
         return;
     }
   });

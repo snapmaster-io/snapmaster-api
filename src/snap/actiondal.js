@@ -8,9 +8,10 @@
 //   getAction(actionId): get a action definition from the user's environment
 //   getActions(userId): get all actions in the user's environment
 
-const YAML = require('yaml');
 const database = require('../data/database');
 const dbconstants = require('../data/database-constants');
+const { successvalue, errorvalue } = require('../modules/returnvalue');
+const YAML = require('yaml');
 
 /* 
  * An action definition is specified as follows:
@@ -18,7 +19,7 @@ const dbconstants = require('../data/database-constants');
  *   actionId: string,    // [account/name]
  *   description: string, 
  *   provider: string,    // provider name if any
- *   actions: [string],   // array of tool names
+ *   actions: [],         // array of actin definitions
  *   url: string,         // base URL for the action
  *   text: string         // inline definition of action
  * }
@@ -27,22 +28,43 @@ const dbconstants = require('../data/database-constants');
 // create an action in the user's environment using the definition
 exports.createAction = async (userId, url, definition) => {
   try {
+    // validate url and definition
+    if (!url) {
+      const message = 'action must have a url';
+      console.error(`createAction: ${message}`);
+      return errorvalue(message);
+    }    
+    if (!definition) {
+      const message = 'action must have a definition';
+      console.error(`createAction: ${message}`);
+      return errorvalue(message);
+    }
+
+    // remove any trailing '/' or '/__metadata' from url
+    if (url.endsWith('/')) {
+      url = url.substring(0, url.length - 1);
+    }
+    const mdsuffix = '/__metadata';
+    if (url.endsWith(mdsuffix)) {
+      url = url.substring(0, url.length - mdsuffix.length);
+    }
+    
     // get the account name associated with the user
     const account = await getAccount(userId);
     if (!account) {
       const message = `cannot find account for userId ${userId}`;
       console.error(`createAction: ${message}`);
-      return message;
+      return errorvalue(message);
     }
 
     // parse the action definition
-    const action = parseDefinition(account, definition);
-    if (!action || !action.actionId) {
-      // if no actionId field, then this is an error message
-      return action;
+    const response = parseDefinition(account, definition);
+    if (response.error) {
+      return response;
     }
 
     // store the action's userId
+    const action = response.data;
     action.userId = userId;
 
     // store the action
@@ -50,10 +72,10 @@ exports.createAction = async (userId, url, definition) => {
     
     // store the action object and return it
     const storedAction = await database.storeDocument(account, dbconstants.actionsCollection, action.name, action);
-    return storedAction;
+    return successvalue(storedAction);
   } catch (error) {
-    console.log(`createAcion: caught exception: ${error}`);
-    return null;
+    console.log(`createAction: caught exception: ${error}`);
+    return errorvalue(error.message, error);
   }
 }
 
@@ -63,96 +85,29 @@ exports.deleteAction = async (userId, actionId) => {
     // get the account name associated with the user
     const account = await getAccount(userId);
     if (!account) {
-      console.error(`deleteAction: cannot find account for userId ${userId}`);
-      return null;
+      const message = `cannot find account for userId ${userId}`;
+      console.error(`deleteAction: ${message}`);
+      return errorvalue(message);
     }
 
-    const nameArray = actionId.split('/');
-    const actionName = nameArray.length > 1 ? nameArray[1] : actionId;
-
-    // get the action definition 
-    const action = await database.getDocument(account, dbconstants.actionsCollection, actionName);
-    if (action) {
-      // if the action was found, remove it
-      await database.removeDocument(account, dbconstants.actionsCollection, actionName);
-      return action;
-    }
-
-    return null;
-  } catch (error) {
-    console.log(`deleteAction: caught exception: ${error}`);
-    return null;
-  }
-}
-
-// edit an action in the user's environment
-exports.editAction = async (userId, actionId, privacy) => {
-  try {
-    // get the account name associated with the user
-    const account = await getAccount(userId);
-    if (!account) {
-      console.error(`editAction: cannot find account for userId ${userId}`);
-      return null;
-    }
-
-    // re-construct action name to ensure it's in the user's account
     const nameArray = actionId.split('/');
     const actionName = nameArray.length > 1 ? nameArray[1] : actionId;
     const localActionId = `${account}/${actionName}`;
 
     // get the action definition 
-    const action = await exports.getAction(localActionId);
+    const action = await database.getDocument(account, dbconstants.actionsCollection, actionName);
     if (!action) {
-      console.error(`editAction: cannot find action ${localActionId}`);
-      return null;
+      const message = `cannot find action ${localActionId}`;
+      console.error(`deleteAction: ${message}`);
+      return errorvalue(message);
     }
 
-    // set the privacy flag
-    action.private = privacy;
-
-    // save the updated action and return it
-    await database.storeDocument(account, dbconstants.actionsCollection, actionName, action);
-
-    // return the updated action
-    return exports.getAction(localActionId);
+    // if the action was found, remove it
+    await database.removeDocument(account, dbconstants.actionsCollection, actionName);
+    return successvalue(action);
   } catch (error) {
     console.log(`deleteAction: caught exception: ${error}`);
-    return null;
-  }
-}
-
-// fork an action into the user's environment
-exports.forkAction = async (userId, actionId) => {
-  try {
-    // get the account name associated with the user
-    const account = await getAccount(userId);
-    if (!account) {
-      console.error(`forkAction: cannot find account for userId ${userId}`);
-      return null;
-    }
-
-    // get the action definition 
-    const action = await exports.getAction(actionId);
-    if (!action) {
-      console.error(`forkAction: cannot find action ${actionId}`);
-      return null;
-    }
-
-    // construct new name
-    const forkedActionId = `${account}/${action.name}`;
-    action.actionId = forkedActionId;
-    action.private = true;
-    action.account = account;
-    action.userId = userId;
-
-    // store the new action
-    await database.storeDocument(account, dbconstants.actionsCollection, action.name, action);
-
-    // return the new actionId
-    return action;
-  } catch (error) {
-    console.log(`forkAction: caught exception: ${error}`);
-    return null;
+    return errorvalue(error.message, error);
   }
 }
 
@@ -162,16 +117,20 @@ exports.getAction = async (actionId) => {
     // actionId must be given as "user/name"
     const [account, actionName] = actionId.split('/');
     if (!account || !actionName) {
-      console.error(`getAction: invalid actionId ${actionId}`)
-      return null;
+      const message = `invalid actionId ${actionId}`;
+      console.error(`getAction: ${message}`)
+      return errorvalue(message);
     }
 
     // get the action definition 
     const action = await database.getDocument(account, dbconstants.actionsCollection, actionName);
-    return action;
+    if (!action) {
+      return errorvalue(`action ${actionId} not found`);
+    }
+    return successvalue(action);
   } catch (error) {
-    console.log(`getAction: caught exception: ${error}`);
-    return null;
+    console.error(`getAction: caught exception: ${error}`);
+    return errorvalue(error.message, error);
   }
 }
 
@@ -181,13 +140,17 @@ exports.getActions = async (userId) => {
     // get the account name associated with the user
     const account = await getAccount(userId);
     if (!account) {
-      console.error(`getActions: cannot find account for userId ${userId}`);
-      return null;
+      const message = `cannot find account for userId ${userId}`;
+      console.error(`getActions: ${message}`)
+      return errorvalue(message);
     }
 
     // get all the actions in the user's account
     const actions = await database.query(account, dbconstants.actionsCollection);
-    return actions;
+    if (!actions) {
+      return errorvalue(`no actions found`);
+    }
+    return successvalue(actions);
   } catch (error) {
     console.log(`getActions: caught exception: ${error}`);
     return null;
@@ -225,25 +188,25 @@ const parseDefinition = (account, definition) => {
       if (!action[field]) {
         const message = `action definition did not contain required field "${field}"`;
         console.error(`parseDefinition: ${message}`);
-        return message;
+        return errorvalue(message);
       }
     }
 
     if (!action.actions || action.actions.length === 0) {
       const message = `action definition did not contain any actions`;
       console.error(`parseDefinition: ${message}`);
-      return message;
+      return errorvalue(message);
     }
 
     if (action.name.indexOf(' ') >= 0) {
       const message = `action name cannot contain spaces`;
       console.error(`parseDefinition: ${message}`);
-      return message;
+      return errorvalue(message);
     }
 
-    return action;
+    return successvalue(action);
   } catch (error) {
-    console.log(`parseDefinition: caught exception: ${error}`);
-    return `unknown error: ${error}`;
+    console.error(`parseDefinition: caught exception: ${error}`);
+    return errorvalue(error.message, error);
   }
 }
