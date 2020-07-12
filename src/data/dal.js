@@ -132,7 +132,7 @@ exports.invokeProvider = async (userId, provider, entity, params) => {
     }
 
     // check for an error and return it
-    if (data.message) {
+    if (data.error || data.message) {
       return data;
     }
 
@@ -224,7 +224,9 @@ const callProvider = async (provider, params) => {
 
 const filterKeysFromData = (provider, data) => {
   try {
-    const keyFields = provider.keyFields;
+    const keyFields = provider.keyFields || [];
+    keyFields.push('__key');
+    
     if (keyFields && keyFields.length) {
       // make an new copy of the data
       const cleanData = [...data];

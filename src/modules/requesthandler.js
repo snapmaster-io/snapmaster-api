@@ -15,6 +15,7 @@ const dal = require('../data/dal');
 const environment = require('../modules/environment');
 const domain = environment.getOAuth2Domain();
 const audience = environment.getOAuth2Audience();
+const { successvalue, errorvalue } = require('./returnvalue');
 
 // Create middleware for checking the JWT
 exports.checkJwt = jwt({
@@ -31,7 +32,7 @@ exports.checkJwt = jwt({
   issuer: `https://${domain}/`,
   algorithms: [ 'RS256' ]
 });
-  
+
 // create middleware that will log all requests, including userId, email, and impersonated UserId
 // it will also set the userId property on the request object for future pipeline stages
 exports.processUser = (req, res, next) => {
@@ -42,7 +43,7 @@ exports.processUser = (req, res, next) => {
   console.log(`${req.method} ${req.url}: userId: ${userId} email: ${email}${processingAs}`);
   req.userId = impersonatedUserId || userId;
   next();
-};
+}
 
 
 // async function to retrieve provider data (either from storage cache
@@ -66,21 +67,19 @@ exports.getData = async (
     // retrieve the data from the data access layer
     const data = await dal.getData(userId, provider, entity, params, forceRefresh, false);
     if (!data) {
-      console.log('getData: no data returned');
-      res.status(200).send({ message: 'no data returned'});
+      console.error('getData: no data returned');
+      res.status(200).send(errorvalue('no data returned'));
       return;
     }
 
     // SUCCESS! send the data back to the client
-    res.status(200).send(data);
-    return;
+    res.status(200).send(successvalue(data));
   } catch (error) {
     await error.response;
-    console.log(`getData: caught exception: ${error}`);
-    res.status(200).send({ message: error });
-    return;
+    console.error(`getData: caught exception: ${error}`);
+    res.status(200).send(errorvalue(error.message, error));
   }
-};
+}
 
 // async function to invoke the provider and return the result 
 //   
@@ -104,24 +103,26 @@ exports.invokeProvider = async (
     if (!data) {
       console.log('invokeProvider: no data returned');
       if (returnResult) {
-        res.status(200).send({ message: 'no data returned'});
+        res.status(200).send(errorvalue('no data returned'));
       }
       return;
     }
 
     // SUCCESS! send the data back to the client
     if (returnResult) {
-      res.status(200).send(data);
+      if (data.error || data.message) {
+        res.status(200).send(data);
+      } else {
+        res.status(200).send(successvalue(data));
+      }
     }
-    return;
   } catch (error) {
-    await error.response;
-    console.log(`invokeProvider: caught exception: ${error}`);
+    console.error(`invokeProvider: caught exception: ${error}`);
     if (returnResult) {
-      res.status(200).send({ message: error });
+      res.status(200).send(errorvalue(error.message, error));
     }
   }
-};
+}
 
 // async function to query the provider and return the result 
 //   
@@ -139,26 +140,24 @@ exports.queryProvider = async (
     // invoke the provider and retrieve the data from the data access layer
     const data = await dal.queryProvider(provider, params);
     if (!data) {
-      console.log('queryProvider: no data returned');
+      console.error('queryProvider: no data returned');
       if (returnResult) {
-        res.status(200).send({ message: 'no data returned'});
+        res.status(200).send(errorvalue('no data returned'));
       }
       return;
     }
 
     // SUCCESS! send the data back to the client
     if (returnResult) {
-      res.status(200).send(data);
+      res.status(200).send(successvalue(data));
     }
-    return;
   } catch (error) {
-    await error.response;
-    console.log(`queryProvider: caught exception: ${error}`);
+    console.error(`queryProvider: caught exception: ${error}`);
     if (returnResult) {
-      res.status(200).send({ message: error });
+      res.status(200).send(errorvalue(error.message, error));
     }
   }
-};
+}
 
 // store metadata associated with a set of data objects
 //   data is in the following format:
@@ -182,12 +181,9 @@ exports.storeMetadata = async (
     const newData = await dal.getData(userId, provider, entity, [userId], false, false);
 
     // SUCCESS! send a success code back to client, with the new data
-    res.status(200).send(newData);
-    return;
+    res.status(200).send(successvalue(newData));
   } catch (error) {
-    await error.response;
-    console.log(`storeMetadata: caught exception: ${error}`);
-    res.status(200).send({ message: error });
-    return;
+    console.error(`storeMetadata: caught exception: ${error}`);
+    res.status(200).send(errorvalue(error.message, error));
   }
-};
+}

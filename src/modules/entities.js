@@ -15,6 +15,7 @@ const providers = require('../providers/providers');
 const requesthandler = require('./requesthandler');
 const credentials = require('./credentials');
 const connections = require('./connections');
+const { successvalue, errorvalue } = require('./returnvalue');
 
 exports.createHandlers = (app) => {
   // entities API endpoint
@@ -29,16 +30,18 @@ exports.entityHandler = (req, res) => {
     // get the provider for the entity
     let [providerName, entityName] = entity.split(':');
     if (!providerName) {
-      console.error(`getEntities: could not retrieve provider from entity ${entity}`);
-      res.status(200).send([]);
+      const message = `could not retrieve provider from entity ${entity}`;
+      console.error(`getEntities: ${message}`);
+      res.status(200).send(errorvalue(message));
       return;
     }
 
     // get the provider 
     const provider = providers.getProvider(providerName);
     if (!provider) {
-      console.error(`getEntities: could not retrieve provider ${providerName}`);
-      res.status(200).send([]);
+      const message = `could not retrieve provider ${providerName}`;
+      console.error(`getEntities: ${message}`);
+      res.status(200).send(errorvalue(message));
       return;
     }
 
@@ -46,8 +49,9 @@ exports.entityHandler = (req, res) => {
     if (!entityName) {
       const name = provider.definition.connection && provider.definition.connection.entity;
       if (!name) {
-        console.error(`getEntities: could not retrieve default entity for provider ${providerName}`);
-        res.status(200).send([]);  
+        const message = `could not retrieve default entity for provider ${providerName}`;
+        console.error(`getEntities: ${message}`);
+        res.status(200).send(errorvalue(message));
         return;
       }
 
@@ -58,14 +62,16 @@ exports.entityHandler = (req, res) => {
     // validate entity
     const providerEntities = provider.entities;
     if (!providerEntities) {
-      console.error(`getEntities: ${provider.name} provider does not support any entities`);
-      res.status(200).send([]);
+      const message = `${provider.name} provider does not support any entities`;
+      console.error(`getEntities: ${message}`);
+      res.status(200).send(errorvalue(message));
       return;
     }
     const providerEntity = providerEntities[entity];
     if (!providerEntity) {
-      console.error(`getEntities: ${provider.name} provider does not support entity ${entity}`);
-      res.status(200).send([]);
+      const message = `${provider.name} provider does not support entity ${entity}`;
+      console.error(`getEntities: ${message}`);
+      res.status(200).send(errorvalue(message));
       return;
     }
     
@@ -81,10 +87,11 @@ exports.entityHandler = (req, res) => {
     } 
 
     // return an empty result
-    res.status(200).send([]);
+    res.status(200).send(errorvalue('method not supported'));
   } catch (error) {
-    console.log(`handler: caught exception: ${error}`);
-    res.status(200).send([]);
+    console.error(`handler: caught exception: ${error}`);
+    res.status(200).send(errorvalue(error.message, error));
+    //res.status(200).send([]);
   }
 }
 
@@ -158,7 +165,7 @@ const postHandler = (req, res, provider, entity) => {
     return;
   }
 
-  res.status(200).send({ message: 'Unknown action'}); 
+  res.status(200).send(errormessage('Unknown action')); 
 }
 
 // generic add handler
@@ -173,11 +180,11 @@ const addHandler = async ([userId, entity, connectionInfo]) => {
 
     const response = await func([connectionInfo, defaultConnInfo]);
     if (!response) {
-      return { message: 'could not add the new entity' };
+      return errorvalue(`could not add the ${entityName} credential`);
     }
 
     // if this is an error, return it now
-    if (response.message) {
+    if (response.error || response.message) {
       return response;
     }
 
@@ -224,7 +231,7 @@ const editHandler = async ([userId, entityName, payload]) => {
     // invokeProvider will re-read the entity collection and return it
     return [];
   } catch (error) {
-    console.log(`editHandler: caught exception: ${error}`);
+    console.error(`editHandler: caught exception: ${error}`);
     return null;
   }
 }
@@ -234,7 +241,11 @@ const removeHandler = async ([userId, entityName, id]) => {
   try {
     // get the key if it exists
     const connectionInfo = await database.getDocument(userId, entityName, id);
-    if (connectionInfo && connectionInfo[dbconstants.keyField]) {
+    if (!connectionInfo) {
+      return errorvalue(`${id} not found`);
+    }
+
+    if (connectionInfo[dbconstants.keyField]) {
       // remove the secret associated with the key
       credentials.remove(userId, connectionInfo[dbconstants.keyField]);
     }
@@ -245,7 +256,7 @@ const removeHandler = async ([userId, entityName, id]) => {
     // invokeProvider will re-read the entity collection and return it
     return [];
   } catch (error) {
-    console.log(`removeHandler: caught exception: ${error}`);
+    console.error(`removeHandler: caught exception: ${error}`);
     return null;
   }
 }
