@@ -4,13 +4,17 @@
 //   post(): post an event to a pubsub topic
 
 const pubsub = require('../services/pubsub');
-
-// topic name
-const topicName = 'snapmaster-events';
+const environment = require('./environment');
 
 exports.post = async (message) => {
   try {
-    const response = pubsub.publish(topicName, message);
+    const topicName = environment.getEventTopic();
+    if (!topicName) {
+      console.error(`post: cannot obtain topic name`);
+      return null;
+    }
+
+    const response = await pubsub.publish(topicName, message);
     return response;
   } catch (error) {
     console.error(`post: caught exception: ${error}`);

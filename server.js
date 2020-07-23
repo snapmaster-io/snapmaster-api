@@ -125,8 +125,8 @@ app.listen(port, () => {
   const message = `SnapMaster service started on port ${port}`;
   console.log(message);
 
-  // if running in production, send an event on the pubsub topic
+  // if running in a hosted environment, send an event on the pubsub topic
   if (!environment.getDevMode()) {
-    async () => { await events.post(message) };
+    events.post(message);
   }
 });

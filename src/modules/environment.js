@@ -6,6 +6,7 @@
 //   getCloudPlatformConfigFile(): gets the GCP config for the current env (dev | prod)
 //   getProjectId(): gets the GCP project ID for the current env (dev | prod)
 //   getEndpoint(): gets the Google Cloud Run endpoint for the current env (dev | prod)
+//   getEventTopic(): gets the event topic for the current env (dev | prod)
 //   getOAuth2Audience(): gets the OAuth2 audience value for API
 //   getOAuth2Domain(): gets the OAuth2 server's domain
 //   getServiceAccount(): gets the GCP pub-sub service account for the current env (dev | prod)
@@ -53,6 +54,11 @@ exports.getEndpoint = () => {
   const endpoint = environment === 'dev' ? 'https://snapmaster-dev-7hjh6mhjjq-uc.a.run.app' 
                                          : 'https://snapmaster-iwswjzd7qa-uc.a.run.app';
   return endpoint;
+}
+
+exports.getEventTopic = () => {
+  const topic = environment === 'prod' ? 'snapmaster-events' : `snapmaster-events-${environment}`;
+  return topic;
 }
 
 exports.getOAuth2Audience = () => {
