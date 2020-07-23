@@ -10,6 +10,8 @@ const dbconstants = require('../data/database-constants');
 const auth0 = require('../services/auth0');
 const requesthandler = require('./requesthandler');
 const events = require('./events');
+const environment = require('../modules/environment');
+const audience = environment.getOAuth2Audience();
 
 exports.notifyEmail = 'notifyEmail';
 exports.notifySms = 'notifySms';
@@ -34,6 +36,13 @@ exports.createHandlers = (app) => {
       }
       res.status(200).send(fullProfile);
     }
+
+    // if this request is part of the login process, post an event
+    if (!environment.getDevMode() && req.query.login) {
+      const email = req.user[`${audience}/email`];
+      events.post(`user ${email} logged in`);
+    }
+
     returnProfile();
   });
 

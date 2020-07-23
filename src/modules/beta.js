@@ -6,6 +6,7 @@
 const database = require('../data/database');
 const dbconstants = require('../data/database-constants');
 const sms = require('../services/sms');
+const events = require('./events');
 
 exports.createHandlers = (app) => {
   // request access endpoint: this is an unauthenticated request that stores 
@@ -63,7 +64,12 @@ exports.createHandlers = (app) => {
 const requestAccess = async (email, document) => {
   try {
     await database.storeDocument(dbconstants.signups, dbconstants.emailsCollection, email, document);
+
+    // send a text to the admin to signal a new access request
     await sms.textNotification(sms.toAdmin, `New access request: ${email}`);
+
+    // post an event to signal a new access request
+    await events.post(`New access request: ${email}`);
   } catch (error) {
     console.log(`requestAccess: caught exception: ${error}`);    
   }
