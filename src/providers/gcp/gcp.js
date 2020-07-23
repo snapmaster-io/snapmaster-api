@@ -23,7 +23,9 @@ const entityName = 'gcp:projects';
 exports.name = providerName;
 exports.definition = provider.getDefinition(providerName);
 
-// invokeAction is implemented by a separate service
+// createTrigger, deleteTrigger, and invokeAction are implemented by an external provider
+exports.createTrigger = provider.createTrigger;
+exports.deleteTrigger = provider.deleteTrigger;
 exports.invokeAction = provider.invokeAction;  
 
 // entities defined by this provider

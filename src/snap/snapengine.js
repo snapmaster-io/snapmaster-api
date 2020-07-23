@@ -175,7 +175,7 @@ exports.deactivateSnap = async (userId, activeSnapId) => {
       
       // delete the snap trigger
       const response = await provider.deleteTrigger(activeSnap.provider, connInfo, activeSnap.triggerData, triggerParam);
-      if (response == null) {
+      if (response === null) {
         // TODO: fix this code path. currently we need a way to delete all snap artifacts when it gets deactivated, but 
         // also return the message below 
         // return { message: 'could not remove trigger for this snap - use the trigger info action to remove it manually from the provider' };
@@ -671,7 +671,7 @@ const getConnectionInfo = async (userId, providerName) => {
     const connectionInfo = await connections.getConnectionInfo(userId, providerName);
 
     // back-compat: older formats stored connection info as an array of objects
-    if (connectionInfo.length) {
+    if (connectionInfo && connectionInfo.length) {
       // normalize connection info into a single object
       const connectionInfoObject = {};
       for (const param of connectionInfo) {

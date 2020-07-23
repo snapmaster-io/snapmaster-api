@@ -18,6 +18,16 @@ parameters:
   - name: region
     description: region to operate in
 triggers: 
+  - name: pubsub
+    description: subscribe to a pubsub topic 
+    parameters:
+    - name: project
+      description: project ID
+      entity: gcp:projects
+      required: true
+    - name: topic
+      description: topic name
+      required: true
 actions:
   - name: build
     description: clone a repo and build a container image 

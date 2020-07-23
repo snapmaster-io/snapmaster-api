@@ -42,9 +42,16 @@ exports.createTrigger = async (providerName, connectionInfo, userId, activeSnapI
         headers: headers
       });
 
-    // construct output message
-    const triggerData = response.data;
-    return triggerData;
+    // construct return value
+    // TODO: formalize snapmaster/provider protocol to return the standard
+    // { status, message, data } responses, including internal providers.
+    const responseData = response.data;
+    if (!responseData || responseData.error) {
+      return responseData.message;
+    } else {
+      return responseData.data;
+    }
+    // return responseData;
   } catch (error) {
     console.error(`createTrigger: caught exception: ${error}`);
     return null;
@@ -82,9 +89,16 @@ exports.deleteTrigger = async (providerName, connectionInfo, triggerData, param)
         headers: headers
       });
 
-    // construct output message
-    const output = response.data;
-    return output;
+    // construct return value
+    // TODO: formalize snapmaster/provider protocol to return the standard
+    // { status, message, data } responses, including internal providers.
+    const responseData = response.data;
+    if (!responseData || responseData.error) {
+      return responseData.message;
+    } else {
+      return responseData.data;
+    }
+    // return responseData;
   } catch (error) {
     console.error(`deleteTrigger: caught exception: ${error}`);
     return null;
