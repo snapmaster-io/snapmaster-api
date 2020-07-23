@@ -26,13 +26,13 @@ const requesthandler = require('./src/modules/requesthandler');
 // import providers, database, storage, data access, datapipeline, profile, connections, entities, apidocs
 const providers = require('./src/providers/providers');
 const database = require('./src/data/database');
-const dal = require('./src/data/dal');
 const datapipeline = require('./src/modules/datapipeline');
 const profile = require('./src/modules/profile');
 const connections = require('./src/modules/connections');
 const entities = require('./src/modules/entities');
 const oauth = require('./src/modules/oauth');
 const apidocs = require('./src/modules/apidocs');
+const events = require('./src/modules/events');
 
 // import API handlers
 const snaphandlers = require('./src/snap/snaphandlers');
@@ -44,7 +44,7 @@ const loghandlers = require('./src/snap/loghandlers');
 const beta = require('./src/modules/beta');
 
 // import google auth for checking JWT
-const google = require('./src/services/googleauth');
+const googleauth = require('./src/services/googleauth');
 
 // get persistence provider based on environment variable
 const persistenceProvider = process.env.PROVIDER || 'firestore';
@@ -97,7 +97,7 @@ app.post('/invoke', function(req, res){
   const [, token] = auth.match(/Bearer (.*)/);
 
   // validate the authorization bearer JWT
-  if (google.validateJwt(token)) {
+  if (googleauth.validateJwt(token)) {
     // invoke the data pipeline message handler
     // this will dispatch to the appropriate event handler based on the 'action' in the body
     datapipeline.messageHandler(message);
@@ -122,5 +122,11 @@ app.use(function (err, req, res, next) {
 // Launch the API Server at PORT, or default port 8080
 const port = process.env.PORT || 8080;
 app.listen(port, () => {
-  console.log('SnapMaster listening on port', port);
+  const message = `SnapMaster service started on port ${port}`;
+  console.log(message);
+
+  // if running in production, send an event on the pubsub topic
+  if (!environment.getDevMode()) {
+    async () => { await events.post(message) };
+  }
 });

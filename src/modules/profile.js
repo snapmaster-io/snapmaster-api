@@ -9,6 +9,7 @@ const database = require('../data/database');
 const dbconstants = require('../data/database-constants');
 const auth0 = require('../services/auth0');
 const requesthandler = require('./requesthandler');
+const events = require('./events');
 
 exports.notifyEmail = 'notifyEmail';
 exports.notifySms = 'notifySms';
@@ -73,6 +74,11 @@ exports.createHandlers = (app) => {
       } else {
         // create a new user with the name ${accountName}, noting the userId in the profile
         await database.setUserData(accountName, dbconstants.profile, { userId: req.userId });
+
+        // publish an event indicating a new user just signed up and created an account
+        events.post(`new user ${req.userId} created account named ${accountName}`);
+
+        // return success status
         res.status(200).send({ status: 'success' });
       }
     }

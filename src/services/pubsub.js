@@ -1,7 +1,10 @@
 // pubsub system based on google cloud pubsub
 // exports:
 //   createTopic: creates a topic, or if it exists, gets a reference to it
-//   createSubscription: creates a sub on a topic, using the event handlers passed in
+//   createPullSubscription: creates a pull sub on a topic, using the event handlers passed in
+//   createPushSubscription: creates a push sub on a topic
+//   deleteSubscription: deletes a subscription
+//   publish: publishes a message to a topic
 
 const { PubSub } = require('@google-cloud/pubsub');
 const environment = require('../modules/environment');
@@ -68,6 +71,34 @@ exports.createPullSubscription = async (topic, subName, handler) => {
     console.log(`listening on subscription ${subName}`);
   } catch (error) {
     console.log(`createPullSubscription: caught exception ${error}`);
+  }
+}
+
+exports.deleteSubscription = async (subName) => {
+  try {
+    // delete the subscription
+    const response = await pubsub.subscription(subName).delete();
+    return response && response.length && response[0];
+  } catch (error) {
+    console.error(`deleteSubscription: caught exception: ${error}`);
+    return null;
+  }
+}
+
+exports.publish = async (topicName, message) => {
+  try {
+    // obtain the topic reference or, if it doesn't exist, create it
+    const topic = pubsub.topic(topicName) && exports.createTopic(topicName);
+    if (!topic) {
+      console.error(`publish: could not create topic name ${topicName}`);
+      return null;
+    }
+
+    const messageBuffer = Buffer.from(message);  
+    const messageId = await topic.publish(messageBuffer);
+    return messageId;
+  } catch (error) {
+    console.error(`publish: caught exception ${error}`);
   }
 }
 
