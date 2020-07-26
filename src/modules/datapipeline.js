@@ -2,7 +2,7 @@
 // 
 // exports:
 //   createDataPipeline: create pubsub machinery for data pipeine
-//   messageHandler: event handler for dispatching messages coming in through the pubsub system
+//   createHandlers: create handlers for POST endpoint for a pubsub push event
 //   refreshHistory: invoke snapshot pipeline for a specific user
 
 const database = require('../data/database');
@@ -16,6 +16,9 @@ const email = require('../services/email');
 const sms = require('../services/sms');
 const environment = require('./environment');
 const profile = require('./profile');
+
+// import google auth for checking JWT
+const googleauth = require('../services/googleauth');
 
 // base name for pubsub machinery
 const invoke = 'invoke';
@@ -70,7 +73,7 @@ exports.createDataPipeline = async (env) => {
       dataPipelineObject.topicName = topicName;
 
       // set up a pull subscription for the dev environment
-      await pubsub.createPullSubscription(topic, subName, exports.messageHandler);
+      await pubsub.createPullSubscription(topic, subName, messageHandler);
       dataPipelineObject.subName = subName;
     }
 
@@ -84,6 +87,27 @@ exports.createDataPipeline = async (env) => {
     console.log(`createDataPipeline: caught exception: ${error}`);
     return null;
   }
+}
+
+exports.createHandlers = (app) => {
+  // invoke endpoint: this is only called from the pubsub push subscription
+  app.post('/invoke', function(req, res){
+    console.log('POST /invoke');
+    const message = Buffer.from(req.body.message.data, 'base64').toString('utf-8');
+    console.log(`\tData: ${message}`);
+
+    const auth = req.headers.authorization;
+    const [, token] = auth.match(/Bearer (.*)/);
+
+    // validate the authorization bearer JWT
+    if (googleauth.validateJwt(token)) {
+      // invoke the data pipeline message handler
+      // this will dispatch to the appropriate event handler based on the 'action' in the body
+      messageHandler(message);
+    }
+
+    res.status(204).send();
+  });
 }
 
 const createScheduler = async (env, dataPipelineObject, action, schedule) => {
@@ -113,7 +137,7 @@ const createScheduler = async (env, dataPipelineObject, action, schedule) => {
 //   action: 'action name'    // e.g. 'load', 'snapshot'
 //   ...                      // message specific fields
 // }
-exports.messageHandler = async (dataBuffer) => {
+const messageHandler = async (dataBuffer) => {
   try {
     // convert the message data to a JSON string, and parse into a map
     const data = JSON.parse(dataBuffer.toString());
@@ -213,8 +237,8 @@ const loadPipeline = async () => {
           if (invokeInfo && invokeInfo.provider && invokeInfo.name) {
             const providerName = invokeInfo.provider,
             funcName = invokeInfo.name,
-            providerObject = dataProviders[providerName],
-            provider = providerObject && providerObject[funcName],
+            providerObject = providers.getProvider(providerName),
+            provider = providerObject && providerObject.apis && providerObject.apis[funcName],
             params = invokeInfo.params;
 
             // utilize the data access layer's getData mechanism to re-retrieve object
