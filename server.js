@@ -82,7 +82,9 @@ app.get('/*', function(req, res) {
 app.use(function (err, req, res, next) {
   if (err.name === 'UnauthorizedError') {
     // return a 401 status with no other payload
-    res.status(401).send();
+    //res.status(401).send();
+    // redirect back to main page
+    res.sendFile(path.join(__dirname, 'build', 'index.html'));
   }
 });
 
