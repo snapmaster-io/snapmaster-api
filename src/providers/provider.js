@@ -9,6 +9,7 @@ const fs = require('fs');
 const YAML = require('yaml');
 const auth0 = require('../services/auth0');
 const environment = require('../modules/environment');
+const { successvalue, errorvalue } = require('../modules/returnvalue');
 
 // create a provider trigger across service boundaries
 exports.createTrigger = async (providerName, connectionInfo, userId, activeSnapId, param) => {
