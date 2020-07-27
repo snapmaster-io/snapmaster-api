@@ -125,8 +125,9 @@ exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param)
     // currently  provider services all do auth via Auth0, and all share an Auth0 API service clientID / secret
     const token = await auth0.getAPIAccessToken();
     if (!token) {
-      console.error('invokeAction: could not retrieve API access token');
-      return null;
+      const message = `could not retrieve API access token`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
     }
 
     const providerUrl = environment.getProviderUrl(providerName);
@@ -151,15 +152,14 @@ exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param)
 
     // construct output message
     const output = response.data;
-    const message = 
-      `${output && output.error && output.error.message ? `error: ${output.error.message}, ` : ''}` + 
-      `stdout: ${output && output.stdout}, stderr: ${output && output.stderr}`;
+    const status = (output && output.status) || "error";
+    const message = output && output.message;
 
-    console.log(`invokeAction: ${providerName} executed action ${param.action} and returned ${message}`);
+    console.log(`invokeAction: ${providerName} executed action ${param.action} and returned status ${status}, message ${message}`);
 
-    return output;
+    return successvalue(output);
   } catch (error) {
     console.error(`invokeAction: caught exception: ${error}`);
-    return null;
+    return errorvalue(error.message);
   }
 }
