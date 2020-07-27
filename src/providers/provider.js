@@ -158,7 +158,8 @@ exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param)
 
     console.log(`invokeAction: ${providerName} executed action ${param.action} and returned status ${status}, message ${message}`);
 
-    return successvalue(output);
+    // return the output, which is already in the correct response format { status, message, data }
+    return output;
   } catch (error) {
     console.error(`invokeAction: caught exception: ${error}`);
     return errorvalue(error.message);
