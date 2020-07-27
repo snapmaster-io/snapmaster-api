@@ -354,17 +354,35 @@ exports.executeSnap = async (userId, activeSnapId, params, payload) => {
       // invoke the provider
       const output = await provider.invokeAction(param.provider, connInfo, activeSnapId, actionParam);
 
+      const state = (!output || output.error) ? 
+        dbconstants.executionStateError : 
+        dbconstants.executionStateExecuted;
       // log the action execution (with the parameter object that doesn't contain entity info)
       const actionLog = {
         name: param.name,
         provider: param.provider,
         action: param.action,
-        state: dbconstants.executionStateExecuted,
-        param: param,
-        output: output
+        state,
+        param,
+        output
+      };
+
+      if (state === dbconstants.executionStateError) {
+        // log the error state
+        logObject.state = dbconstants.executionStateError;        
       }
 
+      // update the log object
       await updateLog(logObject, actionLog);
+
+      // if the output state was an error, terminate the snap execution
+      if (state === dbconstants.executionStateError) {
+        // increment and store execution counter in activeSnap document
+        activeSnap.errorCounter = activeSnap.errorCounter ? activeSnap.errorCounter + 1 : 1;
+        await database.storeDocument(userId, dbconstants.activeSnapsCollection, activeSnapId, activeSnap);
+
+        return;
+      }
     }
 
     // log the completed state

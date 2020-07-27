@@ -11,6 +11,7 @@ const axios = require('axios');
 const provider = require('../provider');
 const config = require('../../modules/config');
 const oauth = require('../../modules/oauth');
+const { successvalue, errorvalue } = require('../../modules/returnvalue');
 
 const providerName = 'jira';
 const entityName = `${providerName}:accounts`;
@@ -34,28 +35,40 @@ exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param)
     // validate params
     const account = param[entityName];
     if (!account) {
-      console.error(`invokeAction: missing required parameter "account"`);
-      return null;
+      const message = `missing required parameter "account"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
     }
     const action = param.action;
     if (!action) {
-      console.error(`invokeAction: missing required parameter "action"`);
-      return null;
+      const message = `missing required parameter "action"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
     }
     const project = param.project;
     if (!project) {
-      console.error(`invokeAction: missing required parameter "project"`);
-      return null;
+      const message = `missing required parameter "project"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
     }
     const summary = param.summary;
     if (!summary) {
-      console.error(`invokeAction: missing required parameter "summary"`);
-      return null;
+      const message = `missing required parameter "summary"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
     }
+
+    if (action !== 'create-issue') {
+      const message = `unknown action "${action}"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
+    }
+
     const accountID = account.id;
     if (!accountID) {
-      console.error(`createTrigger: could not find account ID`);
-      return null;
+      const message = `could not find account ID`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
     }
 
     console.log(`${providerName}: account ${param.account}, action ${action}, project ${project}, summary ${summary}`);
@@ -63,8 +76,9 @@ exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param)
     // get token for calling API from the default creds
     const token = await getToken(connectionInfo);
     if (!token) {
-      console.error('invokeAction: no authorization token');
-      return null;
+      const message = `no authorization token`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
     }
 
     const url = `https://api.atlassian.com/ex/jira/${accountID}/rest/api/3/issue`;
@@ -76,13 +90,15 @@ exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param)
     // find the right issue type from the issue metadata in the account information
     const proj = account.issueMetadata && account.issueMetadata.projects && account.issueMetadata.projects.find(p => p.key === project);
     if (!proj) {
-      console.error(`invokeAction: count not find project ${project}`);
-      return null;
+      const message = `count not find project ${project}`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
     }
     const issueType = proj.issuetypes && proj.issuetypes.find(i => i.name === "Bug");
     if (!issueType) {
-      console.error(`invokeAction: count not find the Bug issue type`);
-      return null;
+      const message = `count not find the Bug issue type`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
     }
     const bugIssueType = issueType.id;
 
@@ -105,14 +121,14 @@ exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param)
         headers: headers
       });
 
-    return response.data;  
+    return successvalue(response.data);
   } catch (error) {
-    console.log(`invokeAction: caught exception: ${error}`);
+    console.error(`invokeAction: caught exception: ${error}`);
     const errorData = error.response && error.response.data && error.response.data.errors;
     for (const msg of Object.keys(errorData)) {
       console.error(`jira API error: ${msg}: ${errorData[msg]}`);
     }
-    return null;
+    return errorvalue(error.message, errorData);
   }
 }
 

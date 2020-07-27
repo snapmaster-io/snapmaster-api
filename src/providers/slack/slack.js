@@ -12,6 +12,7 @@
 
 const axios = require('axios');
 const provider = require('../provider');
+const { successvalue, errorvalue } = require('../../modules/returnvalue');
 
 const providerName = 'slack';
 const entityName = `${providerName}:workspaces`;
@@ -35,16 +36,31 @@ exports.createHandlers = (app) => {
 exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param) => {
   try {
     const action = param.action;
+    if (!action) {
+      const message = `missing required parameter "action"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
+    }
     const workspace = param.workspace;
+    if (!workspace) {
+      const message = `missing required parameter "workspace"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
+    }
     const channel = param.channel;
+    if (!channel) {
+      const message = `missing required parameter "channel"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
+    }
     const message = param.message;
+    if (!message) {
+      const message = `missing required parameter "message"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
+    }
 
     console.log(`${providerName}: workspace ${workspace}, action ${action}, channel ${channel}, message ${message}`);
-
-    if (!action || !workspace || !channel || !message) {
-      console.error('invokeAction: missing required parameter');
-      return null;
-    }
 
     // get token for calling API (either from the default workspace in connection info, or the workspace passed in)
     const token = await getToken(
@@ -71,10 +87,10 @@ exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param)
         headers: headers
       });
 
-    return response.data;  
+    return successvalue(response.data);
   } catch (error) {
-    console.log(`invokeAction: caught exception: ${error}`);
-    return null;
+    console.error(`invokeAction: caught exception: ${error}`);
+    return errorvalue(error.message);
   }
 }
 

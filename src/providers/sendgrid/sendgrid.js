@@ -12,6 +12,7 @@
 
 const sgMail = require('@sendgrid/mail');
 const provider = require('../provider');
+const { successvalue, errorvalue } = require('../../modules/returnvalue');
 
 const providerName = 'sendgrid';
 const entityName = `${providerName}:accounts`;
@@ -35,23 +36,47 @@ exports.createHandlers = (app) => {
 exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param) => {
   try {
     const action = param.action;
+    if (!action) {
+      const message = `missing required parameter "action"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
+    }
     const account = param.account;
+    if (!account) {
+      const message = `missing required parameter "account"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
+    }
     const to = param.to;
+    if (!to) {
+      const message = `missing required parameter "to"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
+    }
     const from = param.from;
+    if (!from) {
+      const message = `missing required parameter "from"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
+    }
     const subject = param.subject;
+    if (!subject) {
+      const message = `missing required parameter "subject"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
+    }
     const message = param.message;
+    if (!message) {
+      const message = `missing required parameter "message"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
+    }
     let html = param.html;
 
-    console.log(`${providerName}: account ${account}, action ${action}, to ${to}, message ${message}`);
-
-    if (!action || !account || !to || !from || !message) {
-      console.error('invokeAction: missing required parameter');
-      return null;
-    }
-
     if (action !== 'send') {
-      console.error(`invokeAction: unknown action "${action}"`);
-      return null;
+      const message = `unknown action "${action}"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
     }
 
     // get client for calling API (either from the default account in connection info, or the account passed in)
@@ -79,10 +104,10 @@ exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param)
     // send the email
     const response = await sgMail.send(msg);
 
-    return response[0].statusMessage;
+    return successvalue(response && response.length && response[0].statusMessage);
   } catch (error) {
-    console.log(`invokeAction: caught exception: ${error}`);
-    return null;
+    console.error(`invokeAction: caught exception: ${error}`);
+    return errorvalue(error.message);
   }  
 }
 

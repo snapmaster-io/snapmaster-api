@@ -8,8 +8,9 @@
 //   name: provider name
 //   definition: provider definition
 
-const provider = require('../provider');
 const axios = require('axios');
+const provider = require('../provider');
+const { successvalue, errorvalue } = require('../../modules/returnvalue');
 
 const providerName = 'circleci';
 const entityName = `${providerName}:accounts`;
@@ -32,21 +33,33 @@ exports.createHandlers = (app) => {
 
 exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param) => {
   try {
-    const action = param.action;
+    // validate params
     const account = param.account;
+    if (!account) {
+      const message = `missing required parameter "account"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
+    }
+    const action = param.action;
+    if (!action) {
+      const message = `missing required parameter "action"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
+    }
     const project = param.project;
-
-    console.log(`${providerName}: account ${account}, action ${action}, project ${project}`);
-
-    if (!action || !account || !project) {
-      console.error('invokeAction: missing required parameter');
-      return null;
+    if (!project) {
+      const message = `missing required parameter "project"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
     }
 
     if (action !== 'trigger-pipeline') {
-      console.error(`invokeAction: unknown action "${action}"`);
-      return null;
+      const message = `unknown action "${action}"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
     }
+
+    console.log(`${providerName}: account ${account}, action ${action}, project ${project}`);
 
     // get token for calling API (either from the default entity in connection info, or the entity passed in)
     const token = await getToken(
@@ -68,10 +81,10 @@ exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param)
         headers: headers
       });
 
-    return response.data;  
+    return successvalue(response.data);
   } catch (error) {
-    console.log(`invokeAction: caught exception: ${error}`);
-    return null;
+    console.error(`invokeAction: caught exception: ${error}`);
+    return errorvalue(error.message);
   }
 }
 

@@ -12,6 +12,7 @@
 
 const axios = require('axios');
 const provider = require('../provider');
+const { successvalue, errorvalue } = require('../../modules/returnvalue');
 
 const providerName = 'mattermost';
 const entityName = `${providerName}:servers`;
@@ -35,17 +36,43 @@ exports.createHandlers = (app) => {
 exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param) => {
   try {
     const action = param.action;
-    let server = param.server;
-    const team = param.team;
-    const channel = param.channel;
-    const message = param.message;
-
-    console.log(`${providerName}: server ${server}, team ${team}, action ${action}, channel ${channel}, message ${message}`);
-
-    if (!action || !server || !team || !channel || !message) {
-      console.error('invokeAction: missing required parameter');
-      return null;
+    if (!action) {
+      const message = `missing required parameter "action"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
     }
+    let server = param.server;
+    if (!server) {
+      const message = `missing required parameter "project"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
+    }
+    const team = param.team;
+    if (!team) {
+      const message = `missing required parameter "summary"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
+    }
+    const channel = param.channel;
+    if (!channel) {
+      const message = `missing required parameter "channel"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
+    }
+    const message = param.message;
+    if (!message) {
+      const message = `missing required parameter "message"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
+    }
+
+    if (action !== 'post') {
+      const message = `unknown action "${action}"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
+    }
+    
+    console.log(`${providerName}: server ${server}, team ${team}, action ${action}, channel ${channel}, message ${message}`);
 
     // get token for calling API (either from the default server in connection info, or the server passed in)
     const token = await getToken(
@@ -69,8 +96,9 @@ exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param)
     const channelIDResponse = await axios.get(channelPath, { headers: headers });
     const channelID = channelIDResponse && channelIDResponse.data && channelIDResponse.data.id;
     if (!channelID) {
-      console.error(`invokeAction: could not find channel ID for team ${team} channel ${channel}`);
-      return null;
+      const message = `could not find channel ID for team ${team} channel ${channel}`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
     }
 
     const postPath = `${baseUrl}/posts`
@@ -86,10 +114,10 @@ exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param)
         headers: headers
       });
 
-    return response.data;  
+    return successvalue(response.data);
   } catch (error) {
-    console.log(`invokeAction: caught exception: ${error}`);
-    return null;
+    console.error(`invokeAction: caught exception: ${error}`);
+    return errorvalue(error.message);
   }
 }
 

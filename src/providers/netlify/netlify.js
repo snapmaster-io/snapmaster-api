@@ -18,6 +18,7 @@ const snapengine = require('../../snap/snapengine');
 const environment = require('../../modules/environment');
 const config = require('../../modules/config');
 const netlifyauth = require('../../services/netlifyauth');
+const { successvalue, errorvalue } = require('../../modules/returnvalue');
 
 const providerName = 'netlify';
 
@@ -190,6 +191,8 @@ exports.invokeAction = async (providerName, defaultConnectionInfo, activeSnapId,
       return message;
     }
 
+    console.log(`${providerName}: site ${site}, action ${action}`);
+
     const token = await getToken(defaultConnectionInfo);
 
     // create a build hook
@@ -232,10 +235,10 @@ exports.invokeAction = async (providerName, defaultConnectionInfo, activeSnapId,
       return message;
     }
 
-    return `${providerName}: built and deployed ${site}`;
+    return successvalue({ stdout: `${providerName}: built and deployed ${site}` });
   } catch (error) {
-    console.log(`invokeAction: caught exception: ${error}`);
-    return null;
+    console.error(`invokeAction: caught exception: ${error}`);
+    return errorvalue(error.message);
   }
 }
 

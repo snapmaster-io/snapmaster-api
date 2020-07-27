@@ -15,6 +15,7 @@ const snapengine = require('../../snap/snapengine');
 const environment = require('../../modules/environment');
 const config = require('../../modules/config');
 const oauth = require('../../modules/oauth');
+const { successvalue, errorvalue } = require('../../modules/returnvalue');
 
 const providerName = 'pagerduty';
 const entityName = `${providerName}:services`;
@@ -187,23 +188,33 @@ exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param)
     // validate params
     const service = param[entityName];
     if (!service) {
-      console.error(`invokeAction: missing required parameter "service"`);
-      return null;
+      const message = `missing required parameter "service"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
     }
     const action = param.action;
     if (!action) {
-      console.error(`invokeAction: missing required parameter "action"`);
-      return null;
+      const message = `missing required parameter "action"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
     }
     const title = param.title;
     if (!title) {
-      console.error(`invokeAction: missing required parameter "title"`);
-      return null;
+      const message = `missing required parameter "title"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
     }
     const serviceID = service.id;
     if (!serviceID) {
-      console.error(`createTrigger: could not find service ID`);
-      return null;
+      const message = `could not find service ID`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
+    }
+
+    if (action !== 'create') {
+      const message = `unknown action "${action}"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
     }
 
     // get token for calling API 
@@ -248,10 +259,10 @@ exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param)
       });
 
     // return response
-    return response.data;
+    return successvalue(response.data);
   } catch (error) {
-    console.log(`invokeAction: caught exception: ${error}`);
-    return null;
+    console.error(`invokeAction: caught exception: ${error}`);
+    return errorvalue(error.message);
   }
 }
 

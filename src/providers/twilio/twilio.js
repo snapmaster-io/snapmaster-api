@@ -12,6 +12,7 @@
 
 const Twilio = require('twilio'); 
 const provider = require('../provider');
+const { successvalue, errorvalue } = require('../../modules/returnvalue');
 
 const providerName = 'twilio';
 const entityName = `${providerName}:accounts`;
@@ -35,18 +36,44 @@ exports.createHandlers = (app) => {
 exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param) => {
   try {
     const action = param.action;
+    if (!action) {
+      const message = `missing required parameter "action"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
+    }
     const account = param.account;
+    if (!account) {
+      const message = `missing required parameter "account"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
+    }
     const to = param.to;
-    const message = param.message;
+    if (!to) {
+      const message = `missing required parameter "to"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
+    }
     const from = param.from;
+    if (!from) {
+      const message = `missing required parameter "from"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
+    }
+    const message = param.message;
+    if (!message) {
+      const message = `missing required parameter "message"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
+    }
     const mediaUrl = param.mediaUrl || 'https://github.com/snapmaster-io/snapmaster/raw/master/public/SnapMaster-logo-220.png';
 
-    console.log(`${providerName}: account ${account}, action ${action}, to ${to}, message ${message}`);
-
-    if (!action || !account || !to || !from || !message) {
-      console.error('invokeAction: missing required parameter');
-      return null;
+    if (action !== 'send') {
+      const message = `unknown action "${action}"`;
+      console.error(`invokeAction: ${message}`);
+      return errorvalue(message);
     }
+
+    console.log(`${providerName}: account ${account}, action ${action}, to ${to}, message ${message}`);
 
     // get client for calling API (either from the default account in connection info, or the account passed in)
     const client = await getClient(
@@ -67,10 +94,10 @@ exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param)
 
     // return only the data 
     const output = JSON.parse(JSON.stringify(response));
-    return output;
+    return successvalue(output);
   } catch (error) {
-    console.log(`invokeAction: caught exception: ${error}`);
-    return null;
+    console.error(`invokeAction: caught exception: ${error}`);
+    return errorvalue(error.message);
   }  
 }
 
