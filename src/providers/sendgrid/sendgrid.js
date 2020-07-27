@@ -104,7 +104,8 @@ exports.invokeAction = async (providerName, connectionInfo, activeSnapId, param)
     // send the email
     const response = await sgMail.send(msg);
 
-    return successvalue(response && response.length && response[0].statusMessage);
+    const output = response && response.length && response[0].statusMessage;
+    return successvalue({ statusMessage: output });
   } catch (error) {
     console.error(`invokeAction: caught exception: ${error}`);
     return errorvalue(error.message);
