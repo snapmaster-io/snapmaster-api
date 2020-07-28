@@ -89,9 +89,6 @@ exports.createHandlers = (app) => {
       }
 
       try {
-        // get the userId out of the state hash
-        const userId = state.userId;
-
         // get configuration data
         const configData = await config.getConfig(providerName);
         if (!configData) {
@@ -116,6 +113,8 @@ exports.createHandlers = (app) => {
         // trade the authorization token for an access token
         const authResult = oauth.accessToken.create(authorizationToken);
 
+        // get the userId out of the state hash
+        const userId = state.userId;
         if (userId) {
           // store the default credentials for the connection
           const jsonValue = JSON.stringify(authResult.token);
@@ -177,18 +176,10 @@ const encodeState = (redirectUrl, csrfToken, providerName, userId) => {
 // parse the "state" querystring parameter
 const parseState = (provider, state) => {
   // slack does not allow the "state" to contain url-encoded parameters 
-  // delimited by "&", so we need to delimit using a space and parse accordingly
-  // slack returns the %20 delimiter as a '+'
+  // so we engcoded with spaces.  change them back to &
   if (provider === 'slack') {
-    const parsedState = {};
-    for (const param of state.split('+')) {
-      const kv = param.split('%3D');
-      if (kv && kv.length && kv.length > 1) {
-        parsedState[kv[0]] = kv[1];
-      }
-    }
-    return parsedState;
-  } else {
-    return querystring.parse(state);
+    state = state.replace(/ /g, '&');
   }
+
+  return querystring.parse(state);
 }
