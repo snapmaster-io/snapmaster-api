@@ -44,7 +44,7 @@ exports.createHandlers = (app) => {
         const authorizeURIOptions = {
           redirect_uri: `${environment.getUrl()}/oauth/callback/${providerName}`,
           scope: configData.scopes,
-          state: `url=${redirectUrl}&csrf=${csrfToken}&providerName=${providerName}&userId=${userId}`,
+          state: encodeState(redirectUrl, csrfToken, providerName, userId),
         };
         if (configData.audience) {
           authorizeURIOptions.audience = configData.audience;
@@ -69,23 +69,30 @@ exports.createHandlers = (app) => {
   app.use('/oauth/callback/:provider', function(req, res){
     // define an async function to handle the call (since we use await in this codepath)
     const call = async () => {
+      // get provider name 
+      const providerName = req.params.provider;
+      if (!providerName) {
+        console.error('oauthcallback: could not obtain provider name');
+        const url = `${state.url}#message=error`;
+        res.redirect(url);
+        return;
+      }
+
       // get the grant code and state
       const code = req.query.code;
-      const state = querystring.parse(req.query.state);
+      const state = parseState(providerName, req.query.state);
+      if (!state) {
+        console.error('oauthcallback: could not parse state');
+        const url = `${state.url}#message=error`;
+        res.redirect(url);
+        return;
+      }
 
       try {
         // get the userId out of the state hash
         const userId = state.userId;
 
-        // get provider name and configuration data
-        const providerName = req.params.provider;
-        if (!providerName) {
-          console.error('oauthcallback: could not obtain provider name');
-          const url = `${state.url}#message=error`;
-          res.redirect(url);
-          return;
-        }
-
+        // get configuration data
         const configData = await config.getConfig(providerName);
         if (!configData) {
           console.error('oauthcallback: could not obtain config data');
@@ -154,4 +161,33 @@ exports.getOAuthClient = (configData) => {
     }
   });
   return client;
+}
+
+// encode the "state" querystring parameter
+const encodeState = (redirectUrl, csrfToken, providerName, userId) => {
+  // slack does not allow the "state" to contain url-encoded parameters 
+  // delimited by "&", so we need to delimit using a space and parse accordingly
+  if (providerName === 'slack') {
+    return `url=${redirectUrl} csrf=${csrfToken} providerName=${providerName} userId=${userId}`;
+  } else {
+    return `url=${redirectUrl}&csrf=${csrfToken}&providerName=${providerName}&userId=${userId}`;
+  }
+}
+
+// parse the "state" querystring parameter
+const parseState = (provider, state) => {
+  // slack does not allow the "state" to contain url-encoded parameters 
+  // delimited by "&", so we need to delimit using a space and parse accordingly
+  if (provider === 'slack') {
+    const parsedState = {};
+    for (const param of state.split('%20')) {
+      const kv = param.split('%3D');
+      if (kv && kv.length && kv.length > 1) {
+        parsedState[kv[0]] = kv[1];
+      }
+    }
+    return parsedState;
+  } else {
+    return querystring.parse(state);
+  }
 }
