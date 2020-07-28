@@ -178,9 +178,10 @@ const encodeState = (redirectUrl, csrfToken, providerName, userId) => {
 const parseState = (provider, state) => {
   // slack does not allow the "state" to contain url-encoded parameters 
   // delimited by "&", so we need to delimit using a space and parse accordingly
+  // slack returns the %20 delimiter as a '+'
   if (provider === 'slack') {
     const parsedState = {};
-    for (const param of state.split('%20')) {
+    for (const param of state.split('+')) {
       const kv = param.split('%3D');
       if (kv && kv.length && kv.length > 1) {
         parsedState[kv[0]] = kv[1];
