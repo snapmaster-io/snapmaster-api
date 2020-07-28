@@ -88,7 +88,7 @@ exports.deleteSubscription = async (subName) => {
 exports.publish = async (topicName, message) => {
   try {
     // obtain the topic reference or, if it doesn't exist, create it
-    const topic = pubsub.topic(topicName) && await exports.createTopic(topicName);
+    const topic = await pubsub.topic(topicName) || await exports.createTopic(topicName);
     if (!topic) {
       console.error(`publish: could not create topic name ${topicName}`);
       return null;
