@@ -81,10 +81,17 @@ app.get('/*', function(req, res) {
 // handle all unauthorized errors by returning a 401
 app.use(function (err, req, res, next) {
   if (err.name === 'UnauthorizedError') {
-    // return a 401 status with no other payload
-    //res.status(401).send();
-    // redirect back to main page
-    res.sendFile(path.join(__dirname, 'build', 'index.html'));
+    console.error(`401 Unauthorized: ${error.message}, ${req.user['sub']}`);
+
+    // if this is an API call
+    if (req.header('Content-Type') === 'application/json') {
+      console.log('returning 401');
+      res.status(401).send({ status: 401 });
+    } else {
+      // send the main page content back
+      console.log('returning index.html');
+      res.sendFile(path.join(__dirname, 'build', 'index.html'));
+    }
   }
 });
 
