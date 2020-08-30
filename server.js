@@ -81,7 +81,7 @@ app.get('/*', function(req, res) {
 // handle all unauthorized errors by returning a 401
 app.use(function (err, req, res, next) {
   if (err.name === 'UnauthorizedError') {
-    console.error(`401 Unauthorized: ${err.message}, ${req.user['sub']}`);
+    console.error(`401 Unauthorized: ${err.message}`);
 
     // if this is an API call
     if (req.header('Content-Type') === 'application/json') {
